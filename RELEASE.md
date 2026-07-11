@@ -1,6 +1,6 @@
-# ShinaYuu Music 1.4.17
+# ShinaYuu Music 1.4.24
 
-Bản này tiếp tục trực tiếp từ 1.4.16.
+Bản này tiếp tục trực tiếp từ MineRadio 1.1.0
 
 ## Tua nhạc ổn định
 
@@ -13,5 +13,4 @@ Bản này tiếp tục trực tiếp từ 1.4.16.
 
 - YouTube dùng PCM trực tiếp từ HTML Audio + Web Audio Analyser; không trộn beat-grid hoặc tempo assist cho nguồn YouTube.
 - Spotify dùng Windows system-audio loopback do Electron cấp cho Web Audio Analyser.
-- Không còn BPM 120, timeline pulse, sine pulse hoặc Audio Analysis fallback giả.
 - Khi không có PCM thật, hiệu ứng giảm dần về trạng thái nghỉ thay vì tự nhấp nháy.
