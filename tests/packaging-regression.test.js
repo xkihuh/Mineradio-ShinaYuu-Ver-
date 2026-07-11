@@ -1,0 +1,50 @@
+'use strict';
+
+const assert = require('assert/strict');
+const fs = require('fs');
+const path = require('path');
+
+const root = path.resolve(__dirname, '..');
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const main = fs.readFileSync(path.join(root, 'desktop', 'main.js'), 'utf8');
+const host = fs.readFileSync(path.join(root, 'desktop', 'spotify-host-runtime.js'), 'utf8');
+
+assert.equal(pkg.version, '1.4.24');
+assert.equal(pkg.main, 'desktop/main.js');
+assert.equal(pkg.scripts.start, 'electron .');
+assert.equal(pkg.scripts['build:win'], 'electron-builder --win nsis');
+assert.equal(pkg.scripts['build:win:dir'], 'electron-builder --win dir');
+assert.equal(pkg.build.appId, 'com.shinayuu.music');
+assert.equal(pkg.build.productName, 'ShinaYuu Music');
+assert.equal(pkg.build.asar, false);
+assert.equal(pkg.build.win.executableName, 'ShinaYuuMusic');
+assert.deepEqual(pkg.build.win.target, [{ target: 'nsis', arch: ['x64'] }]);
+assert.equal(pkg.build.nsis.oneClick, false);
+assert.equal(pkg.build.nsis.createDesktopShortcut, true);
+assert.equal(pkg.build.nsis.createStartMenuShortcut, true);
+assert.equal(pkg.build.nsis.artifactName, 'ShinaYuu-Music-${version}-Setup.${ext}');
+assert.match(main, /new BrowserWindow\(/);
+assert.match(main, /await mainWindow\.loadURL/);
+assert.match(main, /startSpotifyHostRuntime\(port\)/);
+assert.match(main, /ensureDiscordPresenceManager\(\)/);
+assert.ok(fs.existsSync(path.join(root, 'desktop', 'discord-presence.js')));
+assert.ok(fs.existsSync(path.join(root, 'desktop', 'discord-ipc-client.js')));
+const discordPresence = fs.readFileSync(path.join(root, 'desktop', 'discord-presence.js'), 'utf8');
+assert.match(discordPresence, /DiscordIpcClient/);
+assert.doesNotMatch(discordPresence, /require\('discord-rpc'\)/);
+assert.match(host, /visible: false/);
+assert.match(host, /windowsSkipTaskbar: true/);
+assert.doesNotMatch(host, /x: -32000/);
+assert.match(host, /hostWindow\.hide\(\)/);
+assert.match(host, /setInterval\(forceHidden, 250\)/);
+assert.ok(fs.existsSync(path.join(root, 'build', 'installer.nsh')));
+assert.ok(fs.existsSync(path.join(root, 'build', 'installerHeader.bmp')));
+assert.ok(fs.existsSync(path.join(root, 'build', 'installerSidebar.bmp')));
+assert.ok(fs.existsSync(path.join(root, 'build', 'icon.ico')));
+
+const installer = fs.readFileSync(path.join(root, 'build', 'installer.nsh'), 'utf8');
+assert.match(installer, /StrCpy \$2 "\$0" 15 -15/);
+assert.match(installer, /StrCpy \$1 "\$INSTDIR" 15 -15/);
+assert.doesNotMatch(installer, /StrCpy \$2 "\$0" 10 -10\n  \${If} \$1 < 10/);
+assert.match(installer, /validInstallSuffix:/);
+console.log('Packaging regression tests passed.');

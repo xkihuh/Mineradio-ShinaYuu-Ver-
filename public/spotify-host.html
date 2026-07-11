@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ShinaYuu Music Spotify Host</title>
+  <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font:12px sans-serif}</style>
+</head>
+<body>
+<script>
+(function () {
+  'use strict';
+
+  var player = null;
+  var connected = false;
+  var deviceId = '';
+  var reconnectTimer = null;
+  var heartbeatTimer = null;
+  var stateTimer = null;
+  var scriptPromise = null;
+  var creating = false;
+
+  function postEvent(type, payload) {
+    return fetch('/api/spotify/host/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ type: type, at: Date.now() }, payload || {}))
+    }).catch(function () {});
+  }
+
+  function loadSdk() {
+    if (window.Spotify && window.Spotify.Player) return Promise.resolve();
+    if (scriptPromise) return scriptPromise;
+    scriptPromise = new Promise(function (resolve, reject) {
+      var settled = false;
+      window.onSpotifyWebPlaybackSDKReady = function () {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      var script = document.createElement('script');
+      script.src = 'https://sdk.scdn.co/spotify-player.js';
+      script.async = true;
+      script.onerror = function () {
+        if (settled) return;
+        settled = true;
+        reject(new Error('SPOTIFY_SDK_LOAD_FAILED'));
+      };
+      document.head.appendChild(script);
+      setTimeout(function () {
+        if (window.Spotify && window.Spotify.Player && !settled) {
+          settled = true;
+          resolve();
+        } else if (!settled) {
+          settled = true;
+          reject(new Error('SPOTIFY_SDK_TIMEOUT'));
+        }
+      }, 12000);
+    }).catch(function (error) {
+      scriptPromise = null;
+      throw error;
+    });
+    return scriptPromise;
+  }
+
+  function getToken(callback) {
+    fetch('/api/spotify/player/token?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (response) {
+        if (!response.ok) throw new Error('SPOTIFY_TOKEN_HTTP_' + response.status);
+        return response.json();
+      })
+      .then(function (data) {
+        if (!data || !data.accessToken) throw new Error('SPOTIFY_TOKEN_MISSING');
+        callback(data.accessToken);
+      })
+      .catch(function (error) {
+        postEvent('error', { error: String(error && (error.message || error) || 'SPOTIFY_TOKEN_FAILED') });
+      });
+  }
+
+  function statePayload(state) {
+    var current = state && state.track_window && state.track_window.current_track;
+    return {
+      deviceId: deviceId,
+      currentUri: current && current.uri || '',
+      currentTrackId: current && current.id || '',
+      positionMs: Number(state && state.position || 0),
+      durationMs: Number(state && state.duration || current && current.duration_ms || 0),
+      isPlaying: !!(state && state.paused === false),
+      paused: !!(state && state.paused !== false)
+    };
+  }
+
+  async function createPlayer() {
+    if (creating || connected) return;
+    creating = true;
+    try {
+      await loadSdk();
+      if (player) {
+        try { player.disconnect(); } catch (_) {}
+        player = null;
+      }
+      player = new window.Spotify.Player({
+        name: 'ShinaYuu Music',
+        getOAuthToken: getToken,
+        volume: 0.65
+      });
+      player.addListener('ready', function (payload) {
+        connected = true;
+        deviceId = payload && payload.device_id || '';
+        postEvent('ready', { ready: true, connected: true, deviceId: deviceId, deviceName: 'ShinaYuu Music' });
+        try {
+          var activation = player.activateElement && player.activateElement();
+          if (activation && typeof activation.catch === 'function') activation.catch(function () {});
+        } catch (_) {}
+      });
+      player.addListener('not_ready', function (payload) {
+        if (!payload || payload.device_id === deviceId) {
+          connected = false;
+          deviceId = '';
+        }
+        postEvent('not_ready', { ready: false, connected: false, deviceId: payload && payload.device_id || '' });
+      });
+      player.addListener('player_state_changed', function (state) {
+        if (!state) return;
+        postEvent('state', statePayload(state));
+      });
+      ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach(function (name) {
+        player.addListener(name, function (payload) {
+          var message = payload && payload.message || name;
+          if (name !== 'playback_error') connected = false;
+          postEvent('error', { errorType: name, error: message, ready: connected, connected: connected, deviceId: deviceId });
+        });
+      });
+      player.addListener('autoplay_failed', function () {
+        postEvent('error', { errorType: 'autoplay_failed', error: 'SPOTIFY_AUTOPLAY_FAILED', ready: connected, connected: connected, deviceId: deviceId });
+      });
+      var ok = await player.connect();
+      if (!ok) throw new Error('SPOTIFY_SDK_CONNECT_FAILED');
+      try {
+        var activation = player.activateElement && player.activateElement();
+        if (activation && typeof activation.catch === 'function') activation.catch(function () {});
+      } catch (_) {}
+    } catch (error) {
+      connected = false;
+      postEvent('error', { error: String(error && (error.message || error) || 'SPOTIFY_HOST_FAILED'), ready: false, connected: false });
+    } finally {
+      creating = false;
+    }
+  }
+
+  function ensureConnected() {
+    fetch('/api/login/status?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (response) { return response.json(); })
+      .then(function (status) {
+        if (status && status.loggedIn && !connected) createPlayer();
+      })
+      .catch(function () {});
+  }
+
+  heartbeatTimer = setInterval(function () {
+    postEvent('heartbeat', { ready: connected, connected: connected, deviceId: deviceId, deviceName: 'ShinaYuu Music' });
+  }, 2000);
+  stateTimer = setInterval(function () {
+    if (!connected || !player || typeof player.getCurrentState !== 'function') return;
+    player.getCurrentState().then(function (state) {
+      if (state) postEvent('state', statePayload(state));
+    }).catch(function () {});
+  }, 350);
+  reconnectTimer = setInterval(ensureConnected, 4000);
+  ensureConnected();
+
+  window.addEventListener('beforeunload', function () {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    if (stateTimer) clearInterval(stateTimer);
+    if (reconnectTimer) clearInterval(reconnectTimer);
+    try { if (player) player.disconnect(); } catch (_) {}
+  });
+})();
+</script>
+</body>
+</html>
