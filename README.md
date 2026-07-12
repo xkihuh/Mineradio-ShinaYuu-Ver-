@@ -64,3 +64,13 @@ Không cần Bot Token, Client Secret hoặc OAuth trình duyệt.
 - Windows 10/11 x64.
 - Node.js 24 trở lên.
 - Microsoft Edge WebView2 Runtime.
+
+## Copyright and License
+
+Copyright (C) 2026 XxHuberrr.
+Copyright (C) 2026 akimiya7742 (For modifications and maintenance).
+
+This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE) file for details.
+
+The MR Logo, the name "Mineradio," the UI visual design, and original visual assets belong entirely to the original author. Third-party dependencies and services follow their respective open-source licenses and terms of service.
+
