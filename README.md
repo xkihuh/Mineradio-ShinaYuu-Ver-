@@ -68,7 +68,7 @@ Không cần Bot Token, Client Secret hoặc OAuth trình duyệt.
 ## Copyright and License
 
 Copyright (C) 2026 XxHuberrr.
-Copyright (C) 2026 akimiya7742 (For modifications and maintenance).
+Copyright (C) 2026 x.kihuh (For modifications and maintenance).
 
 This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE) file for details.
 
