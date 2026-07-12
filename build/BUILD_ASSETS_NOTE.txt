@@ -1,0 +1,11 @@
+ShinaYuu Music 1.1.2 - custom installer build folder
+
+Changed:
+- installerHeader.bmp: rebuilt from the supplied anime artwork, 150x57, 24-bit BMP.
+- installerSidebar.bmp: rebuilt from the supplied anime artwork, 164x314, 24-bit BMP.
+- installer.nsh: dark cyan ShinaYuu Music palette; removed visible Mineradio/Chinese installer labels.
+
+Unchanged:
+- icon.ico, icon.png, icon-64.rgba, after-pack.js, preview-win.js.
+
+Replace the existing /build folder in ShinaYuu Music 1.1.2 with this folder, then rebuild the installer.

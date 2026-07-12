@@ -1,20 +1,20 @@
 !ifndef MUI_BGCOLOR
-  !define MUI_BGCOLOR "FFFFFF"
+  !define MUI_BGCOLOR "071416"
 !endif
 !ifndef MUI_TEXTCOLOR
-  !define MUI_TEXTCOLOR "111217"
+  !define MUI_TEXTCOLOR "EAFDFC"
 !endif
 !ifndef MUI_DIRECTORYPAGE_BGCOLOR
-  !define MUI_DIRECTORYPAGE_BGCOLOR "FFFFFF"
+  !define MUI_DIRECTORYPAGE_BGCOLOR "071416"
 !endif
 !ifndef MUI_DIRECTORYPAGE_TEXTCOLOR
-  !define MUI_DIRECTORYPAGE_TEXTCOLOR "111217"
+  !define MUI_DIRECTORYPAGE_TEXTCOLOR "EAFDFC"
 !endif
 !ifndef MUI_INSTFILESPAGE_COLORS
-  !define MUI_INSTFILESPAGE_COLORS "3257F7 FFFFFF"
+  !define MUI_INSTFILESPAGE_COLORS "2DE2C4 071416"
 !endif
 !ifndef MUI_FINISHPAGE_LINK_COLOR
-  !define MUI_FINISHPAGE_LINK_COLOR "3257F7"
+  !define MUI_FINISHPAGE_LINK_COLOR "2DE2C4"
 !endif
 !ifndef MUI_HEADERIMAGE
   !define MUI_HEADERIMAGE
@@ -110,109 +110,109 @@ Function MineradioGuiInit
 FunctionEnd
 
 Function MineradioTintCommonControls
-  SetCtlColors $HWNDPARENT "111217" "FFFFFF"
+  SetCtlColors $HWNDPARENT "EAFDFC" "071416"
 
   GetDlgItem $0 $HWNDPARENT 1
   ${If} $0 <> 0
-    SetCtlColors $0 "111217" "FFFFFF"
+    SetCtlColors $0 "EAFDFC" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 2
   ${If} $0 <> 0
-    SetCtlColors $0 "111217" "FFFFFF"
+    SetCtlColors $0 "EAFDFC" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 3
   ${If} $0 <> 0
-    SetCtlColors $0 "111217" "FFFFFF"
+    SetCtlColors $0 "EAFDFC" "071416"
   ${EndIf}
 
   GetDlgItem $0 $HWNDPARENT 1028
   ${If} $0 <> 0
-    SetCtlColors $0 "4B5263" "FFFFFF"
+    SetCtlColors $0 "8AA9A7" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 1256
   ${If} $0 <> 0
-    SetCtlColors $0 "4B5263" "FFFFFF"
+    SetCtlColors $0 "8AA9A7" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 1034
   ${If} $0 <> 0
-    SetCtlColors $0 "" "FFFFFF"
+    SetCtlColors $0 "" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 1035
   ${If} $0 <> 0
-    SetCtlColors $0 "" "FFFFFF"
+    SetCtlColors $0 "" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 1037
   ${If} $0 <> 0
-    SetCtlColors $0 "111217" "FFFFFF"
+    SetCtlColors $0 "EAFDFC" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 1038
   ${If} $0 <> 0
-    SetCtlColors $0 "4B5263" "FFFFFF"
+    SetCtlColors $0 "8AA9A7" "071416"
   ${EndIf}
   GetDlgItem $0 $HWNDPARENT 1039
   ${If} $0 <> 0
-    SetCtlColors $0 "" "FFFFFF"
+    SetCtlColors $0 "" "071416"
   ${EndIf}
 
   FindWindow $0 "#32770" "" $HWNDPARENT
   ${If} $0 <> 0
-    SetCtlColors $0 "111217" "FFFFFF"
+    SetCtlColors $0 "EAFDFC" "071416"
 
     GetDlgItem $1 $0 1000
     ${If} $1 <> 0
-      SetCtlColors $1 "111217" "FFFFFF"
+      SetCtlColors $1 "EAFDFC" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1001
     ${If} $1 <> 0
-      SetCtlColors $1 "111217" "FFFFFF"
+      SetCtlColors $1 "EAFDFC" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1004
     ${If} $1 <> 0
-      SetCtlColors $1 "3257F7" "FFFFFF"
+      SetCtlColors $1 "2DE2C4" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1006
     ${If} $1 <> 0
-      SetCtlColors $1 "4B5263" "FFFFFF"
+      SetCtlColors $1 "8AA9A7" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1016
     ${If} $1 <> 0
-      SetCtlColors $1 "4B5263" "FFFFFF"
+      SetCtlColors $1 "8AA9A7" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1019
     ${If} $1 <> 0
-      SetCtlColors $1 "111217" "FFFFFF"
+      SetCtlColors $1 "EAFDFC" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1020
     ${If} $1 <> 0
-      SetCtlColors $1 "4B5263" "FFFFFF"
+      SetCtlColors $1 "8AA9A7" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1023
     ${If} $1 <> 0
-      SetCtlColors $1 "4B5263" "FFFFFF"
+      SetCtlColors $1 "8AA9A7" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1024
     ${If} $1 <> 0
-      SetCtlColors $1 "4B5263" "FFFFFF"
+      SetCtlColors $1 "8AA9A7" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1027
     ${If} $1 <> 0
-      SetCtlColors $1 "111217" "FFFFFF"
+      SetCtlColors $1 "EAFDFC" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1201
     ${If} $1 <> 0
-      SetCtlColors $1 "111217" "FFFFFF"
+      SetCtlColors $1 "EAFDFC" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1202
     ${If} $1 <> 0
-      SetCtlColors $1 "4B5263" "FFFFFF"
+      SetCtlColors $1 "8AA9A7" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1203
     ${If} $1 <> 0
-      SetCtlColors $1 "111217" "FFFFFF"
+      SetCtlColors $1 "EAFDFC" "071416"
     ${EndIf}
     GetDlgItem $1 $0 1204
     ${If} $1 <> 0
-      SetCtlColors $1 "4B5263" "FFFFFF"
+      SetCtlColors $1 "8AA9A7" "071416"
     ${EndIf}
   ${EndIf}
 FunctionEnd
@@ -805,35 +805,35 @@ Function MineradioWelcomeShow
     Abort
   ${EndIf}
 
-  SetCtlColors $MineradioWelcomePage "111217" "FFFFFF"
+  SetCtlColors $MineradioWelcomePage "EAFDFC" "071416"
   CreateFont $MineradioHeroFont "Segoe UI" 24 700
   CreateFont $MineradioTitleFont "Segoe UI" 11 700
   CreateFont $MineradioBodyFont "Segoe UI" 9 400
   CreateFont $MineradioSmallFont "Segoe UI" 8 400
 
-  ${NSD_CreateLabel} 22u 20u 82u 10u "MINERADIO"
+  ${NSD_CreateLabel} 22u 20u 82u 10u "SHINAYUU MUSIC"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioSmallFont 1
-  SetCtlColors $0 "3257F7" "FFFFFF"
+  SetCtlColors $0 "2DE2C4" "071416"
 
   ${NSD_CreateLabel} 22u 42u 226u 30u "Cài đặt ShinaYuu Music / ShinaYuu Music Setup"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioHeroFont 1
-  SetCtlColors $0 "111217" "FFFFFF"
+  SetCtlColors $0 "EAFDFC" "071416"
 
   ${NSD_CreateLabel} 22u 78u 36u 2u ""
   Pop $0
-  SetCtlColors $0 "" "3257F7"
+  SetCtlColors $0 "" "2DE2C4"
 
   ${NSD_CreateLabel} 22u 96u 238u 24u "Cài ShinaYuu Music trên máy tính này. Mặc định: D:\ShinaYuu Music; bạn có thể chọn vị trí khác ở bước tiếp theo."
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioBodyFont 1
-  SetCtlColors $0 "4B5263" "FFFFFF"
+  SetCtlColors $0 "8AA9A7" "071416"
 
   ${NSD_CreateLabel} 22u 130u 238u 12u "默认位置：$INSTDIR"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioTitleFont 1
-  SetCtlColors $0 "3257F7" "FFFFFF"
+  SetCtlColors $0 "2DE2C4" "071416"
 
   nsDialogs::Show
 FunctionEnd
@@ -860,30 +860,30 @@ Function MineradioDirectoryShow
     Abort
   ${EndIf}
 
-  SetCtlColors $MineradioDirectoryPage "111217" "FFFFFF"
+  SetCtlColors $MineradioDirectoryPage "EAFDFC" "071416"
   CreateFont $MineradioTitleFont "Segoe UI" 15 700
   CreateFont $MineradioBodyFont "Segoe UI" 9 400
   CreateFont $MineradioSmallFont "Segoe UI" 8 500
 
-  ${NSD_CreateLabel} 22u 12u 238u 20u "选择安装位置"
+  ${NSD_CreateLabel} 22u 12u 238u 20u "Chọn vị trí cài đặt"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioTitleFont 1
-  SetCtlColors $0 "111217" "FFFFFF"
+  SetCtlColors $0 "EAFDFC" "071416"
 
-  ${NSD_CreateLabel} 22u 40u 238u 24u "你可以使用默认路径，也可以选择其它磁盘或文件夹。安装器会自动创建缺失的目录。"
+  ${NSD_CreateLabel} 22u 40u 238u 24u "Dùng đường dẫn mặc định hoặc chọn ổ đĩa/thư mục khác. Trình cài đặt sẽ tự tạo thư mục còn thiếu."
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioBodyFont 1
-  SetCtlColors $0 "4B5263" "FFFFFF"
+  SetCtlColors $0 "8AA9A7" "071416"
 
-  ${NSD_CreateLabel} 22u 76u 238u 10u "安装目录"
+  ${NSD_CreateLabel} 22u 76u 238u 10u "Thư mục cài đặt"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioSmallFont 1
-  SetCtlColors $0 "3257F7" "FFFFFF"
+  SetCtlColors $0 "2DE2C4" "071416"
 
   ${NSD_CreateText} 22u 94u 178u 15u "$INSTDIR"
   Pop $MineradioDirectoryInput
   SendMessage $MineradioDirectoryInput ${WM_SETFONT} $MineradioBodyFont 1
-  SetCtlColors $MineradioDirectoryInput "111217" "FFFFFF"
+  SetCtlColors $MineradioDirectoryInput "EAFDFC" "071416"
 
   ${NSD_CreateBrowseButton} 210u 93u 50u 17u "浏览..."
   Pop $0
@@ -893,7 +893,7 @@ Function MineradioDirectoryShow
   ${NSD_CreateLabel} 22u 122u 238u 12u "Khuyến nghị: D:\ShinaYuu Music; thư mục sẽ được tạo tự động."
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioSmallFont 1
-  SetCtlColors $0 "6B7280" "FFFFFF"
+  SetCtlColors $0 "73918F" "071416"
 
   nsDialogs::Show
 FunctionEnd
@@ -901,7 +901,7 @@ FunctionEnd
 Function MineradioDirectoryLeave
   ${NSD_GetText} $MineradioDirectoryInput $0
   ${If} $0 == ""
-    MessageBox MB_ICONEXCLAMATION|MB_OK "请选择安装文件夹。"
+    MessageBox MB_ICONEXCLAMATION|MB_OK "Vui lòng chọn thư mục cài đặt."
     Abort
   ${EndIf}
   Push "$0"

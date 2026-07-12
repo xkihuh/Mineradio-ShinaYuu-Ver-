@@ -5,10 +5,15 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.4.17';
+const UA = 'ShinaYuu Music/1.1.2';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const LRCLIB_BASE = 'https://lrclib.net/api';
+// Spotify does not publish a lyrics endpoint in the public Web API. This
+// compatibility bridge mirrors the timed-lyrics response used by Spotify's
+// own web player. It is deliberately isolated and always falls back to
+// LRCLIB when Spotify rejects or changes the response.
+const SPOTIFY_LYRICS_BASE = 'https://spclient.wg.spotify.com/color-lyrics/v2/track';
 const lyricSync = require('./public/lyrics-sync');
 
 const spotifyTrackCache = new Map();
@@ -18,6 +23,7 @@ const youtubeSearchCache = new Map();
 const spotifyAuthRequests = new Map();
 const spotifyAuthResults = new Map();
 const spotifyAudioAnalysisCache = new Map();
+const spotifyLyricsCache = new Map();
 const youtubeStreamTokens = new Map();
 let youtubeClientPromise = null;
 let youtubeEnginePreparePromise = null;
@@ -547,6 +553,156 @@ async function spotifyApi(endpoint, options = {}) {
     throw error;
   }
   return data;
+}
+
+
+function spotifyLyricsTrackId(value) {
+  const raw = String(value || '').trim();
+  const uriMatch = raw.match(/^spotify:track:([A-Za-z0-9]{16,32})$/i);
+  const urlMatch = raw.match(/open\.spotify\.com\/track\/([A-Za-z0-9]{16,32})/i);
+  const id = uriMatch ? uriMatch[1] : (urlMatch ? urlMatch[1] : raw);
+  return /^[A-Za-z0-9]{16,32}$/.test(id) ? id : '';
+}
+
+function spotifyLyricsTimestamp(milliseconds) {
+  const total = Math.max(0, Math.round(Number(milliseconds) || 0));
+  const minutes = Math.floor(total / 60000);
+  const seconds = Math.floor((total % 60000) / 1000);
+  const millis = total % 1000;
+  return `[${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}]`;
+}
+
+function normalizeSpotifyLyricsPayload(payload, metadata = {}) {
+  const lyrics = payload && payload.lyrics && typeof payload.lyrics === 'object' ? payload.lyrics : {};
+  const syncType = String(lyrics.syncType || '').trim().toUpperCase();
+  const rawLines = Array.isArray(lyrics.lines) ? lyrics.lines : [];
+  const lines = rawLines.map((line) => {
+    const words = String(line && line.words || '').replace(/\r?\n/g, ' ').trim();
+    const startTimeMs = Number(line && line.startTimeMs);
+    const endTimeMs = Number(line && line.endTimeMs);
+    const syllables = Array.isArray(line && line.syllables) ? line.syllables.map((item) => {
+      const text = String(item && (item.text || item.word || item.words) || '').replace(/\r?\n/g, ' ');
+      const syllableStart = Number(item && item.startTimeMs);
+      const syllableEnd = Number(item && item.endTimeMs);
+      return {
+        text,
+        startTimeMs: Number.isFinite(syllableStart) ? Math.max(0, syllableStart) : -1,
+        endTimeMs: Number.isFinite(syllableEnd) ? Math.max(0, syllableEnd) : 0,
+      };
+    }).filter((item) => item.text || item.startTimeMs >= 0) : [];
+    return {
+      words,
+      startTimeMs: Number.isFinite(startTimeMs) ? Math.max(0, startTimeMs) : -1,
+      endTimeMs: Number.isFinite(endTimeMs) ? Math.max(0, endTimeMs) : 0,
+      syllables,
+    };
+  }).filter((line) => line.words || line.startTimeMs >= 0);
+  const timed = syncType !== 'UNSYNCED' && lines.some((line) => line.startTimeMs >= 0);
+  if (!lines.length) return null;
+  const durationSeconds = lyricSync.normalizeDurationSeconds(metadata.duration || metadata.durationMs || 0);
+  const plainLyric = lines.map((line) => line.words).filter(Boolean).join('\n');
+  if (!timed) {
+    return {
+      lyric: '',
+      tlyric: '',
+      yrc: '',
+      plainLyric,
+      instrumental: false,
+      source: 'spotify-native-unsynced',
+      metadataProvider: 'spotify',
+      metadata,
+      spotifyLyrics: {
+        syncType: syncType || 'UNSYNCED',
+        language: String(lyrics.language || ''),
+        provider: String(lyrics.providerDisplayName || lyrics.provider || 'Spotify'),
+        lineCount: lines.length,
+        timed: false,
+        lines,
+      },
+    };
+  }
+  const timedLines = lines.filter((line) => line.startTimeMs >= 0);
+  const lyric = timedLines.map((line) => `${spotifyLyricsTimestamp(line.startTimeMs)}${line.words}`).join('\n');
+  return {
+    lyric,
+    tlyric: '',
+    yrc: '',
+    plainLyric,
+    instrumental: false,
+    source: 'spotify-native',
+    metadataProvider: 'spotify',
+    metadata,
+    match: {
+      id: String(lyrics.providerLyricsId || metadata.spotifyId || metadata.id || ''),
+      score: 100,
+      track: String(metadata.track || metadata.name || ''),
+      artist: String(metadata.artist || ''),
+      album: String(metadata.album || ''),
+      duration: durationSeconds,
+      synced: true,
+    },
+    spotifyLyrics: {
+      syncType: syncType || 'LINE_SYNCED',
+      language: String(lyrics.language || ''),
+      provider: String(lyrics.providerDisplayName || lyrics.provider || 'Spotify'),
+      lineCount: timedLines.length,
+      timed: true,
+      // Preserve Spotify's raw millisecond timeline. Converting to LRC and
+      // parsing it again loses blank timing rows, endTimeMs and any available
+      // syllable timing, which makes the app visibly diverge from Spotify.
+      lines: timedLines,
+    },
+  };
+}
+
+async function spotifyNativeLyrics(id, metadata = {}) {
+  if (/^(0|false|off|disabled)$/i.test(String(process.env.SPOTIFY_NATIVE_LYRICS || '').trim())) return null;
+  const trackId = spotifyLyricsTrackId(id || metadata.spotifyId || metadata.id);
+  if (!trackId) return null;
+  const cached = spotifyLyricsCache.get(trackId);
+  if (cached && Date.now() - cached.at < 6 * 60 * 60 * 1000) return cached.value;
+
+  let token = await validSpotifyToken(false);
+  if (!token || !token.access_token) return null;
+  const endpoint = `${SPOTIFY_LYRICS_BASE}/${encodeURIComponent(trackId)}?format=json&vocalRemoval=false&market=from_token`;
+  const request = (accessToken) => fetchWithTimeout(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json',
+      'App-Platform': 'WebPlayer',
+      'User-Agent': UA,
+    },
+  }, 10000);
+
+  try {
+    let response = await request(token.access_token);
+    if (response.status === 401 && token.refresh_token) {
+      token = await refreshSpotifyAccessToken();
+      if (token && token.access_token) response = await request(token.access_token);
+    }
+    if (!response.ok) {
+      if (![401, 403, 404].includes(response.status)) {
+        console.warn('[SpotifyLyrics] HTTP', response.status, trackId);
+      }
+      return null;
+    }
+    const payload = await response.json().catch(() => null);
+    const value = normalizeSpotifyLyricsPayload(payload, {
+      ...metadata,
+      spotifyId: trackId,
+      id: trackId,
+    });
+    if (!value || value.source !== 'spotify-native') return null;
+    spotifyLyricsCache.set(trackId, { at: Date.now(), value });
+    if (spotifyLyricsCache.size > 120) {
+      const oldest = [...spotifyLyricsCache.entries()].sort((a, b) => a[1].at - b[1].at).slice(0, spotifyLyricsCache.size - 96);
+      oldest.forEach(([key]) => spotifyLyricsCache.delete(key));
+    }
+    return value;
+  } catch (error) {
+    console.warn('[SpotifyLyrics]', trackId, error && (error.message || error));
+    return null;
+  }
 }
 
 function normalizeSpotifyProfile(profile) {
@@ -1670,6 +1826,14 @@ async function lyricsFor(id, provider, query = {}) {
   };
   if (!trackName) return { lyric: '', tlyric: '', yrc: '', source: 'lrclib', plainLyric: '', metadataProvider: provider, metadata };
 
+  // For Spotify playback, first request Spotify's own timed line data so the
+  // lyric line changes use the same timestamps as the Spotify client. Any
+  // rejection or unsupported track falls through to the existing LRCLIB path.
+  if (provider === 'spotify') {
+    const spotifyTimed = await spotifyNativeLyrics(metadata.spotifyId || id, metadata);
+    if (spotifyTimed && spotifyTimed.lyric) return spotifyTimed;
+  }
+
   const candidates = [];
   const addCandidate = (item) => {
     if (!item || typeof item !== 'object') return;
@@ -1920,6 +2084,8 @@ module.exports = {
   spotifyResumePlayback,
   spotifySeekPlayback,
   spotifySetPlaybackVolume,
+  spotifyNativeLyrics,
+  normalizeSpotifyLyricsPayload,
   lyricsFor,
   youtubeComments,
   youtubePodcastSearch,

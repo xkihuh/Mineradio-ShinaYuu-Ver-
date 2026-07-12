@@ -1,34 +1,14 @@
-# ShinaYuu Music 1.4.24
+# ShinaYuu Music 1.1.2
 
-Bản này tiếp tục trực tiếp từ nhánh **MineRadio 1.1.0 → ShinaYuu Music 1.1.1**, nhưng khôi phục đúng kiến trúc chạy và build của repo Mineradio gốc.
+Trình phát nhạc desktop cho Windows, hỗ trợ Spotify, YouTube, lyrics đồng bộ, Visual Effects, Desktop Lyrics và Discord Rich Presence.
 
+## Lyrics Spotify
 
-## Đồng bộ lyrics theo từng bài 
+Khi phát từ Spotify, ứng dụng ưu tiên timestamp lyrics theo dòng của Spotify và dùng cùng đồng hồ phát của Spotify SDK. Nếu nguồn này không khả dụng, ứng dụng tự chuyển sang LRCLIB.
 
-- Tự sửa sai lệch tiến triển do bản lyrics và bản âm thanh có thời lượng hơi khác nhau.
-- Lưu độ trễ riêng cho từng bài, nguồn Spotify/YouTube và nguồn lyrics gốc/tùy chỉnh.
-- Trong bảng Visual Effects, dùng mục **Căn lời cho bài hiện tại**: lời chạy nhanh thì tăng `+`; lời chạy chậm thì giảm `−`.
+Hiệu ứng lyrics không còn làm câu xuất hiện chậm: dòng mới được dựng trước 180 ms, chạy fade/blur/trượt/scale và hoàn tất đúng timestamp Spotify. Phần tô sáng karaoke vẫn bắt đầu đúng thời điểm lời cất lên.
 
-
-## Sửa Discord UI và cấu hình 
-
-- Lyrics đồng bộ theo thời gian phát đã bù độ trễ âm thanh mặc định `+0.35 giây`.
-- Hỗ trợ đúng thẻ LRC `[offset:+/-milliseconds]`.
-- Có thanh **Độ trễ lyrics** trong Visual Effects, điều chỉnh từ `-1.50s` đến `+3.00s`.
-- Lọc kết quả LRCLIB có thời lượng lệch quá xa để tránh lấy nhầm bản live/remix/edit.
-- Discord phân biệt chính xác các trường hợp: chưa mở Discord, IPC bị chặn do quyền chạy, RPC timeout và Application ID không hợp lệ.
-- Tự kết nối lại an toàn, không để lần kết nối cũ ghi đè trạng thái của lần kết nối mới.
-
-## Kiến trúc ứng dụng
-
-```text
-npm start
-└─ Electron
-   ├─ desktop/main.js
-   ├─ cửa sổ ShinaYuu Music duy nhất
-   ├─ server nội bộ
-   └─ Spotify WebView2 host chạy ẩn, không có cửa sổ và không hiện trên Taskbar
-```
+Với lyrics LRCLIB, người dùng vẫn có thể chỉnh độ trễ và tốc độ timeline riêng cho từng bài.
 
 ## Chạy source
 
@@ -37,14 +17,7 @@ npm install
 npm start
 ```
 
-Lệnh này giống repo gốc:
-
-```text
-start = electron .
-main  = desktop/main.js
-```
-
-## Tạo bản chạy thử EXE
+## Build bản chạy thử
 
 ```powershell
 npm run build:win:dir
@@ -56,7 +29,7 @@ Mở:
 dist\win-unpacked\ShinaYuuMusic.exe
 ```
 
-## Tạo bộ cài Windows
+## Build bộ cài Windows
 
 ```powershell
 npm run build:win
@@ -65,76 +38,29 @@ npm run build:win
 Kết quả:
 
 ```text
-dist\ShinaYuu-Music-1.4.24-Setup.exe
+dist\ShinaYuu-Music-1.1.2-Setup.exe
 ```
 
-Bộ cài dùng `electron-builder + NSIS`, giống repo Mineradio gốc, gồm shortcut Desktop, shortcut Start Menu và trình gỡ cài đặt.
+## Spotify
 
-
-## Spotify Login
-
-```text
-Mở Spotify OAuth ngay
-→ callback đổi code lấy token một lần
-→ gọi /me một lần
-→ cache tên, avatar và gói tài khoản vào spotify-token.json
-→ UI chỉ poll trạng thái nội bộ, không tạo thêm request Spotify
-```
-
-## Spotify và YouTube
-
-- Spotify phát trực tiếp từ Spotify bằng Spotify Web Playback SDK.
-- Giao diện chính vẫn là Electron nguyên bản.
-- Phần protected-media của Spotify chạy trong một WebView2 host ẩn ngoài màn hình, không tạo cửa sổ trắng và không xuất hiện trên Taskbar.
-- YouTube phát độc lập bằng yt-dlp.
-- Bài Spotify không đi qua YouTube hoặc yt-dlp.
-
-Redirect URI Spotify:
+- Spotify Premium để phát trực tiếp.
+- Redirect URI mặc định:
 
 ```text
 http://127.0.0.1:43821/api/spotify/callback
 ```
 
-## Yêu cầu
+## Discord Rich Presence
 
-- Windows 10/11 x64.
-- Node.js 24 trở lên để phát triển/build.
-- Spotify Premium để phát Spotify.
-- Microsoft Edge WebView2 Runtime.
-
-## Tua nhạc và hiệu ứng real-time 
-
-- Khi kéo thanh thời gian, ứng dụng chỉ xem trước vị trí; lệnh tua chỉ được gửi khi thả chuột.
-- Spotify chờ bộ phát xác nhận vị trí mới và bỏ qua state cũ trong lúc seek.
-- YouTube tự làm mới stream hết hạn rồi tiếp tục đúng vị trí đã chọn.
-- YouTube phân tích PCM trực tiếp từ thẻ Audio bằng Web Audio Analyser.
-- Spotify phân tích âm thanh đầu ra Windows theo thời gian thực qua loopback.
-- Không sử dụng BPM cố định, nhịp theo timeline hoặc beat-map dự phòng cho hai nguồn trực tuyến.
-
-
-## Discord Profile + Rich Presence 
-
-Trang chủ có thêm thẻ hồ sơ Discord theo phong cách ShinaYuu. Tích hợp dùng Discord RPC cục bộ nên không yêu cầu Bot Token và không mở trang đăng nhập OAuth.
-
-1. Tạo một Discord Application với tên **ShinaYuu Music**.
+1. Tạo Discord Application tên **ShinaYuu Music**.
 2. Sao chép **Application ID**.
 3. Mở Discord Desktop.
-4. Trong thẻ Discord ở trang chủ, nhập Application ID rồi bấm **Lưu & kết nối**.
-5. Có thể tải ảnh Rich Presence Asset với key tùy chọn, ví dụ `shinayuu`. Nếu để trống, Discord dùng icon của Application.
+4. Trong ứng dụng, mở **Thiết lập Discord**, nhập Application ID rồi bấm **Lưu & kết nối**.
 
-Khi phát nhạc, Discord Rich Presence hiển thị:
+Không cần Bot Token, Client Secret hoặc OAuth trình duyệt.
 
-```text
-Đang sử dụng ShinaYuu Music
-Đang nghe trên ShinaYuu Music
-Tên bài — Nghệ sĩ
-```
+## Yêu cầu phát triển
 
-Profile card lấy tên, avatar và Discord ID từ Discord Desktop qua IPC cục bộ. Rich Presence cần Discord Desktop đang chạy; Discord Web và mobile không cung cấp RPC cục bộ.
-
-Copyright and License
-Copyright (C) 2026 XxHuberrr. Copyright (C) 2026 x.kihuh (For modifications and maintenance).
-
-This project is licensed under the GPL-3.0 License. See the LICENSE file for details.
-
-The MR Logo, the name "Mineradio," the UI visual design, and original visual assets belong entirely to the original author. Third-party dependencies and services follow their respective open-source licenses and terms of service.
+- Windows 10/11 x64.
+- Node.js 24 trở lên.
+- Microsoft Edge WebView2 Runtime.

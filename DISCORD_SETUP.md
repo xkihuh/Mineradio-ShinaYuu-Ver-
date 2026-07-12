@@ -1,4 +1,4 @@
-# Thiết lập Discord cho ShinaYuu Music 1.4.24
+# Thiết lập Discord cho ShinaYuu Music 1.1.2
 
 ## Mục tiêu
 
@@ -24,7 +24,7 @@
 4. Nhập Rich Presence Asset Key hoặc để trống để dùng icon application.
 6. Bấm `Lưu & kết nối`.
 
-Tích hợp kết nối trực tiếp tới Discord Desktop bằng bộ IPC tích hợp của ShinaYuu Music. Phiên bản 1.4.24 không còn phụ thuộc vào bộ giải mã `discord-rpc` cũ. Không cần Client Secret, Bot Token hay OAuth trình duyệt.
+Tích hợp kết nối trực tiếp tới Discord Desktop bằng bộ IPC tích hợp của ShinaYuu Music. Phiên bản 1.1.2 không còn phụ thuộc vào bộ giải mã `discord-rpc` cũ. Không cần Client Secret, Bot Token hay OAuth trình duyệt.
 
 ## Khi Discord vẫn hiện Spotify
 
@@ -34,7 +34,7 @@ Discord có thể hiển thị hoạt động Spotify riêng nếu tài khoản 
 
 - `Discord chưa chạy`: mở ứng dụng Discord Desktop, không phải Discord trên trình duyệt, rồi bấm `Kết nối lại`.
 - `Discord đang mở nhưng IPC bị chặn`: thoát Discord hoàn toàn cả biểu tượng dưới khay hệ thống, mở lại Discord và ShinaYuu Music với cùng mức quyền. Không chạy một ứng dụng bằng Administrator trong khi ứng dụng còn lại chạy bình thường.
-- `Đã thấy Discord IPC nhưng chưa nhận gói READY`: chờ Discord tải xong rồi bấm `Kết nối lại`. Phiên bản 1.4.24 xử lý được gói IPC bị chia nhỏ và tự thử lại.
+- `Đã thấy Discord IPC nhưng chưa nhận gói READY`: chờ Discord tải xong rồi bấm `Kết nối lại`. Phiên bản 1.1.2 xử lý được gói IPC bị chia nhỏ và tự thử lại.
 - `Sai Discord Application ID`: phải dùng Application ID trong **General Information**; không dùng Discord User ID, Bot Token hoặc Public Key.
 - `Application ID không hợp lệ`: sao chép lại ID dạng số từ General Information.
 - Không hiện ảnh lớn: để trống Asset Key hoặc kiểm tra đúng key đã tải trong Rich Presence Assets.

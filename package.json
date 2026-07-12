@@ -1,7 +1,7 @@
 {
   "name": "shinayuu-music",
   "productName": "ShinaYuu Music",
-  "version": "1.4.24",
+  "version": "1.1.2",
   "description": "Trình phát nhạc hình ảnh Việt–Anh cho Windows với Spotify, YouTube và Discord Rich Presence.",
   "author": "ShinaYuu",
   "main": "desktop/main.js",
@@ -12,14 +12,14 @@
     "build:win": "electron-builder --win nsis",
     "build:win:dir": "electron-builder --win dir",
     "preview:win": "node build/preview-win.js",
-    "test": "node tests/provider-regression.test.js && node tests/spotify-auth-regression.test.js && node tests/spotify-direct-player-regression.test.js && node tests/realtime-playback-regression.test.js && node tests/lyrics-sync-regression.test.js && node tests/ui-regression.test.js && node tests/packaging-regression.test.js && node tests/spotify-host-visibility-regression.test.js && node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
+    "test": "node tests/provider-regression.test.js && node tests/spotify-auth-regression.test.js && node tests/spotify-direct-player-regression.test.js && node tests/realtime-playback-regression.test.js && node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js && node tests/ui-regression.test.js && node tests/packaging-regression.test.js && node tests/spotify-host-visibility-regression.test.js && node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
     "test:providers": "node tests/provider-regression.test.js",
     "test:spotify": "node tests/spotify-direct-player-regression.test.js",
     "test:ui": "node tests/ui-regression.test.js",
     "test:packaging": "node tests/packaging-regression.test.js",
     "test:spotify-auth": "node tests/spotify-auth-regression.test.js",
     "test:discord": "node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
-    "test:lyrics": "node tests/lyrics-sync-regression.test.js"
+    "test:lyrics": "node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js"
   },
   "build": {
     "appId": "com.shinayuu.music",
