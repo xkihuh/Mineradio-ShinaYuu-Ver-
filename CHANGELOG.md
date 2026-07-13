@@ -2,6 +2,16 @@
 
 All notable changes to ShinaYuu Music are documented in this file.
 
+## 1.1.3.1 — 2026-07-13 (Patch Build)
+
+### Fixed
+
+- Escaped the PowerShell `$ProgressPreference` variable in the NSIS include script so `makensis` no longer reports warning 6000 and aborts the installer build.
+- Updated the patch display version, Windows build version, installer artifact name, build helper scripts, and regression tests.
+- Added a regression check that rejects an unescaped PowerShell dollar sign in `build/installer.nsh`.
+
+> This is a patch build based on stable version 1.1.3. It intentionally does not include a `RELEASE_1.1.3.1.md` file.
+
 ## 1.1.3 — 2026-07-13
 
 ### YouTube lyrics

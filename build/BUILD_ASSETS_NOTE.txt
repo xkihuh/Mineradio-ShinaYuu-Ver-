@@ -1,11 +1,15 @@
-ShinaYuu Music 1.1.2 - custom installer build folder
+ShinaYuu Music 1.1.3.1 - build resources
 
-Changed:
-- installerHeader.bmp: rebuilt from the supplied anime artwork, 150x57, 24-bit BMP.
-- installerSidebar.bmp: rebuilt from the supplied anime artwork, 164x314, 24-bit BMP.
-- installer.nsh: dark cyan ShinaYuu Music palette; removed visible Mineradio/Chinese installer labels.
+This build folder is prepared for the ShinaYuu Music 1.1.3.1 patch.
 
-Unchanged:
-- icon.ico, icon.png, icon-64.rgba, after-pack.js, preview-win.js.
+Included resources:
+- icon.ico: multi-resolution Windows and Electron application icon.
+- icon.png: 512 x 512 application icon.
+- icon-64.rgba: synchronized raw 64 x 64 RGBA icon data.
+- installerHeader.bmp: NSIS header artwork, 150 x 57 pixels, 24-bit RGB.
+- installerSidebar.bmp: NSIS sidebar artwork, 164 x 314 pixels, 24-bit RGB.
+- installer.nsh: customized NSIS installer logic, including the escaped PowerShell variable required by NSIS and the WebView2 Runtime check/install flow.
+- after-pack.js: applies the application icon and Windows executable metadata after packaging.
+- preview-win.js: Windows build preview helper.
 
-Replace the existing /build folder in ShinaYuu Music 1.1.2 with this folder, then rebuild the installer.
+No stable release document was added for this patch version.

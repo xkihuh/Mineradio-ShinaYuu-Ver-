@@ -134,7 +134,8 @@ Function ShinaYuuEnsureWebView2Runtime
 
   DetailPrint "Microsoft Edge WebView2 Runtime is missing. Installing the Evergreen Runtime..."
   StrCpy $R9 "$PLUGINSDIR\MicrosoftEdgeWebview2Setup.exe"
-  nsExec::ExecToStack 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "$ProgressPreference = ''SilentlyContinue''; Invoke-WebRequest -UseBasicParsing -Uri ''https://go.microsoft.com/fwlink/p/?LinkId=2124703'' -OutFile ''$R9''"'
+  ; Escape the PowerShell dollar sign for NSIS. $$ becomes a literal $ at runtime.
+  nsExec::ExecToStack 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "$$ProgressPreference = ''SilentlyContinue''; Invoke-WebRequest -UseBasicParsing -Uri ''https://go.microsoft.com/fwlink/p/?LinkId=2124703'' -OutFile ''$R9''"'
   Pop $R7
   Pop $R6
   ${If} $R7 != "0"

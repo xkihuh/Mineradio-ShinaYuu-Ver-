@@ -1,4 +1,4 @@
-# ShinaYuu Music 1.1.3
+# ShinaYuu Music 1.1.3.1 Patch Build
 
 ShinaYuu Music is a Windows desktop visual music player with Spotify and YouTube playback, synchronized lyrics, Desktop Lyrics, real-time visual effects, Discord Rich Presence, and a unified in-app master volume control.
 
@@ -50,7 +50,7 @@ npm run build:win
 Installer output:
 
 ```text
-dist\ShinaYuu-Music-1.1.3-Setup.exe
+dist\ShinaYuu-Music-1.1.3.1-Setup.exe
 ```
 
 ## Spotify configuration
@@ -93,12 +93,6 @@ The existing UI, UX, Desktop Lyrics, and visual effects remain unchanged. Only t
 - `NOTICE.md` — attribution and third-party notices.
 - `CHANGELOG.md` — release history.
 
-## Copyright and License
-
-Copyright (C) 2026 XxHuberrr.
-Copyright (C) 2026 X.kihuh (For modifications and maintenance).
+## License
 
 ShinaYuu Music is licensed under `GPL-3.0-only`. Redistribution of source or binaries must preserve the license, copyright notices, attribution, and the corresponding source obligations described by GPLv3.
-This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE) file for details.
-
-The MR Logo, the name "Mineradio," the UI visual design, and original visual assets belong entirely to the original author. Third-party dependencies and services follow their respective open-source licenses and terms of service.

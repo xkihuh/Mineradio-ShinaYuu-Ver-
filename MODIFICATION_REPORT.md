@@ -1,4 +1,4 @@
-# Modification Report — ShinaYuu Music 1.1.3
+# Modification Report — ShinaYuu Music 1.1.3.1 Patch Build
 
 ## Project relationship
 
@@ -20,3 +20,9 @@ ShinaYuu Music is a modified work based on the original Mineradio project. The p
 - Added WebView2 Evergreen Runtime provisioning to the installer.
 - Standardized Markdown documentation in English.
 - Added release and regression documentation for 1.1.3.
+
+## 1.1.3.1 patch changes
+
+- Fixed the NSIS warning 6000 failure caused by an unescaped PowerShell `$ProgressPreference` variable.
+- Updated current patch-facing version metadata and installer output naming.
+- Preserved `RELEASE_1.1.3.md` as the latest stable release document; no patch release document was added.
