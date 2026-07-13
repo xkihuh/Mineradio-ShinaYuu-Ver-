@@ -1,4 +1,4 @@
-# Modification Report — ShinaYuu Music 1.1.3.2 Patch Build
+# Modification Report — ShinaYuu Music 1.1.3.3 Patch Build
 
 ## Project relationship
 
@@ -30,4 +30,12 @@ ShinaYuu Music is a modified work based on the original Mineradio project. The p
 - Added explicit HTTP and transport diagnostics for failed Spotify lyrics requests.
 - Added a stale-track guard based on playback duration so the previous song ID cannot be reused during a fast track switch.
 - Retained the corrected NSIS build resources from patch 1.1.3.1.
+- Preserved `RELEASE_1.1.3.md` as the latest stable release document; no patch-specific release document was added.
+
+## 1.1.3.3 patch changes
+
+- Added direct YouTube subtitle parsing for JSON3, TTML, SRV3, and WebVTT.
+- Added caption quality filtering and removal of non-lyric cue rows.
+- Preserved Spotify-native lyrics, YouTube Music lyrics, LRCLIB, plain lyrics, and local forced alignment.
+- Preserved the consolidated lyric calibration panel, expanded correction ranges, completed localization pass, and Windows audio-session bridge.
 - Preserved `RELEASE_1.1.3.md` as the latest stable release document; no patch-specific release document was added.

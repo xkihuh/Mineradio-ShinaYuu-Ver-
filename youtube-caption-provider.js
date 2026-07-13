@@ -12,7 +12,7 @@
 
 const DEFAULT_CACHE_TTL = 30 * 60 * 1000;
 const MAX_CAPTION_BYTES = 8 * 1024 * 1024;
-const FORMAT_PRIORITY = Object.freeze({ json3: 40, srv3: 30, vtt: 20 });
+const FORMAT_PRIORITY = Object.freeze({ json3: 50, ttml: 40, srv3: 35, vtt: 25 });
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -301,10 +301,99 @@ function parseVtt(vttText) {
   return finalizeLines(lines);
 }
 
+
+function parseTtmlTime(value) {
+  const text = String(value || '').trim();
+  if (!text) return NaN;
+  if (/^-?\d+(?:\.\d+)?ms$/i.test(text)) return Number.parseFloat(text) || 0;
+  if (/^-?\d+(?:\.\d+)?s$/i.test(text)) return (Number.parseFloat(text) || 0) * 1000;
+  if (/^-?\d+(?:\.\d+)?m$/i.test(text)) return (Number.parseFloat(text) || 0) * 60000;
+  if (/^-?\d+(?:\.\d+)?h$/i.test(text)) return (Number.parseFloat(text) || 0) * 3600000;
+  const clock = text.match(/^(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?$/);
+  if (clock) {
+    const fraction = String(clock[4] || '').padEnd(3, '0').slice(0, 3);
+    return ((Number(clock[1]) || 0) * 3600 + (Number(clock[2]) || 0) * 60 + (Number(clock[3]) || 0)) * 1000 + (Number(fraction) || 0);
+  }
+  return NaN;
+}
+
+function parseTtml(ttmlText) {
+  const xml = String(ttmlText || '').replace(/^\ufeff/, '');
+  const lines = [];
+  const paragraphPattern = /<p\b([^>]*)>([\s\S]*?)<\/p>/gi;
+  let paragraph;
+
+  while ((paragraph = paragraphPattern.exec(xml))) {
+    const attributes = paragraph[1] || '';
+    const body = paragraph[2] || '';
+    const beginMs = parseTtmlTime(attributeValue(attributes, 'begin'));
+    const endMs = parseTtmlTime(attributeValue(attributes, 'end'));
+    const durMs = parseTtmlTime(attributeValue(attributes, 'dur'));
+    const legacyStart = Number(attributeValue(attributes, 't'));
+    const legacyDuration = Number(attributeValue(attributes, 'd'));
+    const startMs = Number.isFinite(beginMs) ? beginMs : (Number.isFinite(legacyStart) ? legacyStart : NaN);
+    if (!Number.isFinite(startMs)) continue;
+    const durationMs = Number.isFinite(endMs) && endMs > startMs
+      ? endMs - startMs
+      : (Number.isFinite(durMs) && durMs > 0 ? durMs : (Number.isFinite(legacyDuration) ? legacyDuration : 4000));
+
+    const rawSegments = [];
+    const spanPattern = /<span\b([^>]*)>([\s\S]*?)<\/span>/gi;
+    let span;
+    while ((span = spanPattern.exec(body))) {
+      const spanAttributes = span[1] || '';
+      const spanText = span[2] || '';
+      let spanStart = parseTtmlTime(attributeValue(spanAttributes, 'begin'));
+      let spanEnd = parseTtmlTime(attributeValue(spanAttributes, 'end'));
+      const spanDur = parseTtmlTime(attributeValue(spanAttributes, 'dur'));
+      if (!Number.isFinite(spanStart)) {
+        const offset = Number(attributeValue(spanAttributes, 't'));
+        if (Number.isFinite(offset)) spanStart = startMs + offset;
+      }
+      if (Number.isFinite(spanStart) && spanStart < startMs && !/:/.test(attributeValue(spanAttributes, 'begin'))) {
+        spanStart += startMs;
+      }
+      if (!Number.isFinite(spanEnd) && Number.isFinite(spanStart) && Number.isFinite(spanDur)) spanEnd = spanStart + spanDur;
+      if (Number.isFinite(spanEnd) && spanEnd < startMs && !/:/.test(attributeValue(spanAttributes, 'end'))) {
+        spanEnd += startMs;
+      }
+      rawSegments.push({ text: spanText, startMs: spanStart, endMs: spanEnd });
+    }
+
+    const fallbackText = body.replace(/<br\s*\/?>/gi, '\n');
+    const line = makeLine(startMs, durationMs, rawSegments, fallbackText, 'ttml');
+    if (line) lines.push(line);
+  }
+
+  return finalizeLines(lines);
+}
+
+const NON_LYRIC_CUE = /^(?:[\[(（【]?\s*(?:music|instrumental|applause|cheering|laughter|intro|outro|foreign|singing|humming|vocalizing|âm nhạc|nhạc|vỗ tay|tiếng cười|dạo nhạc)\s*[\])）】]?|[♪♫♬♩\s._-]+)$/i;
+
+function isNonLyricCueText(value) {
+  const text = compactLineText(value).replace(/^[-–—]\s*/, '').trim();
+  if (!text) return true;
+  return NON_LYRIC_CUE.test(text);
+}
+
+function filterCaptionLyricLines(lines) {
+  return (Array.isArray(lines) ? lines : []).filter((line) => line && !isNonLyricCueText(line.text));
+}
+
+function captionLooksLikeLyrics(lines) {
+  const useful = filterCaptionLyricLines(lines);
+  const text = useful.map((line) => line.text).join(' ').replace(/\s+/g, ' ').trim();
+  const words = text ? text.split(/\s+/).filter(Boolean) : [];
+  if (useful.length >= 3 && text.length >= 30) return true;
+  if (useful.length >= 2 && words.length >= 4 && text.length >= 18) return true;
+  return false;
+}
+
 function parseCaptionPayload(payload, extension) {
   const ext = String(extension || '').toLowerCase();
   if (ext === 'json3') return parseJson3(payload);
   if (ext === 'srv3') return parseSrv3(payload);
+  if (ext === 'ttml') return parseTtml(payload);
   if (ext === 'vtt') return parseVtt(payload);
   return [];
 }
@@ -428,8 +517,9 @@ function createProvider(options = {}) {
         });
         if (!response || !response.ok) continue;
         const payload = await readResponseText(response);
-        const lines = parseCaptionPayload(payload, track.ext);
-        if (!lines.length) continue;
+        const parsedLines = parseCaptionPayload(payload, track.ext);
+        const lines = filterCaptionLyricLines(parsedLines);
+        if (!lines.length || !captionLooksLikeLyrics(lines)) continue;
 
         const wordSynced = lines.some(lineHasUsefulWordTiming);
         const result = {
@@ -473,11 +563,15 @@ function createProvider(options = {}) {
 module.exports = {
   parseJson3,
   parseSrv3,
+  parseTtml,
   parseVtt,
   parseCaptionPayload,
   captionTrackCandidates,
   lineHasUsefulWordTiming,
   linesToYrc,
   plainTextFromLines,
+  isNonLyricCueText,
+  filterCaptionLyricLines,
+  captionLooksLikeLyrics,
   createProvider,
 };

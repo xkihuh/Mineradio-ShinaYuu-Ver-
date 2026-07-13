@@ -1,4 +1,13 @@
 # Changelog
+## 1.1.3.3 - Patch
+
+- Added YouTube subtitle lyrics support for JSON3, TTML, SRV3, and WebVTT tracks exposed by the existing `yt-dlp` engine.
+- Preserved Spotify lyrics, YouTube Music lyrics, LRCLIB, plain lyrics, and local forced alignment as independent fallback sources.
+- Removed non-lyric caption cues such as `[Music]`, `[Applause]`, and symbol-only rows.
+- Rejects low-content caption tracks so poor subtitles do not override better lyric sources.
+- Preserved the consolidated lyric calibration panel, expanded timing ranges, localization pass, Windows audio-session bridge, UI, UX, Desktop Lyrics, and visual effects from the source baseline.
+- Kept 1.1.3 as the latest stable release; no separate patch release document was added.
+
 
 All notable changes to ShinaYuu Music are documented in this file.
 
