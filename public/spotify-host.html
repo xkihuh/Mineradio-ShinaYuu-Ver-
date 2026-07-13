@@ -17,15 +17,60 @@
   var reconnectTimer = null;
   var heartbeatTimer = null;
   var stateTimer = null;
+  var controlTimer = null;
+  var controlBusy = false;
+  var desiredVolume = 0.65;
+  var appliedVolume = -1;
+  var controlRevision = -1;
   var scriptPromise = null;
   var creating = false;
+
+  function clampVolume(value) {
+    value = Number(value);
+    if (!Number.isFinite(value)) return 0.65;
+    return Math.max(0, Math.min(1, value));
+  }
 
   function postEvent(type, payload) {
     return fetch('/api/spotify/host/event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ type: type, at: Date.now() }, payload || {}))
+      body: JSON.stringify(Object.assign({ type: type, at: Date.now(), appliedVolume: appliedVolume >= 0 ? appliedVolume : null }, payload || {}))
     }).catch(function () {});
+  }
+
+  async function applyMasterVolume(force) {
+    if (!player || typeof player.setVolume !== 'function') return false;
+    var next = clampVolume(desiredVolume);
+    if (!force && Math.abs(next - appliedVolume) < 0.0005) return true;
+    try {
+      await player.setVolume(next);
+      appliedVolume = next;
+      return true;
+    } catch (error) {
+      postEvent('error', { errorType: 'volume_error', error: String(error && (error.message || error) || 'SPOTIFY_VOLUME_FAILED') });
+      return false;
+    }
+  }
+
+  async function syncMasterVolumeControl() {
+    if (controlBusy) return;
+    controlBusy = true;
+    try {
+      var response = await fetch('/api/spotify/host/control?t=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) return;
+      var data = await response.json();
+      var next = clampVolume(data && data.volume);
+      var revision = Number(data && data.revision || 0);
+      if (revision !== controlRevision || Math.abs(next - desiredVolume) > 0.0005) {
+        controlRevision = revision;
+        desiredVolume = next;
+        await applyMasterVolume(false);
+      }
+    } catch (_) {
+    } finally {
+      controlBusy = false;
+    }
   }
 
   function loadSdk() {
@@ -87,7 +132,8 @@
       positionMs: Number(state && state.position || 0),
       durationMs: Number(state && state.duration || current && current.duration_ms || 0),
       isPlaying: !!(state && state.paused === false),
-      paused: !!(state && state.paused !== false)
+      paused: !!(state && state.paused !== false),
+      appliedVolume: appliedVolume >= 0 ? appliedVolume : null
     };
   }
 
@@ -103,11 +149,12 @@
       player = new window.Spotify.Player({
         name: 'ShinaYuu Music',
         getOAuthToken: getToken,
-        volume: 0.65
+        volume: desiredVolume
       });
       player.addListener('ready', function (payload) {
         connected = true;
         deviceId = payload && payload.device_id || '';
+        applyMasterVolume(true).catch(function () {});
         postEvent('ready', { ready: true, connected: true, deviceId: deviceId, deviceName: 'ShinaYuu Music' });
         try {
           var activation = player.activateElement && player.activateElement();
@@ -167,13 +214,15 @@
       if (state) postEvent('state', statePayload(state));
     }).catch(function () {});
   }, 350);
+  controlTimer = setInterval(syncMasterVolumeControl, 120);
   reconnectTimer = setInterval(ensureConnected, 4000);
-  ensureConnected();
+  syncMasterVolumeControl().finally(ensureConnected);
 
   window.addEventListener('beforeunload', function () {
     if (heartbeatTimer) clearInterval(heartbeatTimer);
     if (stateTimer) clearInterval(stateTimer);
     if (reconnectTimer) clearInterval(reconnectTimer);
+    if (controlTimer) clearInterval(controlTimer);
     try { if (player) player.disconnect(); } catch (_) {}
   });
 })();

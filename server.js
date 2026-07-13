@@ -68,7 +68,7 @@ const UPDATE_DOWNLOAD_DIR = process.env.MINERADIO_UPDATE_DOWNLOAD_DIR || path.jo
 const UPDATE_PATCH_BACKUP_DIR = process.env.MINERADIO_PATCH_BACKUP_DIR || path.join(UPDATE_WORK_DIR, 'backups', 'patches');
 const BEATMAP_CACHE_DIR = process.env.MINERADIO_BEAT_CACHE_DIR || 'D:\\ShinaYuuMusicCache\\beatmaps';
 const APP_PACKAGE = readPackageInfo();
-const APP_VERSION = process.env.MINERADIO_VERSION || APP_PACKAGE.version || '0.9.11';
+const APP_VERSION = process.env.MINERADIO_VERSION || (APP_PACKAGE.shinayuu && APP_PACKAGE.shinayuu.displayVersion) || APP_PACKAGE.version || '0.9.11';
 const UPDATE_CONFIG = readUpdateConfig(APP_PACKAGE);
 const PATCH_MAX_BYTES = 12 * 1024 * 1024;
 const PATCH_ALLOWED_ROOTS = new Set(['public', 'desktop', 'build']);
@@ -105,7 +105,39 @@ const spotifyHostState = {
   paused: true,
   error: '',
   errorType: '',
+  desiredVolume: 0.65,
+  appliedVolume: null,
+  volumeRevision: 1,
 };
+
+function clampMasterVolume(value, fallback = 0.65) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return Math.max(0, Math.min(1, Number(fallback) || 0));
+  return Math.max(0, Math.min(1, numeric));
+}
+
+function setSpotifyHostMasterVolume(value) {
+  const next = clampMasterVolume(value, spotifyHostState.desiredVolume);
+  if (Math.abs(next - spotifyHostState.desiredVolume) > 0.0005) {
+    spotifyHostState.desiredVolume = next;
+    spotifyHostState.volumeRevision += 1;
+  }
+  return {
+    ok: true,
+    volume: spotifyHostState.desiredVolume,
+    volumePercent: Math.round(spotifyHostState.desiredVolume * 100),
+    revision: spotifyHostState.volumeRevision,
+  };
+}
+
+function publicSpotifyHostControl() {
+  return {
+    ok: true,
+    volume: spotifyHostState.desiredVolume,
+    volumePercent: Math.round(spotifyHostState.desiredVolume * 100),
+    revision: spotifyHostState.volumeRevision,
+  };
+}
 
 function updateSpotifyHostState(payload = {}) {
   spotifyHostState.lastSeen = Date.now();
@@ -121,6 +153,7 @@ function updateSpotifyHostState(payload = {}) {
   if (payload.paused != null) spotifyHostState.paused = !!payload.paused;
   if (payload.error != null) spotifyHostState.error = String(payload.error || '');
   if (payload.errorType != null) spotifyHostState.errorType = String(payload.errorType || '');
+  if (payload.appliedVolume != null) spotifyHostState.appliedVolume = clampMasterVolume(payload.appliedVolume, spotifyHostState.desiredVolume);
 }
 
 function publicSpotifyHostState() {
@@ -140,6 +173,9 @@ function publicSpotifyHostState() {
     paused: !alive || !!spotifyHostState.paused,
     error: spotifyHostState.error,
     errorType: spotifyHostState.errorType,
+    desiredVolume: spotifyHostState.desiredVolume,
+    appliedVolume: spotifyHostState.appliedVolume,
+    volumeRevision: spotifyHostState.volumeRevision,
     lastSeen: spotifyHostState.lastSeen,
   };
 }
@@ -3363,6 +3399,24 @@ async function handleModernMusicRoute(req, res, url, pn) {
 
   if (pn === '/api/spotify/host/status') {
     sendJSON(res, publicSpotifyHostState());
+    return true;
+  }
+
+  if (pn === '/api/spotify/host/control') {
+    sendJSON(res, publicSpotifyHostControl());
+    return true;
+  }
+
+  if (pn === '/api/spotify/host/volume' && req.method === 'POST') {
+    try {
+      const body = await readRequestBody(req);
+      const volume = body.volume != null
+        ? Number(body.volume)
+        : Number(body.volumePercent) / 100;
+      sendJSON(res, setSpotifyHostMasterVolume(volume));
+    } catch (error) {
+      modernProviderError(res, error, 400);
+    }
     return true;
   }
 

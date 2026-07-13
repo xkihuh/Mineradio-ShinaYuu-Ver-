@@ -1,29 +1,21 @@
-# Hỗ trợ / Support
+# Support
 
-## Tiếng Việt
+When reporting an issue, include:
 
-Khi báo lỗi, hãy gửi:
+- A screenshot or short screen recording.
+- The complete log from application startup until the issue appears.
+- Reproduction steps.
+- The affected track and provider.
+- The application version.
+- Output from `node -v` when running from source.
 
-- Ảnh chụp màn hình.
-- Toàn bộ log từ lúc chạy `npm start` đến lúc lỗi xuất hiện.
-- Các bước tái hiện.
-- Tên bài hát, nguồn Spotify/YouTube và thao tác đã thực hiện.
-- Phiên bản Node.js từ `node -v`.
+## Quick checks
 
-### Các kiểm tra nhanh
-
-- Spotify OAuth: Redirect URI trong Dashboard phải đúng tuyệt đối là `http://127.0.0.1:43821/api/spotify/callback`.
-- YouTube: tìm dòng `[YouTubeEngine] Ready` trong Terminal.
-- Nếu yt-dlp không tự tải được, tải bản chính thức riêng và đặt biến môi trường `YTDLP_PATH`.
-- Không gửi `spotify-token.json`, cookie hoặc dữ liệu đăng nhập.
-
-## English
-
-When reporting an issue, include a screenshot, the complete `npm start` log, reproduction steps, the affected track/source, and `node -v`.
-
-Quick checks:
-
-- Spotify Dashboard must contain the exact URI `http://127.0.0.1:43821/api/spotify/callback`.
+- Spotify Dashboard must contain `http://127.0.0.1:43821/api/spotify/callback` exactly.
 - Look for `[YouTubeEngine] Ready` in the terminal.
-- Set `YTDLP_PATH` when automatic yt-dlp preparation is blocked.
-- Never share `spotify-token.json`, cookies, or login data.
+- Look for `[SpotifyHost] Headless WebView2 player started` when testing Spotify.
+- Use `YTDLP_PATH` when automatic `yt-dlp` provisioning is blocked.
+- Verify that Microsoft Edge WebView2 Runtime is installed when Spotify playback does not initialize.
+- Test the in-app master volume before adjusting Windows Volume Mixer.
+
+Never share `spotify-token.json`, cookies, access tokens, or private account data.

@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.2';
+const UA = 'ShinaYuu Music/1.1.3';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const LRCLIB_BASE = 'https://lrclib.net/api';
@@ -15,6 +15,8 @@ const LRCLIB_BASE = 'https://lrclib.net/api';
 // LRCLIB when Spotify rejects or changes the response.
 const SPOTIFY_LYRICS_BASE = 'https://spclient.wg.spotify.com/color-lyrics/v2/track';
 const lyricSync = require('./public/lyrics-sync');
+const youtubeCaptions = require('./youtube-caption-provider');
+const youtubeForcedAligner = require('./youtube-forced-aligner');
 
 const spotifyTrackCache = new Map();
 const youtubePodcastCache = new Map();
@@ -24,7 +26,15 @@ const spotifyAuthRequests = new Map();
 const spotifyAuthResults = new Map();
 const spotifyAudioAnalysisCache = new Map();
 const spotifyLyricsCache = new Map();
+const youtubeMusicLyricsCache = new Map();
 const youtubeStreamTokens = new Map();
+const youtubeYtDlpInfoCache = new Map();
+const youtubeCaptionService = youtubeCaptions.createProvider({ userAgent: UA });
+const youtubeForcedAlignmentService = youtubeForcedAligner.createProvider({
+  appDataDir,
+  runChild,
+  userAgent: UA,
+});
 let youtubeClientPromise = null;
 let youtubeEnginePreparePromise = null;
 let youtubeEngineLastStatus = { ready: false, engine: 'yt-dlp', message: 'not_prepared' };
@@ -270,6 +280,53 @@ function youtubeEngineStatus() {
   return { ...youtubeEngineLastStatus };
 }
 
+function cacheYouTubeYtDlpInfo(videoId, info) {
+  const id = String(videoId || '').trim();
+  if (!id || !info || typeof info !== 'object') return;
+  youtubeYtDlpInfoCache.set(id, { at: Date.now(), info });
+}
+
+function cachedYouTubeYtDlpInfo(videoId) {
+  const id = String(videoId || '').trim();
+  const cached = youtubeYtDlpInfoCache.get(id);
+  if (!cached || Date.now() - cached.at > 20 * 60 * 1000) {
+    if (cached) youtubeYtDlpInfoCache.delete(id);
+    return null;
+  }
+  return cached.info;
+}
+
+function ytDlpMetadataArgs(videoId) {
+  const nodeRuntime = findNodeRuntime();
+  const args = [
+    '--no-playlist',
+    '--no-warnings',
+    '--quiet',
+    '--dump-single-json',
+    '--skip-download',
+    '--socket-timeout', '20',
+    '--retries', '2',
+  ];
+  if (nodeRuntime) args.push('--js-runtimes', `node:${nodeRuntime}`);
+  args.push(`https://www.youtube.com/watch?v=${encodeURIComponent(String(videoId || ''))}`);
+  return args;
+}
+
+async function youtubeInfoViaYtDlp(videoId) {
+  const cached = cachedYouTubeYtDlpInfo(videoId);
+  if (cached) return cached;
+  const engine = await prepareYouTubeEngine();
+  const result = await runChild(engine.executable, ytDlpMetadataArgs(videoId), {
+    timeoutMs: 60000,
+    maxOutput: 24 * 1024 * 1024,
+  });
+  let info;
+  try { info = JSON.parse(result.stdout); }
+  catch (_) { throw new Error('yt-dlp returned invalid YouTube metadata'); }
+  cacheYouTubeYtDlpInfo(videoId, info);
+  return info;
+}
+
 function ytDlpArgs(videoId, quality = '') {
   const nodeRuntime = findNodeRuntime();
   const args = [
@@ -296,6 +353,7 @@ async function youtubeAudioViaYtDlp(videoId, quality = '') {
   let info;
   try { info = JSON.parse(result.stdout); }
   catch (_) { throw new Error('yt-dlp returned invalid metadata'); }
+  cacheYouTubeYtDlpInfo(videoId, info);
   const selected = Array.isArray(info.requested_downloads) && info.requested_downloads[0] || info;
   const directUrl = String(selected.url || info.url || '').trim();
   if (!directUrl) throw new Error('yt-dlp did not return an audio URL');
@@ -1243,6 +1301,61 @@ async function getYouTubeClient() {
   return youtubeClientPromise;
 }
 
+const YOUTUBE_MUSIC_LYRICS_CACHE_TTL = 30 * 60 * 1000;
+const YOUTUBE_MUSIC_LYRICS_MISS_TTL = 5 * 60 * 1000;
+
+function normalizeYouTubeMusicLyricsText(value) {
+  let text = '';
+  if (value && typeof value.toString === 'function') text = value.toString();
+  else text = String(value || '');
+  if (text === 'N/A') text = '';
+  return text
+    .replace(/\r/g, '')
+    .replace(/[\u200b\u200c\u200d\ufeff]/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function normalizeYouTubeMusicLyricsShelf(shelf, videoId = '') {
+  if (!shelf || typeof shelf !== 'object') return null;
+  const plainLyric = normalizeYouTubeMusicLyricsText(shelf.description);
+  if (!plainLyric) return null;
+  const footer = normalizeYouTubeMusicLyricsText(shelf.footer);
+  return {
+    lyric: '',
+    tlyric: '',
+    yrc: '',
+    plainLyric,
+    source: 'youtube-music',
+    syncType: 'UNSYNCED',
+    videoId: String(videoId || ''),
+    provider: footer || 'YouTube Music',
+  };
+}
+
+async function youtubeMusicNativeLyrics(videoId) {
+  const id = String(videoId || '').trim();
+  if (!id) return null;
+  const now = Date.now();
+  const cached = youtubeMusicLyricsCache.get(id);
+  if (cached && now - cached.at < (cached.value ? YOUTUBE_MUSIC_LYRICS_CACHE_TTL : YOUTUBE_MUSIC_LYRICS_MISS_TTL)) {
+    return cached.value ? { ...cached.value } : null;
+  }
+  try {
+    const yt = await getYouTubeClient();
+    const shelf = await yt.music.getLyrics(id);
+    const value = normalizeYouTubeMusicLyricsShelf(shelf, id);
+    youtubeMusicLyricsCache.set(id, { at: now, value });
+    return value ? { ...value } : null;
+  } catch (error) {
+    youtubeMusicLyricsCache.set(id, { at: now, value: null });
+    console.warn('[YouTubeMusicLyrics]', id, error && error.message || String(error));
+    return null;
+  }
+}
+
 function youtubeThumbnail(item) {
   const list = item && item.thumbnail && (item.thumbnail.contents || item.thumbnail) || [];
   const first = Array.isArray(list) ? list[0] : null;
@@ -1808,9 +1921,34 @@ async function spotifyMetadataForLyrics(id, query) {
 }
 
 async function lyricsFor(id, provider, query = {}) {
+  const cachedProviderMeta = provider === 'spotify' ? {} : songMetadata(id, provider);
   let meta = provider === 'spotify'
     ? await spotifyMetadataForLyrics(id, query)
-    : { ...songMetadata(id, provider), name: query.track || '', artist: query.artist || '', album: query.album || '', duration: query.duration || 0 };
+    : {
+      ...cachedProviderMeta,
+      name: query.track || cachedProviderMeta.name || cachedProviderMeta.title || '',
+      artist: query.artist || cachedProviderMeta.artist || '',
+      album: query.album || cachedProviderMeta.album || '',
+      duration: query.duration || cachedProviderMeta.duration || 0,
+    };
+  // A restored YouTube queue can reach the lyric endpoint before its in-memory
+  // search record is populated. Recover exact metadata through the existing
+  // yt-dlp engine so LRCLIB and local forced alignment still receive a usable
+  // title, artist, and duration.
+  if (provider === 'youtube' && id && (!meta.name || !meta.artist || !meta.duration)) {
+    try {
+      const info = await youtubeInfoViaYtDlp(id);
+      meta = {
+        ...meta,
+        name: meta.name || info.track || info.title || '',
+        artist: meta.artist || info.artist || info.creator || info.uploader || info.channel || '',
+        album: meta.album || info.album || '',
+        duration: meta.duration || (Number(info.duration || 0) * 1000),
+      };
+    } catch (error) {
+      console.warn('[YouTubeLyricsMetadata]', id, error.message || String(error));
+    }
+  }
   const trackName = String(meta.name || query.track || '').trim();
   const artistName = String(meta.artist || query.artist || '').trim();
   const albumName = String(meta.album || query.album || '').trim();
@@ -1824,6 +1962,37 @@ async function lyricsFor(id, provider, query = {}) {
     isrc: String(meta.isrc || meta.externalIds && meta.externalIds.isrc || ''),
     spotifyId: provider === 'spotify' ? String(meta.spotifyId || meta.id || id || '') : '',
   };
+  // YouTube Music lyrics and regular YouTube captions are separate data
+  // sources. Read the Lyrics tab through youtubei.js first so tracks that show
+  // lyrics in YouTube Music still have text even when the video has no caption
+  // track and LRCLIB has no matching entry. The native text is later passed to
+  // the existing local forced aligner to create word timing without changing UI.
+  let youtubeMusicLyric = null;
+  if (provider === 'youtube' && id) {
+    youtubeMusicLyric = await youtubeMusicNativeLyrics(id);
+  }
+
+  // YouTube captions are discovered through the same local yt-dlp engine
+  // already used for playback. JSON3/SRV3/WebVTT tracks are converted into the
+  // existing YRC-compatible line/word model, so no renderer UI or visual effect
+  // needs to be replaced. Uploaded captions are preferred, while original
+  // automatic captions are used when they provide richer word offsets.
+  if (provider === 'youtube' && id) {
+    const captionTimed = await youtubeCaptionService.fetchForVideo(id, {
+      getInfo: youtubeInfoViaYtDlp,
+      userAgent: UA,
+      languages: [query.language, providerConfig().language, 'vi', 'en'].filter(Boolean),
+    });
+    if (captionTimed) {
+      return {
+        ...captionTimed,
+        metadataProvider: 'youtube',
+        metadata,
+        match: { score: 100, duration },
+      };
+    }
+  }
+
   if (!trackName) return { lyric: '', tlyric: '', yrc: '', source: 'lrclib', plainLyric: '', metadataProvider: provider, metadata };
 
   // For Spotify playback, first request Spotify's own timed line data so the
@@ -1877,25 +2046,67 @@ async function lyricsFor(id, provider, query = {}) {
   // running progressively ahead or behind the audible song.
   const best = ranked.find((item) => item.score >= 48 && item.durationMatch.compatible) || null;
   const data = best ? best.candidate : {};
-  return {
+  const match = best ? {
+    id: data.id || null,
+    score: Math.round(best.score),
+    track: data.trackName || data.name || '',
+    artist: data.artistName || '',
+    album: data.albumName || '',
+    duration: Number(data.duration || 0),
+    synced: !!data.syncedLyrics,
+  } : null;
+  const nativeYouTubePlainLyric = provider === 'youtube' && youtubeMusicLyric
+    ? String(youtubeMusicLyric.plainLyric || '').trim()
+    : '';
+  const baseResult = {
     lyric: data.syncedLyrics || '',
     tlyric: '',
     yrc: '',
-    plainLyric: data.plainLyrics || '',
+    // Prefer the text attached to the exact YouTube Music video. LRCLIB synced
+    // timing is still kept when available, while native YouTube Music text is
+    // used for display/fallback and for local word alignment.
+    plainLyric: nativeYouTubePlainLyric || data.plainLyrics || '',
     instrumental: !!data.instrumental,
-    source: 'lrclib',
+    source: nativeYouTubePlainLyric ? 'youtube-music' : 'lrclib',
     metadataProvider: provider === 'spotify' ? 'spotify' : 'youtube',
     metadata,
-    match: best ? {
-      id: data.id || null,
-      score: Math.round(best.score),
-      track: data.trackName || data.name || '',
-      artist: data.artistName || '',
-      album: data.albumName || '',
-      duration: Number(data.duration || 0),
-      synced: !!data.syncedLyrics,
-    } : null,
+    match,
+    youtubeMusicLyrics: nativeYouTubePlainLyric ? {
+      available: true,
+      provider: youtubeMusicLyric.provider || 'YouTube Music',
+      syncType: youtubeMusicLyric.syncType || 'UNSYNCED',
+    } : undefined,
   };
+
+  // When YouTube has no usable caption track, keep YouTube Music/LRCLIB text
+  // visible immediately and start a local forced-alignment job in the background. whisper.cpp
+  // generates word timestamps from the exact YouTube audio, while the trusted
+  // LRCLIB text supplies the words shown by the current renderer. The client
+  // polls this same endpoint until the cached word-aligned result is ready.
+  if (provider === 'youtube' && id && (baseResult.lyric || baseResult.plainLyric)) {
+    const alignment = await youtubeForcedAlignmentService.request(id, {
+      syncedLyric: baseResult.lyric,
+      plainLyric: baseResult.plainLyric,
+      duration,
+      language: query.language || providerConfig().language || 'auto',
+      track: trackName,
+      artist: artistName,
+    }, {
+      getYtDlpEngine: prepareYouTubeEngine,
+      findNodeRuntime,
+    });
+    if (alignment && alignment.status === 'ready' && alignment.result) {
+      return {
+        ...alignment.result,
+        metadataProvider: 'youtube',
+        metadata,
+        match,
+        alignment: { status: 'ready', stage: 'ready' },
+      };
+    }
+    baseResult.alignment = alignment || { status: 'failed', stage: 'unknown', message: 'Alignment service is unavailable' };
+  }
+  return baseResult;
 }
 
 async function youtubeComments(videoId, limit = 20) {
@@ -2086,6 +2297,9 @@ module.exports = {
   spotifySetPlaybackVolume,
   spotifyNativeLyrics,
   normalizeSpotifyLyricsPayload,
+  youtubeMusicNativeLyrics,
+  normalizeYouTubeMusicLyricsShelf,
+  normalizeYouTubeMusicLyricsText,
   lyricsFor,
   youtubeComments,
   youtubePodcastSearch,

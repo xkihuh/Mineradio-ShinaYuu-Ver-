@@ -1844,12 +1844,10 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 /*  舞台歌词 (大字 + 3D 入场 + 呼吸)                              */
 /* ============================================================ */
 #stage-lyrics{display:none}
-.stage-lyric-line{position:absolute;font-family:var(--font-sans);font-weight:700;font-size:clamp(34px,5.6vw,76px);letter-spacing:2px;text-align:center;color:#fff;white-space:nowrap;max-width:92vw;padding:0 24px;text-shadow:0 0 14px rgba(168,246,255,.38),0 0 36px rgba(143,233,255,.30),0 0 80px rgba(115,167,255,.16);background:linear-gradient(180deg,rgba(246,253,255,1) 0%,rgba(168,246,255,1) 55%,rgba(126,205,255,1) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;opacity:0;transform-style:preserve-3d;will-change:transform,opacity,filter;filter:drop-shadow(0 4px 22px rgba(143,233,255,.30))}
-.stage-lyric-line.in{animation:lyr-in 900ms cubic-bezier(.16,.84,.32,1.02) forwards,lyr-bob 5.6s ease-in-out 900ms infinite}
-.stage-lyric-line.out{animation:lyr-out 700ms cubic-bezier(.55,0,.85,.45) forwards}
-@keyframes lyr-bob{0%,100%{transform:translate3d(var(--bx,0px),0,0) rotateX(0deg) rotateY(0deg) scale(1)}25%{transform:translate3d(calc(var(--bx,0px) + 6px),-7px,12px) rotateX(2deg) rotateY(-1.5deg) scale(1.01)}50%{transform:translate3d(var(--bx,0px),3px,0) rotateX(-1.5deg) rotateY(0deg) scale(.99)}75%{transform:translate3d(calc(var(--bx,0px) - 6px),-4px,8px) rotateX(1.2deg) rotateY(1.5deg) scale(1.005)}}
-@keyframes lyr-in{0%{opacity:0;transform:translate3d(var(--inx,-60px),var(--iny,40px),-160px) rotateX(var(--inrx,28deg)) rotateY(var(--inry,-22deg)) scale(.7);filter:blur(14px) drop-shadow(0 4px 22px rgba(143,233,255,.30))}55%{opacity:1;filter:blur(0) drop-shadow(0 4px 22px rgba(143,233,255,.30))}100%{opacity:1;transform:translate3d(var(--bx,0px),0,0) rotateX(0deg) rotateY(0deg) scale(1);filter:blur(0) drop-shadow(0 4px 22px rgba(143,233,255,.30))}}
-@keyframes lyr-out{0%{opacity:1;transform:translate3d(var(--bx,0px),0,0) rotateX(0) rotateY(0) scale(1);filter:blur(0)}100%{opacity:0;transform:translate3d(var(--outx,60px),var(--outy,-40px),-120px) rotateX(var(--outrx,-22deg)) rotateY(var(--outry,18deg)) scale(.78);filter:blur(10px)}}
+.stage-lyric-line{position:absolute;font-family:var(--font-sans);font-weight:700;font-size:clamp(34px,5.6vw,76px);letter-spacing:2px;text-align:center;color:#fff;white-space:nowrap;max-width:92vw;padding:0 24px;text-shadow:0 0 14px rgba(168,246,255,.38),0 0 36px rgba(143,233,255,.30),0 0 80px rgba(115,167,255,.16);background:linear-gradient(180deg,rgba(246,253,255,1) 0%,rgba(168,246,255,1) 55%,rgba(126,205,255,1) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;opacity:1;transform:translate3d(var(--bx,0px),0,0);transform-style:preserve-3d;will-change:transform;filter:drop-shadow(0 4px 22px rgba(143,233,255,.30))}
+.stage-lyric-line.in{animation:none;opacity:1;filter:drop-shadow(0 4px 22px rgba(143,233,255,.30))}
+.stage-lyric-line.out{animation:lyr-out 180ms linear forwards}
+@keyframes lyr-out{0%{opacity:1}100%{opacity:0}}
 
 /* ============================================================ */
 /*  手势 HUD + 手骨架                                            */
@@ -1918,7 +1916,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 @media(prefers-reduced-motion:reduce){.splash-letter{animation-duration:1ms!important;animation-delay:0ms!important;opacity:1!important;filter:none!important;transform:none!important}.splash-brand-orbit,.splash-brand-core,.splash-brand-scan,.splash-brand-echo{display:none!important}.splash-wordmark-shinayuu::before,.splash-wordmark-shinayuu::after{animation:none!important;opacity:.35!important;transform:none!important}}
 
 
-/* ShinaYuu 1.4.0 — Aurora Prism wordmark: clean, centered, no overlapping glyph layers. */
+/* ShinaYuu 1.1.1 — Aurora Prism wordmark: clean, centered, no overlapping glyph layers. */
 .splash-wordmark-aurora{position:relative!important;display:grid!important;grid-template-rows:auto auto!important;place-items:center!important;gap:.22em!important;width:min(82vw,920px)!important;min-width:0!important;height:auto!important;padding:.42em .7em .54em!important;overflow:visible!important;isolation:isolate!important;perspective:none!important;filter:drop-shadow(0 28px 72px rgba(0,0,0,.72))!important;animation:splash-aurora-container 1700ms 160ms cubic-bezier(.16,1,.3,1) both}
 .splash-wordmark-aurora::before{content:'';position:absolute;left:12%;right:12%;top:48%;height:1px;background:linear-gradient(90deg,transparent,rgba(122,215,194,.18),rgba(255,255,255,.72),rgba(244,210,138,.68),transparent);opacity:0;transform:scaleX(.08);box-shadow:0 0 22px rgba(244,210,138,.28),0 0 50px rgba(122,215,194,.15);animation:splash-aurora-axis 2100ms 620ms cubic-bezier(.16,1,.3,1) both;z-index:-1}
 .splash-wordmark-aurora::after{content:'';position:absolute;inset:-.8em -1.6em;background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,.10),rgba(244,210,138,.07) 26%,rgba(122,215,194,.045) 44%,transparent 72%);opacity:0;transform:scale(.62);animation:splash-aurora-bloom 3200ms 420ms cubic-bezier(.16,1,.3,1) both;z-index:-3;pointer-events:none}
@@ -1994,7 +1992,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 
 
 
-/* ShinaYuu 1.4.22 — Discord profile + built-in Rich Presence IPC */
+/* ShinaYuu 1.1.3 — Discord profile + built-in Rich Presence IPC */
 .discord-home-card{position:relative;margin-top:clamp(18px,2.2vh,28px);width:min(100%,590px);min-height:150px;border-radius:24px;overflow:hidden;border:1px solid rgba(152,116,255,.28);background:linear-gradient(145deg,rgba(39,24,59,.82),rgba(16,19,27,.86) 54%,rgba(15,42,39,.72));box-shadow:0 20px 60px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(22px) saturate(1.15);-webkit-backdrop-filter:blur(22px) saturate(1.15);color:#f7f4ff;isolation:isolate}
 .discord-home-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 18% 0%,rgba(129,92,246,.34),transparent 34%),radial-gradient(circle at 94% 26%,rgba(95,228,190,.18),transparent 30%),linear-gradient(120deg,rgba(255,255,255,.035),transparent 38%);pointer-events:none;z-index:-1}
 .discord-card-banner{height:54px;background:linear-gradient(105deg,rgba(112,70,210,.72),rgba(52,31,93,.58) 48%,rgba(42,130,116,.46));border-bottom:1px solid rgba(255,255,255,.07);position:relative;overflow:hidden}
@@ -2034,7 +2032,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 @media(max-height:760px){.discord-home-card{margin-top:14px;min-height:126px}.discord-card-banner{height:44px}.discord-card-main{grid-template-columns:60px minmax(0,1fr);margin-top:-22px;padding:0 13px 12px}.discord-avatar-wrap{width:58px;height:58px;border-radius:18px}.discord-avatar{border-radius:14px}.discord-avatar-status{left:48px;top:42px}.discord-profile-copy{padding-top:24px}.discord-profile-note{display:none}.discord-now-playing{padding:8px}.discord-track-cover{width:42px;height:42px}.discord-card-actions{margin-top:0}}
 @media(max-width:840px){.discord-home-card{width:100%}}
 
-/* ShinaYuu 1.4.22 — Discord setup modal and compact card */
+/* ShinaYuu 1.1.3 — Discord setup modal and compact card */
 .discord-home-card.unconfigured{min-height:0}
 .discord-home-card.unconfigured .discord-now-playing{margin-top:5px}
 #discord-reconnect-btn{display:none}
@@ -2401,7 +2399,17 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
       <button type="button" id="track-lyric-delay-reset" onclick="resetCurrentTrackLyricDelay()">跟随默认</button>
     </div>
     <div class="track-lyric-sync-range"><input id="fx-tracklyricdelay" type="range" min="-5" max="5" step="0.05"><output id="track-lyric-delay-value">+0.35s</output></div>
-    <div class="track-lyric-sync-hint">歌词太快按 +，歌词太慢按 −。设置会按歌曲、播放来源和歌词来源分别保存。</div>
+    <div class="track-lyric-sync-hint">歌词整段太快按 +，整段太慢按 −。设置会按歌曲、播放来源和歌词来源分别保存。</div>
+    <div class="track-lyric-sync-head"><strong>进度漂移修正</strong><small id="track-lyric-rate-status">自动跟随歌曲时长</small></div>
+    <div class="track-lyric-sync-controls">
+      <button type="button" data-track-lyric-rate-adjust="1" onclick="adjustCurrentTrackLyricRate(-0.005)">−0.5%</button>
+      <button type="button" data-track-lyric-rate-adjust="1" onclick="adjustCurrentTrackLyricRate(-0.001)">−0.1%</button>
+      <button type="button" data-track-lyric-rate-adjust="1" onclick="adjustCurrentTrackLyricRate(0.001)">+0.1%</button>
+      <button type="button" data-track-lyric-rate-adjust="1" onclick="adjustCurrentTrackLyricRate(0.005)">+0.5%</button>
+      <button type="button" id="track-lyric-rate-reset" onclick="resetCurrentTrackLyricRate()">自动</button>
+    </div>
+    <div class="track-lyric-sync-range"><input id="fx-tracklyricrate" type="range" min="0.94" max="1.06" step="0.001"><output id="track-lyric-rate-value">100.0%</output></div>
+    <div class="track-lyric-sync-hint">越往后歌词越快：增加百分比。越往后歌词越慢：减少百分比。它会修正整首歌的时间轴速度，而不是只移动固定秒数。</div>
   </div>
 
   <div class="fx-fold" id="fx-lyric-fold">
@@ -2763,9 +2771,9 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
     <div class="control-cluster modes">
     <button class="ctrl-btn lyrics-toggle-btn" onclick="toggleLyricsPanel()" title="歌词"><span class="lyrics-word-icon">词</span></button>
     <div id="volume-control" class="volume-control">
-      <button id="volume-btn" class="ctrl-btn" onclick="toggleVolumePanel(event)" title="音量 / 静音"><svg id="volume-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15 9.5a4 4 0 0 1 0 5"/></svg></button>
+      <button id="volume-btn" class="ctrl-btn" onclick="toggleVolumePanel(event)" title="Master volume / Mute"><svg id="volume-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15 9.5a4 4 0 0 1 0 5"/></svg></button>
       <div class="volume-popover" onclick="event.stopPropagation()">
-        <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="音量">
+        <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="Master volume">
         <span id="volume-value">100%</span>
       </div>
     </div>
@@ -3084,7 +3092,9 @@ var STATIC_TRANSLATIONS = {
   '歌词源':['Nguồn lời','Lyrics source'], '原词':['Gốc','Original'], '自定义':['Tùy chỉnh','Custom'], '歌词字体':['Phông lời bài hát','Lyrics font'],
   '默认歌词延迟':['Độ trễ lời mặc định','Default lyrics delay'], '当前歌曲校准':['Căn lời cho bài hiện tại','Current track calibration'],
   '播放歌曲后可单独校准':['Phát một bài để căn riêng','Play a track to calibrate it'], '跟随默认':['Theo mặc định','Use default'],
-  '歌词太快按 +，歌词太慢按 −。设置会按歌曲、播放来源和歌词来源分别保存。':['Lời chạy nhanh: nhấn +. Lời chạy chậm: nhấn −. Mức căn được lưu riêng theo bài, nguồn phát và nguồn lời.','Lyrics too early: press +. Lyrics too late: press −. Calibration is saved per track, playback source, and lyric source.'],
+  '歌词整段太快按 +，整段太慢按 −。设置会按歌曲、播放来源和歌词来源分别保存。':['Cả đoạn lời chạy sớm: nhấn +. Cả đoạn lời chạy trễ: nhấn −. Mức căn được lưu riêng theo bài, nguồn phát và nguồn lời.','Whole lyrics are early: press +. Whole lyrics are late: press −. Calibration is saved per track, playback source, and lyric source.'],
+  '进度漂移修正':['Sửa lệch dần theo tiến độ','Progress drift correction'], '自动跟随歌曲时长':['Tự động theo thời lượng bài','Auto from track duration'],
+  '越往后歌词越快：增加百分比。越往后歌词越慢：减少百分比。它会修正整首歌的时间轴速度，而不是只移动固定秒数。':['Càng về sau lời càng chạy sớm: tăng phần trăm. Càng về sau lời càng chạy trễ: giảm phần trăm. Mục này chỉnh tốc độ toàn timeline, không chỉ dịch cố định vài giây.','If lyrics become earlier later in the song, increase the percentage. If they become later, decrease it. This corrects the whole timeline speed instead of applying a fixed offset.'],
   '标题':['Tiêu đề','Title'], '字间距':['Khoảng cách chữ','Letter spacing'], '行距':['Khoảng cách dòng','Line spacing'], '字重':['Độ đậm','Font weight'],
   '歌词布局':['Bố cục lời','Lyrics layout'], '歌词大小':['Cỡ lời','Lyrics size'], '水平位置':['Vị trí ngang','Horizontal position'], '垂直位置':['Vị trí dọc','Vertical position'],
   '景深位置':['Vị trí chiều sâu','Depth position'], '上下角度':['Góc dọc','Vertical angle'], '左右角度':['Góc ngang','Horizontal angle'],
@@ -3323,6 +3333,8 @@ var beatOnsetFlag = false;        // beat 上升沿瞬时标志,每帧消费一�
 var lastStrongDrop = 0;           // 用于 burst 预设的强 drop 时刻
 
 var lyricsLines = [], lyricsVisible = false, lyricsHasNativeKaraoke = false, lyricsTimingSource = 'none';
+var lyricsSyncState = { sourceDuration:0, targetDuration:0, score:0, autoRate:1, anchor:0, source:'none', updatedAt:0 };
+var lyricClockResetSerial = 0;
 var playlist = [], playQueue = [], currentIdx = -1, playing = false, playToggleBusy = false;
 var searchMode = 'song', searchModeUserSelected = false, podcastResults = [], podcastPrograms = [], podcastCurrentRadio = null;
 var loginStatus = { provider:'spotify', loggedIn:false, configured:false, vipType:0, vipLevel:'none', isVip:false, isSvip:false, vipLabel:'Free' };
@@ -3350,6 +3362,7 @@ var CUSTOM_COVER_STORE_KEY = 'mineradio-custom-covers';
 var CUSTOM_LYRIC_STORE_KEY = 'mineradio-custom-lyrics-v1';
 var CUSTOM_LYRIC_PREF_STORE_KEY = 'mineradio-custom-lyric-prefs-v1';
 var SONG_LYRIC_DELAY_STORE_KEY = 'shinayuu-song-lyric-delay-v1';
+var SONG_LYRIC_RATE_STORE_KEY = 'shinayuu-song-lyric-rate-v1';
 var LYRIC_LAYOUT_STORE_KEY = 'mineradio-lyric-layout-v1';
 var VISUAL_PRESET_SCHEMA = 'skull-preset-v2';
 var PLAYBACK_QUALITY_STORE_KEY = 'mineradio-playback-quality-v1';
@@ -3381,6 +3394,7 @@ var customCoverMap = readCustomCoverMap();
 var customLyricMap = readCustomLyricMap();
 var customLyricPrefs = readCustomLyricPrefs();
 var songLyricDelayMap = readSongLyricDelayMap();
+var songLyricRateMap = readSongLyricRateMap();
 var localBeatMapCache = readLocalBeatMapCache();
 var localBeatMapPrefs = readLocalBeatPrefs();
 var playbackQuality = readPlaybackQualityPreference();
@@ -3388,7 +3402,7 @@ var qqPlaybackQualityCeiling = '';
 var coverCropState = null, coverCropBound = false;
 var currentLocalSong = null;
 var lyricSourceMode = 'original';
-var originalLyricsState = { lines: [], hasNativeKaraoke: false, timingSource: 'none' };
+var originalLyricsState = { lines: [], hasNativeKaraoke: false, timingSource: 'none', syncMeta: null };
 var localBeatAnalysis = { song:null, audioUrl:'', mode:'mr', active:false, token:0 };
 var likedSongMap = {}, likeBusyMap = {}, likeStatusToken = 0;
 var collectTargetSong = null, collectBusy = false;
@@ -7547,7 +7561,7 @@ function createSkullParticleLayer() {
       uPointScale: uniforms.uPointScale,
       uBloomStrength: uniforms.uBloomStrength,
       uColorBoost: uniforms.uColorBoost,
-      uOpacity: { value: 0 },
+      uOpacity: { value: 1 },
       uColorA: { value: new THREE.Color('#b8ae98') },
       uColorB: { value: new THREE.Color('#fff4d8') },
       uShadow: { value: new THREE.Color('#100d0d') },
@@ -9582,7 +9596,7 @@ function buildLyricMesh(text) {
 
   var readabilityTex = makeLyricReadabilityTexture(mask);
   var readabilityMat = new THREE.MeshBasicMaterial({
-    map: readabilityTex, transparent:true, opacity:0, depthWrite:false, depthTest:false,
+    map: readabilityTex, transparent:true, opacity:0.86, depthWrite:false, depthTest:false,
     side:THREE.DoubleSide
   });
   var readability = new THREE.Mesh(new THREE.PlaneGeometry(worldW, worldH, 1, 1), readabilityMat);
@@ -9670,20 +9684,45 @@ function updateLyricMeshProgress(mesh, progress) {
   mesh.userData.lastLyricProgress = progress;
 }
 
-function showStageLine(text, redrawOnly) {
+function showStageLine(text, redrawOnly, options) {
   createLyricsParticles();
   if (!stageLyrics.group) return;
   if (!text) { clearStageLyrics(); return; }
+  options = options || {};
+  var entranceDuration = clampRange(Number(options.entranceDuration) || LYRIC_ENTRANCE_DURATION_SECONDS, 0.08, 0.35);
   if (redrawOnly && stageLyrics.current) {
     disposeLyricMesh(stageLyrics.current);
     stageLyrics.current = null;
   } else if (stageLyrics.current) {
     stageLyrics.current.userData.state = 'out';
     stageLyrics.current.userData.age = 0;
+    stageLyrics.current.userData.exitDuration = options.preRoll ? entranceDuration : 0.38;
     stageLyrics.outgoing.push(stageLyrics.current);
   }
   stageLyrics.currentText = text;
   var mesh = buildLyricMesh(text);
+  // Keep the entrance effects, but start them before the authored Spotify
+  // timestamp. At the exact vocal onset the line is already fully readable;
+  // karaoke progress still uses the unshifted playback clock.
+  if (mesh && mesh.userData) {
+    var lineStart = Math.max(0, Number(options.lineStartTime) || 0);
+    var exactTime = Math.max(0, Number(options.exactTime) || 0);
+    var elapsed = options.preRoll
+      ? clampRange(entranceDuration - Math.max(0, lineStart - exactTime), 0, entranceDuration)
+      : entranceDuration;
+    var rawEntrance = entranceDuration > 0 ? clampRange(elapsed / entranceDuration, 0, 1) : 1;
+    var entrance = rawEntrance * rawEntrance * (3 - 2 * rawEntrance);
+    mesh.userData.age = elapsed;
+    mesh.userData.enterDuration = entranceDuration;
+    mesh.userData.preRoll = !!options.preRoll;
+    mesh.userData.lineStartTime = lineStart;
+    var lyricVisual = mesh.userData.lyric || {};
+    if (lyricVisual.textMat && lyricVisual.textMat.uniforms && lyricVisual.textMat.uniforms.uOpacity) {
+      lyricVisual.textMat.uniforms.uOpacity.value = 0.08 + entrance * 0.92;
+    }
+    if (lyricVisual.readabilityMat) lyricVisual.readabilityMat.opacity = 0.12 + entrance * 0.74;
+    if (lyricVisual.glowMat) lyricVisual.glowMat.opacity = (1 - entrance) * 0.16;
+  }
   stageLyrics.group.add(mesh);
   stageLyrics.current = mesh;
 }
@@ -9691,9 +9730,11 @@ function showStageLine(text, redrawOnly) {
 function refreshCurrentLyricStyle() {
   if (!stageLyrics || !stageLyrics.currentText || !stageLyrics.current) return;
   var progress = stageLyrics.current.userData ? (stageLyrics.current.userData.lastLyricProgress || 0) : 0;
-  showStageLine(stageLyrics.currentText, true);
+  showStageLine(stageLyrics.currentText, true, { preRoll:false, entranceDuration:LYRIC_ENTRANCE_DURATION_SECONDS });
   updateLyricMeshProgress(stageLyrics.current, progress);
-  if (stageLyrics.current && stageLyrics.current.userData) stageLyrics.current.userData.age = 0.48;
+  if (stageLyrics.current && stageLyrics.current.userData) {
+    stageLyrics.current.userData.age = stageLyrics.current.userData.enterDuration || LYRIC_ENTRANCE_DURATION_SECONDS;
+  }
 }
 
 function clearStageLyrics() {
@@ -9863,7 +9904,10 @@ function updateStageLyrics3D(dt) {
   function tickMesh(mesh, isCurrent) {
     if (!mesh) return false;
     mesh.userData.age += dt;
-    var a = Math.min(1, mesh.userData.age / (isCurrent ? 0.52 : 0.38));
+    var phaseDuration = isCurrent
+      ? clampRange(Number(mesh.userData.enterDuration) || LYRIC_ENTRANCE_DURATION_SECONDS, 0.08, 0.35)
+      : clampRange(Number(mesh.userData.exitDuration) || 0.38, 0.08, 0.55);
+    var a = Math.min(1, mesh.userData.age / phaseDuration);
     a = a * a * (3 - 2 * a);
     var data = mesh.userData.lyric || {};
     var followMix = isCurrent ? 1.0 : 0.64;
@@ -9887,13 +9931,25 @@ function updateStageLyrics3D(dt) {
       var shelfDetailLyricDim = shelfDetailLyricProfile.bloom;
       var lyricOpacityTarget = shelfDetailLyricProfile.opacity;
       var currentOpacity = data.textMat ? data.textMat.uniforms.uOpacity.value : 0;
-      var opacityEase = shelfDetailOpen && currentOpacity > lyricOpacityTarget ? shelfDetailLyricProfile.easeDown : 0.16;
-      opacity = clampRange(currentOpacity + (lyricOpacityTarget - currentOpacity) * opacityEase, 0, 1);
+      var entranceVisibility = 0.08 + a * 0.92;
+      var entranceOpacityTarget = lyricOpacityTarget * entranceVisibility;
+      if (a < 0.999) {
+        opacity = clampRange(entranceOpacityTarget, 0, 1);
+      } else {
+        var opacitySpeed = shelfDetailOpen && currentOpacity > lyricOpacityTarget ? 16 : 42;
+        var opacityEase = 1 - Math.exp(-Math.max(0.001, dt) * opacitySpeed);
+        opacity = clampRange(currentOpacity + (lyricOpacityTarget - currentOpacity) * opacityEase, 0, 1);
+      }
       if (data.textMat) data.textMat.uniforms.uOpacity.value = opacity;
       if (data.readabilityMat) {
         var readabilityTarget = opacity * shelfDetailLyricProfile.readability;
-        var readabilityEase = shelfDetailOpen && data.readabilityMat.opacity > readabilityTarget ? 0.28 : 0.16;
-        data.readabilityMat.opacity += (readabilityTarget - data.readabilityMat.opacity) * readabilityEase;
+        if (a < 0.999) {
+          data.readabilityMat.opacity = readabilityTarget;
+        } else {
+          var readabilitySpeed = shelfDetailOpen && data.readabilityMat.opacity > readabilityTarget ? 20 : 38;
+          var readabilityEase = 1 - Math.exp(-Math.max(0.001, dt) * readabilitySpeed);
+          data.readabilityMat.opacity += (readabilityTarget - data.readabilityMat.opacity) * readabilityEase;
+        }
       }
       if (data.textMat && data.textMat.uniforms.uSolar) {
         var solarTarget = stageLyrics.highBloom * shelfDetailLyricDim;
@@ -9903,7 +9959,8 @@ function updateStageLyrics3D(dt) {
       var solar = stageLyrics.highBloom * shelfDetailLyricDim;
       var warmth = Math.max(0, Math.min(1, solar * 1.10));
       if (data.glowMat) {
-        var glowTarget = lyricGlowStrength > 0 ? Math.min(shelfDetailLyricProfile.glowCap, (0.075 + solar * 0.34 + stageLyrics.beatGlow * 0.16 * shelfDetailLyricDim) * Math.min(3.0, glowDrive)) : 0;
+        var entranceGlow = a < 1 ? (1 - a) * 0.16 : 0;
+        var glowTarget = lyricGlowStrength > 0 ? Math.min(shelfDetailLyricProfile.glowCap, (0.075 + solar * 0.34 + stageLyrics.beatGlow * 0.16 * shelfDetailLyricDim) * Math.min(3.0, glowDrive) + entranceGlow) : entranceGlow;
         data.glowMat.opacity += (glowTarget - data.glowMat.opacity) * (glowTarget > data.glowMat.opacity ? 0.095 : (shelfDetailOpen ? 0.20 : 0.055));
         data.glowMat.color.copy(lyricThreeColor(stageLyrics.palette.glowColor || stageLyrics.palette.secondary, '#9cffdf', 0.36)).lerp(lyricSunHotColor, warmth);
       }
@@ -9933,7 +9990,8 @@ function updateStageLyrics3D(dt) {
       if (skullMouthLyrics) {
         var mouthMeshY = -0.070 + Math.sin(t * 0.50 + seed) * 0.018 + Math.sin(t * 1.12 + seed) * 0.006;
         var mouthMeshZ = 0.018 + Math.cos(t * 0.46 + seed) * 0.007;
-        var mouthMeshScale = 1.08 + a * 0.040 + breathe * 0.12 + bass * 0.024 + beatPulse * 0.014;
+        var entranceScale = 0.93 + a * 0.07;
+        var mouthMeshScale = (1.08 + breathe * 0.12 + bass * 0.024 + beatPulse * 0.014) * entranceScale;
         if (!mesh.userData.skullMouthMeshLocked) {
           mesh.position.set(0, mouthMeshY, mouthMeshZ);
           mesh.userData.skullMouthMeshLocked = true;
@@ -9946,9 +10004,14 @@ function updateStageLyrics3D(dt) {
         mesh.rotation.z = Math.sin(t * 0.30 + seed) * 0.010;
       } else {
         mesh.userData.skullMouthMeshLocked = false;
-        mesh.scale.setScalar(0.96 + a * 0.055 + breathe + bass * 0.038 + beatPulse * 0.014);
-        mesh.position.y += ((0.18 + Math.sin(t * 0.55 + seed) * 0.055 + Math.sin(t * 1.35 + seed) * 0.014) - mesh.position.y) * 0.075;
-        mesh.position.z += ((1.48 + Math.cos(t * 0.48 + seed) * 0.080) - mesh.position.z) * 0.080;
+        var entranceScale = 0.93 + a * 0.07;
+        mesh.scale.setScalar((1.015 + breathe + bass * 0.038 + beatPulse * 0.014) * entranceScale);
+        var entranceLift = (1 - a) * 0.12;
+        var entranceDepth = (1 - a) * 0.20;
+        mesh.position.y += ((0.18 + entranceLift + Math.sin(t * 0.55 + seed) * 0.055 + Math.sin(t * 1.35 + seed) * 0.014) - mesh.position.y) * 0.16;
+        mesh.position.z += ((1.48 - entranceDepth + Math.cos(t * 0.48 + seed) * 0.080) - mesh.position.z) * 0.18;
+        mesh.rotation.x = (1 - a) * 0.055;
+        mesh.rotation.y = (1 - a) * -0.045;
         mesh.rotation.z = Math.sin(t * 0.34 + seed) * 0.018;
       }
       if (data.sparks && data.sparkMat) data.sparks.visible = fx.lyricGlowParticles || getLyricSparkOpacity(data) > 0.015;
@@ -9996,15 +10059,51 @@ function updateStageLyrics3D(dt) {
 }
 
 function getLyricPlaybackSeconds() {
-  var current = Math.max(0, Number(getPlaybackCurrentSeconds()) || 0);
+  var currentGetter = typeof window.getPlaybackCurrentSeconds === 'function' ? window.getPlaybackCurrentSeconds : getPlaybackCurrentSeconds;
+  var current = progressDragState && progressDragState.active && isFinite(progressDragState.previewSec)
+    ? Math.max(0, Number(progressDragState.previewSec) || 0)
+    : Math.max(0, Number(currentGetter()) || 0);
   var delay = getEffectiveLyricDelay(currentLyricSong(), lyricSourceMode);
+  var rate = getEffectiveLyricTimelineRate(currentLyricSong(), lyricSourceMode);
+  var anchor = Math.max(0, Number(lyricsSyncState && lyricsSyncState.anchor) || 0);
   var helper = window.ShinaYuuLyricsSync;
-  if (helper && typeof helper.compensatedPlaybackSeconds === 'function') {
-    return helper.compensatedPlaybackSeconds(current, delay);
+  if (helper && typeof helper.mapPlaybackToLyricSeconds === 'function') {
+    return helper.mapPlaybackToLyricSeconds(current, delay, rate, anchor);
   }
-  return Math.max(0, current - clampRange(isFinite(delay) ? delay : 0.35, -5, 5));
+  var compensated = Math.max(0, current - clampRange(isFinite(delay) ? delay : 0.35, -5, 5));
+  return anchor + (compensated - anchor) / clampRange(Number(rate) || 1, 0.94, 1.06);
 }
 window.getLyricPlaybackSeconds = getLyricPlaybackSeconds;
+// The 180 ms window is a visual pre-roll, not a lyrics timestamp offset.
+// Fade/blur/slide finish exactly at the Spotify line timestamp, while the
+// karaoke fill still uses getLyricPlaybackSeconds() without any lookahead.
+var LYRIC_ENTRANCE_DURATION_SECONDS = 0.18;
+var LYRIC_VISUAL_LOOKAHEAD_SECONDS = LYRIC_ENTRANCE_DURATION_SECONDS;
+function getLyricVisualPlaybackSeconds(exactSeconds) {
+  var exact = isFinite(Number(exactSeconds)) ? Math.max(0, Number(exactSeconds)) : getLyricPlaybackSeconds();
+  var helper = window.ShinaYuuLyricsSync;
+  var enabled = !!playing && isExactNativeLyricTiming(lyricSourceMode);
+  if (helper && typeof helper.visualLookupSeconds === 'function') {
+    return helper.visualLookupSeconds(exact, LYRIC_VISUAL_LOOKAHEAD_SECONDS, enabled);
+  }
+  return exact + (enabled ? LYRIC_VISUAL_LOOKAHEAD_SECONDS : 0);
+}
+window.getLyricVisualPlaybackSeconds = getLyricVisualPlaybackSeconds;
+function onPlaybackClockDiscontinuity(positionSeconds, reason) {
+  lyricClockResetSerial++;
+  try {
+    clearStageLyrics();
+    if (stageLyrics) {
+      stageLyrics.currentIdx = -999;
+      stageLyrics.currentText = '';
+    }
+    if (desktopOverlayPushState) desktopOverlayPushState.lastLyricsKey = '';
+    if (typeof pushDesktopLyricsState === 'function') pushDesktopLyricsState(true);
+  } catch (e) {
+    console.warn('[LyricClockReset]', reason || 'unknown', e);
+  }
+}
+window.onPlaybackClockDiscontinuity = onPlaybackClockDiscontinuity;
 function getLyricLineProgress(line, nextLine, now) {
   if (!line) return 0;
   if (line.words && line.words.length && line.charCount > 0) {
@@ -10022,10 +10121,14 @@ function getLyricLineProgress(line, nextLine, now) {
     }
     return 1;
   }
-  var nextT = nextLine && nextLine.t > line.t ? nextLine.t : Math.min(getPlaybackDurationSeconds() || now + 4, line.t + (line.duration || 4.8));
-  var span = Math.max(0.75, nextT - line.t);
-  var prog = Math.max(0, Math.min(1, (now - line.t) / span));
-  return prog * prog * (3 - 2 * prog);
+  var explicitEnd = line.t + Math.max(0.45, Number(line.duration) || 4.8);
+  var nextT = nextLine && nextLine.t > line.t ? nextLine.t : Math.min(getPlaybackDurationSeconds() || now + 4, explicitEnd);
+  var endT = nextLine && nextLine.t > line.t ? Math.min(nextT, Math.max(line.t + 0.45, explicitEnd)) : explicitEnd;
+  var span = Math.max(0.45, endT - line.t);
+  // Line-synced LRC has no word timestamps. Keep the fill tied linearly to the
+  // real playback fraction; smoothstep made the highlight visibly lag at the
+  // beginning and rush near the middle of every line.
+  return Math.max(0, Math.min(1, (now - line.t) / span));
 }
 
 function tickLyricsParticles() {
@@ -10045,9 +10148,15 @@ function tickLyricsParticles() {
     return;
   }
   var t = getLyricPlaybackSeconds();
-  var newIdx = -1;
-  for (var i = 0; i < lyricsLines.length; i++) {
-    if (lyricsLines[i].t <= t + 0.01) newIdx = i; else break;
+  var lookupT = getLyricVisualPlaybackSeconds(t);
+  var helper = window.ShinaYuuLyricsSync;
+  var newIdx = helper && typeof helper.findLyricIndex === 'function'
+    ? helper.findLyricIndex(lyricsLines, lookupT)
+    : -1;
+  if (newIdx < 0 && (!helper || typeof helper.findLyricIndex !== 'function')) {
+    for (var i = 0; i < lyricsLines.length; i++) {
+      if (lyricsLines[i].t <= lookupT) newIdx = i; else break;
+    }
   }
   if (newIdx < 0) {
     var introText = currentLyricFallbackText();
@@ -10067,9 +10176,32 @@ function tickLyricsParticles() {
     }
     return;
   }
+  if (newIdx >= 0) {
+    var lookupLine = lyricsLines[newIdx] || {};
+    if (lookupLine.spotifySilent && Number(lookupLine.t) > t) {
+      newIdx = helper && typeof helper.findLyricIndex === 'function'
+        ? helper.findLyricIndex(lyricsLines, t)
+        : newIdx - 1;
+    }
+  }
   if (newIdx !== stageLyrics.currentIdx) {
-    stageLyrics.currentIdx = newIdx;
-    showStageLine(lyricsLines[newIdx].text || '');
+    var activeLine = lyricsLines[newIdx] || {};
+    if (activeLine.spotifySilent) {
+      clearStageLyrics();
+      // Preserve the silent row index after clearStageLyrics resets it. This
+      // keeps Spotify's timed blank gaps instead of showing the track title.
+      stageLyrics.currentIdx = newIdx;
+      stageLyrics.currentText = '';
+    } else {
+      stageLyrics.currentIdx = newIdx;
+      var usePreRoll = !!(isExactNativeLyricTiming(lyricSourceMode) && Number(activeLine.t) > t);
+      showStageLine(activeLine.text || '', false, {
+        preRoll: usePreRoll,
+        lineStartTime: Number(activeLine.t) || t,
+        exactTime: t,
+        entranceDuration: LYRIC_ENTRANCE_DURATION_SECONDS
+      });
+    }
   }
   if (stageLyrics.current) {
     var curLine = lyricsLines[newIdx] || { t:t };
@@ -17454,13 +17586,55 @@ function saveSongLyricDelayMap() {
     return false;
   }
 }
+function readSongLyricRateMap() {
+  try {
+    var raw = JSON.parse(localStorage.getItem(SONG_LYRIC_RATE_STORE_KEY) || '{}') || {};
+    var out = {};
+    Object.keys(raw).forEach(function(key){
+      var value = Number(raw[key]);
+      if (isFinite(value)) out[key] = clampRange(value, 0.94, 1.06);
+    });
+    return out;
+  } catch (e) {
+    return {};
+  }
+}
+function saveSongLyricRateMap() {
+  try {
+    localStorage.setItem(SONG_LYRIC_RATE_STORE_KEY, JSON.stringify(songLyricRateMap || {}));
+    return true;
+  } catch (e) {
+    console.warn('song lyric rate save failed:', e);
+    return false;
+  }
+}
+function isSpotifyNativeLyricTiming(mode) {
+  var activeMode = mode == null ? lyricSourceMode : mode;
+  return activeMode !== 'custom' && /^spotify-native(?:-|$)/i.test(String(lyricsTimingSource || ''));
+}
+function isYouTubeNativeLyricTiming(mode) {
+  var activeMode = mode == null ? lyricSourceMode : mode;
+  return activeMode !== 'custom' && /^youtube-native(?:-|$)/i.test(String(lyricsTimingSource || ''));
+}
+function isExactNativeLyricTiming(mode) {
+  return isSpotifyNativeLyricTiming(mode) || isYouTubeNativeLyricTiming(mode);
+}
+function exactNativeLyricProviderLabel(mode) {
+  return isYouTubeNativeLyricTiming(mode) ? 'YouTube' : 'Spotify';
+}
+function lyricTimingBucket(mode) {
+  if ((mode == null ? lyricSourceMode : mode) === 'custom') return 'custom';
+  if (isSpotifyNativeLyricTiming(mode)) return 'spotify-native';
+  if (isYouTubeNativeLyricTiming(mode)) return 'youtube-native';
+  return 'external';
+}
 function songLyricDelayKey(song, mode) {
   song = song || currentLyricSong();
   var base = songCustomLyricKey(song);
   if (!base) return '';
   var provider = String(song.playbackProvider || song.actualProvider || song.provider || song.source || song.type || 'unknown').toLowerCase();
   var lyricMode = mode === 'custom' ? 'custom' : 'original';
-  return provider + '|' + base + '|' + lyricMode;
+  return provider + '|' + base + '|' + lyricMode + '|' + lyricTimingBucket(mode);
 }
 function currentTrackLyricDelayOverride(song, mode) {
   var key = songLyricDelayKey(song, mode == null ? lyricSourceMode : mode);
@@ -17468,8 +17642,39 @@ function currentTrackLyricDelayOverride(song, mode) {
   var value = Number(songLyricDelayMap[key]);
   return isFinite(value) ? clampRange(value, -5, 5) : null;
 }
+function songLyricRateKey(song, mode) {
+  return songLyricDelayKey(song, mode);
+}
+function currentTrackLyricRateOverride(song, mode) {
+  var key = songLyricRateKey(song, mode == null ? lyricSourceMode : mode);
+  if (!key || !Object.prototype.hasOwnProperty.call(songLyricRateMap || {}, key)) return null;
+  var value = Number(songLyricRateMap[key]);
+  return isFinite(value) ? clampRange(value, 0.94, 1.06) : null;
+}
+function getAutomaticLyricTimelineRate(mode) {
+  if ((mode == null ? lyricSourceMode : mode) === 'custom' || isExactNativeLyricTiming(mode)) return 1;
+  return clampRange(Number(lyricsSyncState && lyricsSyncState.autoRate) || 1, 0.94, 1.06);
+}
+function getEffectiveLyricTimelineRate(song, mode) {
+  var activeMode = mode == null ? lyricSourceMode : mode;
+  // Spotify-native timestamps must stay on Spotify's original 100% timeline.
+  // Ignore any per-track values saved by older builds so stale calibration
+  // can never distort the same data that Spotify itself uses.
+  if (isExactNativeLyricTiming(activeMode)) return 1;
+  var override = currentTrackLyricRateOverride(song, activeMode);
+  if (override != null) return override;
+  return getAutomaticLyricTimelineRate(activeMode);
+}
+function formatLyricRateValue(value) {
+  value = clampRange(Number(value) || 1, 0.94, 1.06);
+  return (value * 100).toFixed(1) + '%';
+}
 function getEffectiveLyricDelay(song, mode) {
-  var override = currentTrackLyricDelayOverride(song, mode == null ? lyricSourceMode : mode);
+  var activeMode = mode == null ? lyricSourceMode : mode;
+  // Spotify-native timestamps are already authored against Spotify's own
+  // playback clock. Force zero before reading old saved overrides.
+  if (isExactNativeLyricTiming(activeMode)) return 0;
+  var override = currentTrackLyricDelayOverride(song, activeMode);
   if (override != null) return override;
   return clampRange(isFinite(Number(fx && fx.lyricDelay)) ? Number(fx.lyricDelay) : 0.35, -5, 5);
 }
@@ -17487,17 +17692,85 @@ function refreshCurrentTrackLyricDelayControls() {
   var status = document.getElementById('track-lyric-sync-status');
   var reset = document.getElementById('track-lyric-delay-reset');
   var buttons = document.querySelectorAll('[data-track-lyric-adjust]');
-  if (slider) { slider.value = effective; slider.disabled = !key; }
-  if (output) output.textContent = formatLyricDelayValue(effective);
-  if (reset) reset.disabled = !key || override == null;
-  Array.prototype.forEach.call(buttons, function(btn){ btn.disabled = !key; });
+  var exactNative = isExactNativeLyricTiming(lyricSourceMode);
+  if (slider) { slider.value = exactNative ? 0 : effective; slider.disabled = !key || exactNative; }
+  if (output) output.textContent = formatLyricDelayValue(exactNative ? 0 : effective);
+  if (reset) reset.disabled = !key || override == null || exactNative;
+  Array.prototype.forEach.call(buttons, function(btn){ btn.disabled = !key || exactNative; });
   if (status) {
     if (!key) status.textContent = appLanguage === 'en' ? 'Play a track to calibrate it' : 'Phát một bài để căn riêng';
+    else if (exactNative) { var exactLabel = exactNativeLyricProviderLabel(lyricSourceMode); status.textContent = appLanguage === 'en' ? (exactLabel + ' exact timestamps · +0.00s') : ('Timestamp ' + exactLabel + ' nguyên bản · +0,00s'); }
     else if (override == null) status.textContent = (appLanguage === 'en' ? 'Using default · ' : 'Theo mặc định · ') + formatLyricDelayValue(effective);
     else status.textContent = (appLanguage === 'en' ? 'Saved for this track · ' : 'Đã lưu riêng · ') + formatLyricDelayValue(effective);
   }
 }
+function refreshCurrentTrackLyricRateControls() {
+  var song = currentLyricSong();
+  var key = songLyricRateKey(song, lyricSourceMode);
+  var override = currentTrackLyricRateOverride(song, lyricSourceMode);
+  var automatic = getAutomaticLyricTimelineRate(lyricSourceMode);
+  var effective = getEffectiveLyricTimelineRate(song, lyricSourceMode);
+  var slider = document.getElementById('fx-tracklyricrate');
+  var output = document.getElementById('track-lyric-rate-value');
+  var status = document.getElementById('track-lyric-rate-status');
+  var reset = document.getElementById('track-lyric-rate-reset');
+  var buttons = document.querySelectorAll('[data-track-lyric-rate-adjust]');
+  var exactNative = isExactNativeLyricTiming(lyricSourceMode);
+  if (slider) { slider.value = exactNative ? 1 : effective; slider.disabled = !key || exactNative; }
+  if (output) output.textContent = formatLyricRateValue(exactNative ? 1 : effective);
+  if (reset) reset.disabled = !key || override == null || exactNative;
+  Array.prototype.forEach.call(buttons, function(btn){ btn.disabled = !key || exactNative; });
+  if (status) {
+    if (!key) status.textContent = appLanguage === 'en' ? 'Play a track to calibrate it' : 'Phát một bài để căn riêng';
+    else if (exactNative) { var exactLabel = exactNativeLyricProviderLabel(lyricSourceMode); status.textContent = appLanguage === 'en' ? (exactLabel + ' timeline · 100.0%') : ('Timeline ' + exactLabel + ' · 100,0%'); }
+    else if (override == null) status.textContent = (appLanguage === 'en' ? 'Automatic · ' : 'Tự động · ') + formatLyricRateValue(automatic);
+    else status.textContent = (appLanguage === 'en' ? 'Saved for this track · ' : 'Đã lưu riêng · ') + formatLyricRateValue(effective);
+  }
+}
+function setCurrentTrackLyricRate(value, silent) {
+  if (isExactNativeLyricTiming(lyricSourceMode)) {
+    if (!silent) { var exactLabel = exactNativeLyricProviderLabel(lyricSourceMode); showToast(appLanguage === 'en' ? (exactLabel + ' exact timing is locked at 100%.') : ('Timeline ' + exactLabel + ' nguyên bản được khóa ở 100%.')); }
+    refreshCurrentTrackLyricRateControls();
+    return false;
+  }
+  var song = currentLyricSong();
+  var key = songLyricRateKey(song, lyricSourceMode);
+  if (!key) {
+    if (!silent) showToast(appLanguage === 'en' ? 'Play a track first.' : 'Hãy phát một bài trước.');
+    refreshCurrentTrackLyricRateControls();
+    return false;
+  }
+  value = Math.round(clampRange(Number(value) || 1, 0.94, 1.06) * 1000) / 1000;
+  songLyricRateMap[key] = value;
+  saveSongLyricRateMap();
+  if (typeof onPlaybackClockDiscontinuity === 'function') onPlaybackClockDiscontinuity(getPlaybackCurrentSeconds(), 'lyric-rate');
+  refreshCurrentTrackLyricRateControls();
+  if (typeof pushDesktopLyricsState === 'function') pushDesktopLyricsState(true);
+  if (!silent) showToast((appLanguage === 'en' ? 'Track lyrics timeline: ' : 'Tốc độ timeline lời: ') + formatLyricRateValue(value));
+  return true;
+}
+function adjustCurrentTrackLyricRate(delta) {
+  var value = getEffectiveLyricTimelineRate(currentLyricSong(), lyricSourceMode) + (Number(delta) || 0);
+  return setCurrentTrackLyricRate(value, false);
+}
+function resetCurrentTrackLyricRate() {
+  var key = songLyricRateKey(currentLyricSong(), lyricSourceMode);
+  if (!key) return false;
+  delete songLyricRateMap[key];
+  saveSongLyricRateMap();
+  if (typeof onPlaybackClockDiscontinuity === 'function') onPlaybackClockDiscontinuity(getPlaybackCurrentSeconds(), 'lyric-rate-reset');
+  refreshCurrentTrackLyricRateControls();
+  if (typeof pushDesktopLyricsState === 'function') pushDesktopLyricsState(true);
+  showToast(appLanguage === 'en' ? 'This track now uses automatic timeline correction.' : 'Bài này đã trở về căn timeline tự động.');
+  return true;
+}
+
 function setCurrentTrackLyricDelay(value, silent) {
+  if (isExactNativeLyricTiming(lyricSourceMode)) {
+    if (!silent) { var exactLabel = exactNativeLyricProviderLabel(lyricSourceMode); showToast(appLanguage === 'en' ? (exactLabel + ' exact timing is locked at +0.00s.') : ('Timestamp ' + exactLabel + ' nguyên bản được khóa ở +0,00s.')); }
+    refreshCurrentTrackLyricDelayControls();
+    return false;
+  }
   var song = currentLyricSong();
   var key = songLyricDelayKey(song, lyricSourceMode);
   if (!key) {
@@ -17550,26 +17823,67 @@ function cloneLyricLine(line) {
 function cloneLyricLines(lines) {
   return (Array.isArray(lines) ? lines : []).map(cloneLyricLine);
 }
-function setOriginalLyricsState(lines, hasNativeKaraoke, timingSource) {
+function normalizeLyricsSyncMeta(meta) {
+  meta = meta && typeof meta === 'object' ? meta : {};
+  return {
+    sourceDuration: Math.max(0, Number(meta.sourceDuration) || 0),
+    targetDuration: Math.max(0, Number(meta.targetDuration) || 0),
+    score: Math.max(0, Number(meta.score) || 0),
+    source: String(meta.source || 'none')
+  };
+}
+function recomputeLyricTimelineSync(targetDuration, syncMeta) {
+  var helper = window.ShinaYuuLyricsSync;
+  var meta = normalizeLyricsSyncMeta(syncMeta || lyricsSyncState || {});
+  var normalizedTarget = helper && typeof helper.normalizeDurationSeconds === 'function'
+    ? helper.normalizeDurationSeconds(targetDuration || meta.targetDuration || getPlaybackDurationSeconds())
+    : normalizePlaybackDurationSeconds(targetDuration || meta.targetDuration || getPlaybackDurationSeconds());
+  var anchor = helper && typeof helper.lyricTimelineAnchor === 'function'
+    ? helper.lyricTimelineAnchor(lyricsLines)
+    : (lyricsLines[0] && Number(lyricsLines[0].t) || 0);
+  var autoRate = 1;
+  if (lyricSourceMode !== 'custom' && helper && typeof helper.automaticTimelineRate === 'function') {
+    autoRate = helper.automaticTimelineRate(meta.sourceDuration, normalizedTarget, meta.score);
+  }
+  lyricsSyncState = {
+    sourceDuration: meta.sourceDuration,
+    targetDuration: normalizedTarget,
+    score: meta.score,
+    autoRate: clampRange(Number(autoRate) || 1, 0.94, 1.06),
+    anchor: Math.max(0, Number(anchor) || 0),
+    source: meta.source || lyricsTimingSource || 'none',
+    updatedAt: Date.now()
+  };
+  refreshCurrentTrackLyricRateControls();
+  return lyricsSyncState;
+}
+window.refreshLyricTimelineForPlaybackDuration = function(duration) {
+  var meta = lyricSourceMode === 'original' ? originalLyricsState.syncMeta : null;
+  return recomputeLyricTimelineSync(duration, meta);
+};
+function setOriginalLyricsState(lines, hasNativeKaraoke, timingSource, syncMeta) {
   originalLyricsState = {
     lines: cloneLyricLines(lines || []),
     hasNativeKaraoke: !!hasNativeKaraoke,
-    timingSource: timingSource || 'fallback'
+    timingSource: timingSource || 'fallback',
+    syncMeta: normalizeLyricsSyncMeta(syncMeta)
   };
 }
-function applyLyricsState(lines, hasNativeKaraoke, timingSource) {
+function applyLyricsState(lines, hasNativeKaraoke, timingSource, syncMeta) {
   lyricsHasNativeKaraoke = !!hasNativeKaraoke;
   lyricsTimingSource = timingSource || 'fallback';
   lyricsLines = cloneLyricLines(lines || []);
   if (!lyricsLines.length) lyricsLines = withLyricFallback([]);
   if (lyricsLines.length && lyricsLines[0].fallback) lyricsTimingSource = 'fallback';
+  recomputeLyricTimelineSync(getPlaybackDurationSeconds(), syncMeta);
   renderLyrics();
   updateCustomLyricControls();
   refreshCurrentTrackLyricDelayControls();
+  refreshCurrentTrackLyricRateControls();
 }
 function applyOriginalLyricsState() {
   lyricSourceMode = 'original';
-  applyLyricsState(originalLyricsState.lines, originalLyricsState.hasNativeKaraoke, originalLyricsState.timingSource);
+  applyLyricsState(originalLyricsState.lines, originalLyricsState.hasNativeKaraoke, originalLyricsState.timingSource, originalLyricsState.syncMeta);
 }
 function parseCustomLyricText(text) {
   var raw = String(text || '').trim();
@@ -17609,9 +17923,11 @@ function applyCustomLyricState(song, silent) {
   lyricsTimingSource = lines[0] && lines[0].source === 'custom-lrc' ? 'custom-lrc' : 'custom-text';
   lyricsLines = withLyricFallback(lines);
   if (lyricsLines.length && lyricsLines[0].fallback) lyricsTimingSource = 'fallback';
+  recomputeLyricTimelineSync(getPlaybackDurationSeconds(), null);
   renderLyrics();
   updateCustomLyricControls();
   refreshCurrentTrackLyricDelayControls();
+  refreshCurrentTrackLyricRateControls();
   return true;
 }
 function preferredLyricSourceForSong(song) {
@@ -17657,7 +17973,7 @@ function updateCustomLyricControls() {
   var customBtn = document.getElementById('lyric-source-custom');
   if (originalBtn) {
     originalBtn.classList.toggle('active', lyricSourceMode !== 'custom');
-    originalBtn.title = 'Dùng LRCLIB hoặc lời cục bộ';
+    originalBtn.title = 'Ưu tiên lyrics Spotify, sau đó LRCLIB hoặc lời cục bộ';
   }
   if (customBtn) {
     customBtn.classList.toggle('active', lyricSourceMode === 'custom');
@@ -18846,7 +19162,7 @@ function setVolume(value, silent) {
   try { localStorage.setItem('apex-player-volume', String(next)); } catch (e) {}
   applyVolumeToAudio();
   updateVolumeUi();
-  if (!silent) showToast('音量 ' + Math.round(next * 100) + '%');
+  if (!silent) showToast((appLanguage === 'en' ? 'Master volume ' : 'Âm lượng tổng ') + Math.round(next * 100) + '%');
 }
 function adjustVolumeByKeyboard(delta) {
   var step = Number(delta) || 0;
@@ -18888,7 +19204,7 @@ function bindVolumeControls() {
     slider.addEventListener('input', function(){ setVolume(slider.value, true); });
     slider.addEventListener('focus', keepVolumePanelOpen);
     slider.addEventListener('blur', closeVolumePanelSoon);
-    slider.addEventListener('change', function(){ showToast('音量 ' + Math.round(targetVolume * 100) + '%'); });
+    slider.addEventListener('change', function(){ showToast((appLanguage === 'en' ? 'Master volume ' : 'Âm lượng tổng ') + Math.round(targetVolume * 100) + '%'); });
   }
   if (btn) {
     btn.addEventListener('dblclick', function(e){ e.stopPropagation(); toggleMute(); });
@@ -19874,7 +20190,13 @@ function clearPlayerControlFocusState(reason) {
 // ============================================================
 //  歌词
 // ============================================================
-async function fetchLyric(songOrId, token) {
+var youtubeAlignmentRefreshTimer = null;
+async function fetchLyric(songOrId, token, alignmentAttempt) {
+  alignmentAttempt = Number(alignmentAttempt || 0);
+  if (!alignmentAttempt && youtubeAlignmentRefreshTimer) {
+    clearTimeout(youtubeAlignmentRefreshTimer);
+    youtubeAlignmentRefreshTimer = null;
+  }
   try {
     var song = (songOrId && typeof songOrId === 'object') ? songOrId : null;
     var provider = songProviderKey(song);
@@ -19883,6 +20205,12 @@ async function fetchLyric(songOrId, token) {
       var mid = song.mid || song.songmid || song.id || '';
       var qqId = song.qqId || (/^\d+$/.test(String(song.id || '')) ? song.id : '');
       endpoint = '/api/qq/lyric?mid=' + encodeURIComponent(mid) + '&id=' + encodeURIComponent(qqId);
+      if (song) {
+        endpoint += '&track=' + encodeURIComponent(song.name || song.title || '')
+          + '&artist=' + encodeURIComponent(song.artist || '')
+          + '&album=' + encodeURIComponent(song.album || '')
+          + '&duration=' + encodeURIComponent(song.duration || 0);
+      }
     } else {
       var songId = song ? (song.spotifyId || song.id) : songOrId;
       endpoint = '/api/lyric?id=' + encodeURIComponent(songId);
@@ -19895,28 +20223,64 @@ async function fetchLyric(songOrId, token) {
     }
     var r = await apiJson(endpoint);
     if (token !== trackSwitchToken) return;
-    var nativeLines = parseYrcText(r.yrc || '');
-    var lrcLines = parseLyricText(r.lyric || '');
-    var plainLines = (!nativeLines.length && !lrcLines.length)
+    var spotifyNativeTimed = String(r.source || '').toLowerCase() === 'spotify-native';
+    var youtubeNativeTimed = /^(?:youtube-captions-(?:json3|srv3|vtt)|youtube-forced-alignment)$/i.test(String(r.source || ''));
+    var youtubeExactLines = [];
+    var spotifyExactLines = spotifyNativeTimed && r.spotifyLyrics && Array.isArray(r.spotifyLyrics.lines)
+      ? parseSpotifyNativeLyricsLines(r.spotifyLyrics.lines)
+      : [];
+    var exactLines = youtubeExactLines.length ? youtubeExactLines : spotifyExactLines;
+    var nativeLines = exactLines.length ? [] : parseYrcText(r.yrc || '');
+    var lrcLines = exactLines.length ? [] : parseLyricText(r.lyric || '');
+    var plainLines = (!exactLines.length && !nativeLines.length && !lrcLines.length)
       ? parsePlainLyricText(r.plainLyric || '', song && song.duration || r.metadata && r.metadata.duration || 0)
       : [];
-    var hasNativeKaraoke = nativeLines.some(function(line){ return line.words && line.words.length; });
-    var timingSource = hasNativeKaraoke ? 'yrc-word' : (nativeLines.length ? 'yrc-line' : (lrcLines.length ? 'lrc-line' : (plainLines.length ? 'plain-estimated' : 'fallback')));
-    var selectedLines = nativeLines.length ? nativeLines : (lrcLines.length ? lrcLines : plainLines);
-    var lyricHelper = window.ShinaYuuLyricsSync;
-    if (selectedLines.length && r.match && lyricHelper && typeof lyricHelper.timelineScaleFactor === 'function' && typeof lyricHelper.scaleLyricTimeline === 'function') {
-      var targetLyricDuration = song && song.duration || r.metadata && r.metadata.duration || getPlaybackDurationSeconds();
-      var timelineScale = lyricHelper.timelineScaleFactor(r.match.duration, targetLyricDuration);
-      if (timelineScale !== 1) selectedLines = lyricHelper.scaleLyricTimeline(selectedLines, timelineScale);
+    var hasNativeKaraoke = exactLines.some(function(line){ return line.words && line.words.length; })
+      || nativeLines.some(function(line){ return line.words && line.words.length; });
+    var timingSource = youtubeExactLines.length
+      ? (hasNativeKaraoke ? 'youtube-native-word' : 'youtube-native-line')
+      : (spotifyNativeTimed
+        ? (hasNativeKaraoke ? 'spotify-native-word' : 'spotify-native-line')
+        : (hasNativeKaraoke ? 'yrc-word' : (nativeLines.length ? 'yrc-line' : (lrcLines.length ? 'lrc-line' : (plainLines.length ? 'plain-estimated' : 'fallback')))));
+    var selectedLines = exactLines.length
+      ? exactLines
+      : (nativeLines.length ? nativeLines : (lrcLines.length ? lrcLines : plainLines));
+    if (spotifyNativeTimed && !spotifyExactLines.length) {
+      selectedLines = selectedLines.map(function(line){
+        var copy = cloneLyricLine(line);
+        copy.source = timingSource;
+        copy.spotifyNative = true;
+        return copy;
+      });
     }
+    var lyricHelper = window.ShinaYuuLyricsSync;
+    var targetLyricDuration = song && song.duration || r.metadata && r.metadata.duration || getPlaybackDurationSeconds();
+    var lyricSyncMeta = {
+      sourceDuration: (spotifyNativeTimed || youtubeNativeTimed) ? targetLyricDuration : (r.match && r.match.duration || 0),
+      targetDuration: targetLyricDuration || 0,
+      score: (spotifyNativeTimed || youtubeNativeTimed) ? 100 : (r.match && r.match.score || 0),
+      source: String(r.source || timingSource)
+    };
     if (!selectedLines.length && r.instrumental) {
       selectedLines = [{ t:0, text:(appLanguage === 'en' ? 'Instrumental' : 'Nhạc không lời'), duration:9999, charCount:14, instrumental:true }];
       timingSource = 'instrumental';
     }
     var lines = withLyricFallback(selectedLines);
     if (lines.length && lines[0].fallback) timingSource = 'fallback';
-    setOriginalLyricsState(lines, hasNativeKaraoke, timingSource);
+    setOriginalLyricsState(lines, hasNativeKaraoke, timingSource, lyricSyncMeta);
     applyPreferredLyricsForCurrent(true);
+
+    // Local YouTube forced alignment is intentionally prepared in the backend
+    // so LRCLIB remains visible while the first-time model/audio analysis runs.
+    // Poll only for the current track; UI, effects, and playback never pause.
+    if (provider === 'qq' && r.alignment && r.alignment.status === 'processing' && alignmentAttempt < 90) {
+      if (youtubeAlignmentRefreshTimer) clearTimeout(youtubeAlignmentRefreshTimer);
+      youtubeAlignmentRefreshTimer = setTimeout(function(){
+        youtubeAlignmentRefreshTimer = null;
+        if (token !== trackSwitchToken) return;
+        fetchLyric(song || songOrId, token, alignmentAttempt + 1);
+      }, 4000);
+    }
   } catch (e) {
     if (token !== trackSwitchToken) return;
     var fallbackLines = withLyricFallback([]);
@@ -19940,8 +20304,13 @@ function isNoLyricText(text) {
     compact === '此歌曲为没有填词的纯音乐请您欣赏';
 }
 function withLyricFallback(lines) {
-  lines = Array.isArray(lines) ? lines.filter(function(line){ return line && String(line.text || '').trim(); }) : [];
-  if (lines.length && !lines.every(function(line){ return isNoLyricText(line.text); })) return lines;
+  lines = Array.isArray(lines) ? lines.filter(function(line){
+    return line && (String(line.text || '').trim() || line.spotifySilent);
+  }) : [];
+  var meaningful = lines.filter(function(line){
+    return !line.spotifySilent && !isNoLyricText(line.text);
+  });
+  if (meaningful.length) return lines;
   var text = currentLyricFallbackText();
   return text ? [{ t:0, text:text, duration:9999, charCount:Math.max(1, text.length), fallback:true }] : [];
 }
@@ -19961,6 +20330,68 @@ function finalizeLyricLineDurations(lines) {
   }
   return lines;
 }
+function parseSpotifyNativeLyricsLines(rawLines) {
+  rawLines = Array.isArray(rawLines) ? rawLines : [];
+  var prepared = rawLines.map(function(line, index){
+    var startMs = Number(line && line.startTimeMs);
+    var endMs = Number(line && line.endTimeMs);
+    return {
+      index:index,
+      startMs:isFinite(startMs) ? Math.max(0, startMs) : -1,
+      endMs:isFinite(endMs) ? Math.max(0, endMs) : 0,
+      text:String(line && line.words || '').replace(/\r?\n/g, ' ').trim(),
+      syllables:Array.isArray(line && line.syllables) ? line.syllables : []
+    };
+  }).filter(function(line){ return line.startMs >= 0; }).sort(function(a, b){
+    return a.startMs - b.startMs || a.index - b.index;
+  });
+
+  return prepared.map(function(line, index){
+    var next = prepared[index + 1];
+    var inferredEndMs = next && next.startMs > line.startMs ? next.startMs : line.startMs + 4800;
+    var endMs = line.endMs > line.startMs ? line.endMs : inferredEndMs;
+    var durationMs = Math.max(80, endMs - line.startMs);
+    var words = [];
+    var text = line.text;
+    var cursor = 0;
+
+    line.syllables.forEach(function(item){
+      var part = String(item && (item.text || item.word || item.words) || '');
+      var startMs = Number(item && item.startTimeMs);
+      var syllableEndMs = Number(item && item.endTimeMs);
+      if (!part || !isFinite(startMs) || startMs < 0) return;
+      var startIndex = text.indexOf(part, cursor);
+      if (startIndex < 0) startIndex = cursor;
+      var endIndex = Math.min(text.length, startIndex + part.length);
+      cursor = endIndex;
+      var wordEnd = isFinite(syllableEndMs) && syllableEndMs > startMs
+        ? syllableEndMs
+        : Math.min(endMs, startMs + 320);
+      words.push({
+        text:part,
+        t:startMs / 1000,
+        d:Math.max(0.04, (wordEnd - startMs) / 1000),
+        c0:Math.max(0, Math.min(text.length, startIndex)),
+        c1:Math.max(0, Math.min(text.length, endIndex))
+      });
+    });
+
+    return {
+      t:line.startMs / 1000,
+      duration:durationMs / 1000,
+      text:text,
+      words:words,
+      charCount:Math.max(1, text.length),
+      source:words.length ? 'spotify-native-word' : 'spotify-native-line',
+      spotifyNative:true,
+      spotifyExact:true,
+      spotifySilent:!text,
+      spotifyStartTimeMs:line.startMs,
+      spotifyEndTimeMs:endMs
+    };
+  });
+}
+
 function parseLyricText(text) {
   text = String(text || '');
   var helper = window.ShinaYuuLyricsSync;
@@ -20835,9 +21266,17 @@ function updatePlaybackProgressUi() {
 function bindPlaybackProgressEvents(audioEl) {
   if (!audioEl || audioEl._mineradioProgressBound) return;
   audioEl._mineradioProgressBound = true;
-  ['loadedmetadata', 'durationchange', 'timeupdate', 'seeked', 'play', 'pause', 'emptied'].forEach(function(name){
+  ['loadedmetadata', 'durationchange', 'timeupdate', 'seeking', 'seeked', 'ratechange', 'play', 'pause', 'emptied'].forEach(function(name){
     audioEl.addEventListener(name, updatePlaybackProgressUi);
   });
+  ['loadedmetadata', 'durationchange'].forEach(function(name){
+    audioEl.addEventListener(name, function(){
+      if (typeof window.refreshLyricTimelineForPlaybackDuration === 'function') window.refreshLyricTimelineForPlaybackDuration(audioEl.duration);
+      if (typeof pushDesktopLyricsState === 'function') pushDesktopLyricsState(true);
+    });
+  });
+  audioEl.addEventListener('seeking', function(){ onPlaybackClockDiscontinuity(Number(audioEl.currentTime) || 0, 'html-seeking'); });
+  audioEl.addEventListener('seeked', function(){ onPlaybackClockDiscontinuity(Number(audioEl.currentTime) || 0, 'html-seeked'); });
   ['play', 'playing', 'pause', 'ended', 'emptied', 'abort', 'error'].forEach(function(name){
     audioEl.addEventListener(name, function(){ syncPlaybackStateFromAudioEvent(name); });
   });
@@ -20908,12 +21347,14 @@ async function commitHtmlAudioSeek(targetSec) {
     beatOnsetFlag = false;
     // Commit exactly once. Updating currentTime on every pointermove caused a
     // burst of overlapping Range requests and left Chromium on stale buffers.
+    onPlaybackClockDiscontinuity(targetSec, 'html-seek-request');
     audio.currentTime = targetSec;
     setProgressVisual(durationSec > 0 ? targetSec / durationSec * 100 : 0);
     var actual = await waitForMediaSeek(audio, serial, 4600);
     if (serial !== progressDragState.seekSerial || switchToken !== trackSwitchToken) return false;
     syncBeatMapPlaybackCursor(actual, true);
     syncPodcastDjMapCursor(actual, true);
+    onPlaybackClockDiscontinuity(actual, 'html-seek-confirmed');
     resetRealtimeBeatEngine();
     if (wasPlaying && audio.paused) {
       await audio.play();
@@ -23240,7 +23681,18 @@ function bindFxPanel() {
       showToast((appLanguage === 'en' ? 'Saved track lyrics delay: ' : 'Đã lưu độ trễ lời của bài: ') + formatLyricDelayValue(trackLyricDelaySlider.value));
     });
   }
+  var trackLyricRateSlider = document.getElementById('fx-tracklyricrate');
+  if (trackLyricRateSlider && !trackLyricRateSlider.__trackLyricRateBound) {
+    trackLyricRateSlider.__trackLyricRateBound = true;
+    trackLyricRateSlider.addEventListener('input', function(){
+      setCurrentTrackLyricRate(parseFloat(trackLyricRateSlider.value), true);
+    });
+    trackLyricRateSlider.addEventListener('change', function(){
+      showToast((appLanguage === 'en' ? 'Saved track lyrics timeline: ' : 'Đã lưu tốc độ timeline lời: ') + formatLyricRateValue(trackLyricRateSlider.value));
+    });
+  }
   refreshCurrentTrackLyricDelayControls();
+  refreshCurrentTrackLyricRateControls();
   var lyricPicker = document.getElementById('lyric-color-picker');
   if (lyricPicker) {
     lyricPicker.addEventListener('input', function(){ setLyricColorCustom(lyricPicker.value, true); });
@@ -27164,22 +27616,45 @@ function normalizeDesktopLyricText(text) {
 }
 function currentDesktopLyricSnapshot() {
   var t = getLyricPlaybackSeconds();
+  var lookupT = getLyricVisualPlaybackSeconds(t);
   var lines = Array.isArray(lyricsLines) ? lyricsLines : [];
   if (playing && lines.length) {
-    var idx = -1;
-    for (var i = 0; i < lines.length; i++) {
-      if (lines[i].t <= t + 0.01) idx = i;
-      else break;
+    var lyricHelper = window.ShinaYuuLyricsSync;
+    var idx = lyricHelper && typeof lyricHelper.findLyricIndex === 'function'
+      ? lyricHelper.findLyricIndex(lines, lookupT)
+      : -1;
+    if (idx < 0 && (!lyricHelper || typeof lyricHelper.findLyricIndex !== 'function')) {
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i].t <= lookupT) idx = i;
+        else break;
+      }
     }
     if (idx >= 0) {
       var curLine = lines[idx] || { t:t, text:'' };
+      if (curLine.spotifySilent && Number(curLine.t) > t) {
+        idx = lyricHelper && typeof lyricHelper.findLyricIndex === 'function'
+          ? lyricHelper.findLyricIndex(lines, t)
+          : idx - 1;
+        curLine = idx >= 0 ? (lines[idx] || { t:t, text:'' }) : { t:t, text:'' };
+      }
       var nextLine = lines[idx + 1];
       var nextT = nextLine && nextLine.t > curLine.t ? nextLine.t : Math.min(getPlaybackDurationSeconds() || t + 4, curLine.t + (curLine.duration || 4.8));
-      var span = Math.max(0.75, nextT - curLine.t);
+      var span = Math.max(0.45, nextT - curLine.t);
+      var playbackSpan = span * getEffectiveLyricTimelineRate(currentLyricSong(), lyricSourceMode);
+      var entranceDuration = LYRIC_ENTRANCE_DURATION_SECONDS;
+      var entranceProgress = lyricHelper && typeof lyricHelper.visualEntranceProgress === 'function'
+        ? lyricHelper.visualEntranceProgress(t, Number(curLine.t) || t, entranceDuration, isExactNativeLyricTiming(lyricSourceMode))
+        : (Number(curLine.t) > t && isExactNativeLyricTiming(lyricSourceMode)
+          ? clampRange(1 - (Number(curLine.t) - t) / entranceDuration, 0, 1)
+          : 1);
       return {
-        text: normalizeDesktopLyricText(curLine.text || currentLyricFallbackText()),
-        progress: getLyricLineProgress(curLine, nextLine, t),
-        progressSpan: span
+        // A zero-width space prevents the desktop renderer from replacing a
+        // Spotify timed blank row with the track title.
+        text: curLine.spotifySilent ? '\u200b' : normalizeDesktopLyricText(curLine.text || currentLyricFallbackText()),
+        progress: curLine.spotifySilent ? 0 : getLyricLineProgress(curLine, nextLine, t),
+        progressSpan: Math.max(0.45, playbackSpan),
+        entranceProgress: entranceProgress,
+        entranceDuration: entranceDuration
       };
     }
     var introText = normalizeDesktopLyricText(currentLyricFallbackText());
@@ -27189,7 +27664,9 @@ function currentDesktopLyricSnapshot() {
       return {
         text: introText,
         progress: getLyricLineProgress({ t:0, text:introText, duration:Math.max(0.8, introEnd), charCount:Math.max(1, introText.length), fallback:true }, null, t),
-        progressSpan: Math.max(0.8, introEnd)
+        progressSpan: Math.max(0.8, introEnd * getEffectiveLyricTimelineRate(currentLyricSong(), lyricSourceMode)),
+        entranceProgress: 1,
+        entranceDuration: LYRIC_ENTRANCE_DURATION_SECONDS
       };
     }
   }
@@ -27197,10 +27674,12 @@ function currentDesktopLyricSnapshot() {
     return {
       text: normalizeDesktopLyricText(stageLyrics.currentText),
       progress: stageLyrics.current && stageLyrics.current.userData ? clampRange(Number(stageLyrics.current.userData.lastLyricProgress) || 0, 0, 1) : 0,
-      progressSpan: 4.8
+      progressSpan: 4.8,
+      entranceProgress: 1,
+      entranceDuration: LYRIC_ENTRANCE_DURATION_SECONDS
     };
   }
-  return { text: normalizeDesktopLyricText(currentDesktopSongMeta().title || 'ShinaYuu Music'), progress: 0, progressSpan: 4.8 };
+  return { text: normalizeDesktopLyricText(currentDesktopSongMeta().title || 'ShinaYuu Music'), progress: 0, progressSpan: 4.8, entranceProgress: 1, entranceDuration: LYRIC_ENTRANCE_DURATION_SECONDS };
 }
 function desktopOverlayColorValue(value, fallback) {
   var raw = String(value || '').trim();
@@ -27282,6 +27761,9 @@ function desktopLyricsPayload(forceBeatMap) {
     text: lyric.text,
     progress: lyric.progress,
     progressSpan: lyric.progressSpan,
+    entranceProgress: lyric.entranceProgress == null ? 1 : lyric.entranceProgress,
+    entranceDuration: lyric.entranceDuration || LYRIC_ENTRANCE_DURATION_SECONDS,
+    clockResetSerial: lyricClockResetSerial,
     title: meta.title,
     artist: meta.artist,
     playing: !!playing,
@@ -27328,7 +27810,7 @@ function pushDesktopLyricsState(force) {
   var payload = desktopLyricsPayload(!!force);
   var colors = payload.colors || {};
   var motion = payload.motion || {};
-  var key = payload.enabled + '|' + payload.text + '|' + Math.round(payload.progress * 1000) + '|' + Math.round((payload.progressSpan || 0) * 100) + '|' + payload.playing + '|' + payload.size + '|' + payload.opacity + '|' + payload.y + '|' + payload.clickThrough + '|' + payload.cinema + '|' + payload.highlightFollow + '|' + payload.frameRate + '|' + payload.fontFamily + '|' + payload.fontWeight + '|' + payload.letterSpacing + '|' + payload.lineHeight + '|' + payload.lyricScale + '|' + payload.feather + '|' + payload.beatMapKey + '|' + colors.primary + '|' + colors.secondary + '|' + colors.highlight + '|' + colors.glow + '|' + motion.lyricGlow + '|' + motion.lyricGlowBeat + '|' + Math.round((motion.lyricGlowStrength || 0) * 100) + '|' + Math.round((motion.highBloom || 0) * 100) + '|' + Math.round((motion.beatGlow || 0) * 100) + '|' + Math.round((motion.beatPulse || 0) * 100) + '|' + Math.round((motion.bass || 0) * 100);
+  var key = payload.enabled + '|' + payload.text + '|' + Math.round(payload.progress * 1000) + '|' + Math.round((payload.progressSpan || 0) * 100) + '|' + payload.clockResetSerial + '|' + payload.playing + '|' + payload.size + '|' + payload.opacity + '|' + payload.y + '|' + payload.clickThrough + '|' + payload.cinema + '|' + payload.highlightFollow + '|' + payload.frameRate + '|' + payload.fontFamily + '|' + payload.fontWeight + '|' + payload.letterSpacing + '|' + payload.lineHeight + '|' + payload.lyricScale + '|' + payload.feather + '|' + payload.beatMapKey + '|' + colors.primary + '|' + colors.secondary + '|' + colors.highlight + '|' + colors.glow + '|' + motion.lyricGlow + '|' + motion.lyricGlowBeat + '|' + Math.round((motion.lyricGlowStrength || 0) * 100) + '|' + Math.round((motion.highBloom || 0) * 100) + '|' + Math.round((motion.beatGlow || 0) * 100) + '|' + Math.round((motion.beatPulse || 0) * 100) + '|' + Math.round((motion.bass || 0) * 100);
   if (!force && key === desktopOverlayPushState.lastLyricsKey && now - desktopOverlayPushState.lyricsAt < 900) return;
   desktopOverlayPushState.lyricsAt = now;
   desktopOverlayPushState.lastLyricsKey = key;

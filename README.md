@@ -1,98 +1,98 @@
-# ShinaYuu Music 1.1.2
+# ShinaYuu Music 1.1.3
 
-Trình phát nhạc desktop cho Windows, hỗ trợ Spotify, YouTube, lyrics đồng bộ, Visual Effects, Desktop Lyrics và Discord Rich Presence.
+ShinaYuu Music is a Windows desktop visual music player with Spotify and YouTube playback, synchronized lyrics, Desktop Lyrics, real-time visual effects, Discord Rich Presence, and a unified in-app master volume control.
 
-## Lyrics Spotify
+This project is a modified work based on the original **Mineradio** repository by XxHuberrr. It is distributed under the GNU General Public License version 3 only (`GPL-3.0-only`). See `LICENSE` and `NOTICE.md`.
 
-Khi phát từ Spotify, ứng dụng ưu tiên timestamp lyrics theo dòng của Spotify và dùng cùng đồng hồ phát của Spotify SDK. Nếu nguồn này không khả dụng, ứng dụng tự chuyển sang LRCLIB.
+## Highlights
 
-Hiệu ứng lyrics không còn làm câu xuất hiện chậm: dòng mới được dựng trước 180 ms, chạy fade/blur/trượt/scale và hoàn tất đúng timestamp Spotify. Phần tô sáng karaoke vẫn bắt đầu đúng thời điểm lời cất lên.
+- Spotify Premium playback through a hidden Microsoft Edge WebView2 host.
+- YouTube playback through `yt-dlp` with `youtubei.js` fallback support.
+- Spotify-native synchronized lyrics when available.
+- YouTube Music lyrics, YouTube captions, LRCLIB fallback, and optional local word alignment.
+- Existing 3D lyrics, Desktop Lyrics, glow, blur, slide, scale, particles, and beat-reactive visuals.
+- Discord profile card and local Discord Rich Presence IPC.
+- Unified master volume for YouTube audio and the Spotify WebView2 player.
+- NSIS installer that checks for Microsoft Edge WebView2 Runtime and installs the Evergreen Runtime when it is missing.
 
-Với lyrics LRCLIB, người dùng vẫn có thể chỉnh độ trễ và tốc độ timeline riêng cho từng bài.
+## Requirements
 
-## Support the Original Author
+- Windows 10 or Windows 11 x64.
+- Spotify Premium for direct Spotify playback.
+- Internet access for Spotify, YouTube, lyrics providers, and first-time WebView2/forced-alignment provisioning.
+- Node.js 24 or later for source development.
 
-If Mineradio has accompanied you through an extra song or two, feel free to buy the original author a cup of coffee to support their incredible initial design.
-
-[View the Original Support Page](./docs/SUPPORT.md)
-
-The core goal of version 1.1.1 is to clean up and reorganize Mineradio into a clean, publicly downloadable installation version. The default visual parameters are pulled from the built-in "Default Test" user profile, allowing users to experience a unified visual feel from the very first boot. The 3D playlist rack, lyric layers, user profiles, and background performance strategies have all been wrapped up and finalized in this single release cycle.
-
-## Core Features
-
-* **Dynamic Home Page:** Daily recommendations, personal radio, "continue listening", listening profile insights, and quick access to your custom playlists.
-* **Immersive Playback Visuals:** Switches to the *Emily* / *Default* playback state once music starts, where the lyric stage and particle stage work in perfect sync.
-* **Beat-Based Cinematic Camera System:** A visual engine that adapts dynamically to the rhythm of the music.
-* **Lyric Stage Control:** Supports custom lyrics, lyric positioning, and advanced visual tweaking.
-* **Custom Album Art:** Supports image uploading and built-in cropping.
-* **3D Playlist Rack:** Triggered via right-click to let you intuitively browse through your playlist queues.
-* **GitHub Releases Update Detection:** Automated update checks with an in-app download entrance linking to this fork.
-* **YouTube integration:** Search and play songs from YouTube.
-* **Spotify integration:** Search and play songs from Spotify.
-* **Instant Out-of-the-Box Experience:** Ships with a built-in "Default Test" visual user profile so the software's default look matches this preset perfectly on its first launch.
-
-
-## Development 
+## Development
 
 ```powershell
 npm install
 npm start
 ```
 
-## Build bản chạy thử
+Run the test suite:
+
+```powershell
+npm test
+```
+
+Build an unpacked Windows application:
 
 ```powershell
 npm run build:win:dir
 ```
 
-Mở:
-
-```text
-dist\win-unpacked\ShinaYuuMusic.exe
-```
-
-## Build Setup
+Build the NSIS installer:
 
 ```powershell
 npm run build:win
 ```
 
-Kết quả:
+Installer output:
 
 ```text
-dist\ShinaYuu-Music-1.1.2-Setup.exe
+dist\ShinaYuu-Music-1.1.3-Setup.exe
 ```
 
-## Spotify
+## Spotify configuration
 
-- Spotify Premium để phát trực tiếp.
-- Redirect URI mặc định:
+Create a Spotify application and register this exact redirect URI:
 
 ```text
 http://127.0.0.1:43821/api/spotify/callback
 ```
 
-## Discord Rich Presence
+The application uses OAuth PKCE and does not require a client secret in the desktop client.
 
-1. Tạo Discord Application tên theo ý của bạn
-2. Sao chép **Application ID**.
-3. Mở Discord Desktop.
-4. Trong ứng dụng ShinaYuu Music, mở **Thiết lập Discord**, nhập Application ID rồi bấm **Lưu & kết nối**.
+## Unified master volume
 
-Không cần Bot Token, Client Secret hoặc OAuth trình duyệt.
+The volume button in the application is the master control for both playback engines:
 
-## Yêu cầu phát triển
+- YouTube and local audio are controlled through the application audio graph.
+- Spotify is controlled directly through `Spotify.Player#setVolume()` inside the hidden WebView2 host.
+- The selected volume is stored locally and applied before the next Spotify track starts.
 
-- Windows 10/11 x64.
-- Node.js 24 trở lên.
-- Microsoft Edge WebView2 Runtime.
+Windows may still display a separate WebView2 audio process in Volume Mixer because WebView2 uses its own process tree. Normal users no longer need to adjust that entry manually; the in-app master volume controls the actual Spotify output.
 
-## Copyright and License
+## YouTube lyrics pipeline
 
-Copyright (C) 2026 XxHuberrr.
-Copyright (C) 2026 x.kihuh (For modifications and maintenance).
+ShinaYuu Music checks the following sources in order:
 
-This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE) file for details.
+1. YouTube captions with usable timing.
+2. Lyrics from the YouTube Music lyrics tab.
+3. LRCLIB synchronized or plain lyrics.
+4. Local forced alignment when plain lyrics are available and word timing is missing.
 
-The MR Logo, the name "Mineradio," the UI visual design, and original visual assets belong entirely to the original author. Third-party dependencies and services follow their respective open-source licenses and terms of service.
+The existing UI, UX, Desktop Lyrics, and visual effects remain unchanged. Only the lyric data adapters and timing sources are extended.
 
+## Documentation
+
+- `SETUP_SPOTIFY_YOUTUBE.md` — provider setup and playback architecture.
+- `DISCORD_SETUP.md` — Discord Rich Presence setup.
+- `PRIVACY.md` — local data and third-party services.
+- `SECURITY.md` — security reporting and credential handling.
+- `NOTICE.md` — attribution and third-party notices.
+- `CHANGELOG.md` — release history.
+
+## License
+
+ShinaYuu Music is licensed under `GPL-3.0-only`. Redistribution of source or binaries must preserve the license, copyright notices, attribution, and the corresponding source obligations described by GPLv3.

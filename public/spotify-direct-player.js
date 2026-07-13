@@ -25,8 +25,11 @@
     positionMs: 0,
     durationMs: 0,
     updatedAt: 0,
+    clockUpdatedAt: 0,
     endedHandledFor: '',
     pollTimer: null,
+    clockSyncTimer: null,
+    clockSyncBusy: false,
     volumeTimer: null,
     sdkPlayer: null,
     sdkPromise: null,
@@ -398,10 +401,27 @@
   }
   window.isSpotifyPlaybackActive = isSpotifyActive;
 
+  function monotonicNowMs() {
+    return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+  }
+
   function nowPositionMs() {
+    if (spotifyDirectState.seeking) return Math.max(0, Number(spotifyDirectState.seekTargetMs || spotifyDirectState.positionMs || 0));
+    var helper = window.ShinaYuuLyricsSync;
+    var now = monotonicNowMs();
+    if (helper && typeof helper.monotonicPositionSeconds === 'function') {
+      return helper.monotonicPositionSeconds(
+        Number(spotifyDirectState.positionMs || 0) / 1000,
+        Number(spotifyDirectState.clockUpdatedAt || now),
+        !!spotifyDirectState.isPlaying,
+        1,
+        now,
+        Number(spotifyDirectState.durationMs || 0) / 1000
+      ) * 1000;
+    }
     var position = Number(spotifyDirectState.positionMs || 0);
-    if (spotifyDirectState.isPlaying && spotifyDirectState.updatedAt) {
-      position += Math.max(0, Date.now() - spotifyDirectState.updatedAt);
+    if (spotifyDirectState.isPlaying && spotifyDirectState.clockUpdatedAt) {
+      position += Math.max(0, now - spotifyDirectState.clockUpdatedAt);
     }
     var duration = Number(spotifyDirectState.durationMs || 0);
     return duration > 0 ? Math.min(position, duration) : position;
@@ -412,6 +432,7 @@
     var previousPlaying = spotifyDirectState.isPlaying;
     var previousPosition = nowPositionMs();
     var previousDuration = Number(spotifyDirectState.durationMs || 0);
+    var previousUri = String(spotifyDirectState.currentUri || '');
 
     // Spotify can emit one or more stale player_state_changed snapshots after
     // a seek request. Do not let those snapshots pull the progress bar back
@@ -439,8 +460,17 @@
     if (next.durationMs != null) spotifyDirectState.durationMs = Math.max(0, Number(next.durationMs) || 0);
     if (next.isPlaying != null) spotifyDirectState.isPlaying = !!next.isPlaying;
     spotifyDirectState.updatedAt = Date.now();
+    spotifyDirectState.clockUpdatedAt = monotonicNowMs();
 
     if (!isSpotifyActive()) return;
+    var currentPosition = nowPositionMs();
+    var positionJump = next.positionMs != null ? Math.abs(currentPosition - previousPosition) : 0;
+    if ((next.currentUri != null && previousUri && String(next.currentUri || '') !== previousUri) || positionJump > 1450) {
+      if (typeof window.onPlaybackClockDiscontinuity === 'function') window.onPlaybackClockDiscontinuity(currentPosition / 1000, 'spotify-state');
+    }
+    if (next.durationMs != null && Math.abs(Number(spotifyDirectState.durationMs || 0) - previousDuration) > 250) {
+      if (typeof window.refreshLyricTimelineForPlaybackDuration === 'function') window.refreshLyricTimelineForPlaybackDuration(Number(spotifyDirectState.durationMs || 0) / 1000);
+    }
     window.playing = spotifyDirectState.isPlaying;
     if (typeof window.setPlayIcon === 'function') window.setPlayIcon(window.playing);
     if (typeof window.updatePlaybackProgressUi === 'function') window.updatePlaybackProgressUi();
@@ -504,12 +534,17 @@
   async function applySpotifySdkVolume(player) {
     var value = targetSpotifyVolume();
     if (usesRemoteSpotifyHost()) {
-      if (spotifyDirectState.deviceId) {
-        await postJson('/api/spotify/player/volume', {
-          deviceId: spotifyDirectState.deviceId,
-          volumePercent: Math.round(value * 100)
-        }).catch(function () {});
-      }
+      await postJson('/api/spotify/host/volume', {
+        volume: value,
+        volumePercent: Math.round(value * 100)
+      }).catch(async function () {
+        if (spotifyDirectState.deviceId) {
+          await postJson('/api/spotify/player/volume', {
+            deviceId: spotifyDirectState.deviceId,
+            volumePercent: Math.round(value * 100)
+          }).catch(function () {});
+        }
+      });
       return value;
     }
     player = player || spotifyDirectState.sdkPlayer;
@@ -892,11 +927,60 @@
     return { id: sdkDevice.id, name: 'ShinaYuu Music', mode: 'sdk', active: false };
   }
 
+  function stopSpotifyClockSync() {
+    if (spotifyDirectState.clockSyncTimer) {
+      clearInterval(spotifyDirectState.clockSyncTimer);
+      spotifyDirectState.clockSyncTimer = null;
+    }
+    spotifyDirectState.clockSyncBusy = false;
+  }
+
+  async function syncSpotifySdkClock() {
+    if (!isSpotifyActive() || spotifyDirectState.mode !== 'sdk' || !spotifyDirectState.sdkPlayer || spotifyDirectState.seeking || spotifyDirectState.clockSyncBusy) return;
+    spotifyDirectState.clockSyncBusy = true;
+    try {
+      var state = await spotifyDirectState.sdkPlayer.getCurrentState().catch(function () { return null; });
+      if (!state || !isSpotifyActive()) return;
+      var current = state.track_window && state.track_window.current_track;
+      var uri = current && current.uri || '';
+      if (spotifyDirectState.currentUri && uri && spotifyDirectState.currentUri !== uri) return;
+      var actualMs = Math.max(0, Number(state.position || 0));
+      var estimatedMs = nowPositionMs();
+      var driftMs = actualMs - estimatedMs;
+      var playingChanged = spotifyDirectState.isPlaying !== !state.paused;
+      // player_state_changed is documented to arrive at random intervals.
+      // Re-anchor to the SDK clock when drift reaches roughly two frames so
+      // lyric transitions use the same playback position as Spotify.
+      if (playingChanged || Math.abs(driftMs) >= 34) {
+        updateSpotifyState({
+          mode: 'sdk',
+          currentUri: uri || spotifyDirectState.currentUri,
+          currentTrackId: uri ? uri.split(':').pop() : spotifyDirectState.currentTrackId,
+          positionMs: actualMs,
+          durationMs: Number(state.duration || current && current.duration_ms || spotifyDirectState.durationMs || 0),
+          isPlaying: !state.paused
+        }, 'sdk-clock-sync');
+      }
+    } catch (error) {
+      console.warn('[SpotifyClockSync]', error && (error.message || error));
+    } finally {
+      spotifyDirectState.clockSyncBusy = false;
+    }
+  }
+
+  function startSpotifyClockSync() {
+    stopSpotifyClockSync();
+    if (spotifyDirectState.mode !== 'sdk' || !spotifyDirectState.sdkPlayer) return;
+    spotifyDirectState.clockSyncTimer = setInterval(syncSpotifySdkClock, 500);
+    setTimeout(syncSpotifySdkClock, 120);
+  }
+
   function stopSpotifyPolling() {
     if (spotifyDirectState.pollTimer) {
       clearInterval(spotifyDirectState.pollTimer);
       spotifyDirectState.pollTimer = null;
     }
+    stopSpotifyClockSync();
   }
 
   async function pollSpotifyState() {
@@ -941,7 +1025,10 @@
     stopSpotifyPolling();
     // The SDK state is the source of truth for in-app playback. Polling the
     // Web API here can make the UI look active even when local audio failed.
-    if (spotifyDirectState.mode === 'sdk' && spotifyDirectState.sdkPlayer) return;
+    if (spotifyDirectState.mode === 'sdk' && spotifyDirectState.sdkPlayer) {
+      startSpotifyClockSync();
+      return;
+    }
     spotifyDirectState.pollTimer = setInterval(pollSpotifyState, 1700);
     setTimeout(pollSpotifyState, 350);
   }
@@ -1023,7 +1110,9 @@
     // the SDK/host confirms the new position.
     spotifyDirectState.positionMs = positionMs;
     spotifyDirectState.updatedAt = Date.now();
+    spotifyDirectState.clockUpdatedAt = monotonicNowMs();
     if (typeof window.updatePlaybackProgressUi === 'function') window.updatePlaybackProgressUi();
+    if (typeof window.onPlaybackClockDiscontinuity === 'function') window.onPlaybackClockDiscontinuity(positionMs / 1000, 'spotify-seek-request');
     resetSpotifyVisualCursor(positionMs / 1000);
     resetSpotifyRealtimeDetector();
 
@@ -1045,6 +1134,7 @@
         durationMs: Number(confirmedState.duration || spotifyDirectState.durationMs || 0),
         isPlaying: confirmedState.paused !== true
       }, 'seek-confirmed');
+      if (typeof window.onPlaybackClockDiscontinuity === 'function') window.onPlaybackClockDiscontinuity(Number(confirmedState.position || positionMs) / 1000, 'spotify-seek-confirmed');
       return true;
     } catch (error) {
       if (serial === spotifyDirectState.seekSerial) {
@@ -1072,16 +1162,15 @@
 
   function setSpotifyDirectVolume(value) {
     value = Math.max(0, Math.min(1, Number(value) || 0));
-    if (!isSpotifyActive()) return;
     if (spotifyDirectState.volumeTimer) clearTimeout(spotifyDirectState.volumeTimer);
     spotifyDirectState.volumeTimer = setTimeout(function () {
-      if (spotifyDirectState.mode === 'sdk' && spotifyDirectState.sdkPlayer) {
+      if (usesRemoteSpotifyHost()) {
+        postJson('/api/spotify/host/volume', { volume: value, volumePercent: Math.round(value * 100) })
+          .catch(function (error) { console.warn('[SpotifyMasterVolume]', error); });
+      } else if (spotifyDirectState.mode === 'sdk' && spotifyDirectState.sdkPlayer) {
         spotifyDirectState.sdkPlayer.setVolume(value).catch(function (error) { console.warn('[SpotifyVolume]', error); });
-      } else {
-        postJson('/api/spotify/player/volume', { deviceId: spotifyDirectState.deviceId, volumePercent: Math.round(value * 100) })
-          .catch(function (error) { console.warn('[SpotifyVolume]', error); });
       }
-    }, 80);
+    }, 45);
   }
 
   async function startSpotifyTrack(song, descriptor, opts, token) {
@@ -1112,6 +1201,7 @@
     spotifyDirectState.positionMs = Math.max(0, Math.round(Number(opts && opts.resumeAt || 0) * 1000));
     spotifyDirectState.durationMs = Number(song.duration || descriptor.metadata && descriptor.metadata.duration || 0);
     spotifyDirectState.updatedAt = Date.now();
+    spotifyDirectState.clockUpdatedAt = monotonicNowMs();
     spotifyDirectState.endedHandledFor = '';
 
     window.playing = false;
@@ -1337,7 +1427,7 @@
 
   window.setVolume = function (value, silent) {
     originalSetVolume.call(window, value, silent);
-    if (isSpotifyActive()) setSpotifyDirectVolume(window.targetVolume);
+    setSpotifyDirectVolume(window.targetVolume);
   };
 
   window.getPlaybackDurationSeconds = function () {
@@ -1457,6 +1547,7 @@
     setTimeout(prewarmSpotifyDirectPlayer, 1200);
   }
   window.prewarmSpotifyDirectPlayer = prewarmSpotifyDirectPlayer;
+  setTimeout(function () { setSpotifyDirectVolume(targetSpotifyVolume()); }, 450);
 
   window.addEventListener('beforeunload', function () {
     stopSpotifyPolling();

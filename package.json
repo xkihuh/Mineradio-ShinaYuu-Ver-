@@ -1,8 +1,8 @@
 {
   "name": "shinayuu-music",
   "productName": "ShinaYuu Music",
-  "version": "1.1.2",
-  "description": "Trình phát nhạc hình ảnh Việt–Anh cho Windows với Spotify, YouTube và Discord Rich Presence.",
+  "version": "1.1.3",
+  "description": "A Windows visual music player with Spotify, YouTube, synchronized lyrics, Discord Rich Presence, and integrated master volume control.",
   "author": "ShinaYuu",
   "main": "desktop/main.js",
   "private": true,
@@ -12,14 +12,18 @@
     "build:win": "electron-builder --win nsis",
     "build:win:dir": "electron-builder --win dir",
     "preview:win": "node build/preview-win.js",
-    "test": "node tests/provider-regression.test.js && node tests/spotify-auth-regression.test.js && node tests/spotify-direct-player-regression.test.js && node tests/realtime-playback-regression.test.js && node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js && node tests/ui-regression.test.js && node tests/packaging-regression.test.js && node tests/spotify-host-visibility-regression.test.js && node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
+    "test": "node tests/master-volume-regression.test.js && node tests/webview2-installer-regression.test.js && node tests/youtube-music-lyrics-regression.test.js && node tests/youtube-caption-lyrics-regression.test.js && node tests/youtube-forced-alignment-regression.test.js && node tests/provider-regression.test.js && node tests/spotify-auth-regression.test.js && node tests/spotify-direct-player-regression.test.js && node tests/realtime-playback-regression.test.js && node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js && node tests/ui-regression.test.js && node tests/packaging-regression.test.js && node tests/spotify-host-visibility-regression.test.js && node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
     "test:providers": "node tests/provider-regression.test.js",
     "test:spotify": "node tests/spotify-direct-player-regression.test.js",
     "test:ui": "node tests/ui-regression.test.js",
     "test:packaging": "node tests/packaging-regression.test.js",
     "test:spotify-auth": "node tests/spotify-auth-regression.test.js",
     "test:discord": "node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
-    "test:lyrics": "node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js"
+    "test:lyrics": "node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js",
+    "test:youtube-lyrics": "node tests/youtube-caption-lyrics-regression.test.js && node tests/youtube-forced-alignment-regression.test.js",
+    "test:youtube-music-lyrics": "node tests/youtube-music-lyrics-regression.test.js",
+    "test:volume": "node tests/master-volume-regression.test.js",
+    "test:webview2": "node tests/webview2-installer-regression.test.js"
   },
   "build": {
     "appId": "com.shinayuu.music",
@@ -38,6 +42,8 @@
       "build/**/*",
       "server.js",
       "music-providers.js",
+      "youtube-caption-provider.js",
+      "youtube-forced-aligner.js",
       "dj-analyzer.js",
       "package.json",
       "!public/index.*.html",
@@ -70,8 +76,9 @@
       "uninstallerSidebar": "build/installerSidebar.bmp",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh",
-      "artifactName": "ShinaYuu-Music-${version}-Setup.${ext}"
-    }
+      "artifactName": "ShinaYuu-Music-1.1.3-Setup.${ext}"
+    },
+    "buildVersion": "1.1.3"
   },
   "mineradio": {
     "update": {
@@ -85,6 +92,8 @@
   },
   "dependencies": {
     "@webviewjs/webview": "0.4.0",
+    "extract-zip": "^2.0.1",
+    "ffmpeg-static": "^5.3.0",
     "gsap": "^3.15.0",
     "mpg123-decoder": "^1.0.3",
     "youtubei.js": "^17.2.0"
@@ -102,6 +111,12 @@
       "applicationId": "",
       "largeImageKey": "shinayuu",
       "largeImageText": "ShinaYuu Music"
+    },
+    "displayVersion": "1.1.3",
+    "webview2": {
+      "distribution": "evergreen-bootstrapper",
+      "installWhenMissing": true
     }
-  }
+  },
+  "license": "GPL-3.0-only"
 }

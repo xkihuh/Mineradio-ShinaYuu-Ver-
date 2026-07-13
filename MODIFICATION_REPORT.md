@@ -1,14 +1,22 @@
-# Modification report — ShinaYuu Music 1.1.2
+# Modification Report — ShinaYuu Music 1.1.3
 
-## Phân chia phiên bản
+## Project relationship
 
-- Tất cả chức năng đã có trước ngày 2026-07-12 được gom vào mốc **1.1.1**.
-- Tất cả thay đổi thực hiện trong ngày 2026-07-12 được phát hành dưới phiên bản **1.1.2**.
+ShinaYuu Music is a modified work based on the original Mineradio project. The project preserves original attribution and remains licensed under GNU GPL version 3 only.
 
-## Thay đổi mới nhất
+## Version promotion
 
-- Khôi phục hiệu ứng chuyển lyrics nhưng chuyển toàn bộ animation sang cửa sổ pre-roll 180 ms.
-- Dòng mới đạt opacity 100%, blur 0 và vị trí cuối đúng timestamp Spotify.
-- Dòng cũ thoát đồng thời, tạo chuyển tiếp hai lớp.
-- Karaoke progress không dùng lookahead.
-- Desktop Lyrics tự nội suy animation giữa các gói IPC.
+- `1.1.1` represents the stable baseline.
+- `1.1.2` contains the lyric transition, Spotify timing, Discord IPC, and installer-path work completed on 2026-07-12.
+- Patch revisions `1.1.2.1` through `1.1.2.4` were development builds.
+- Patch `1.1.2.4` was accepted and promoted to stable release `1.1.3`.
+
+## 1.1.3 changes
+
+- Added YouTube Music lyrics retrieval.
+- Preserved caption and LRCLIB fallback behavior.
+- Added local word alignment for unsynchronized YouTube lyrics.
+- Added unified master volume for Spotify WebView2 and YouTube playback.
+- Added WebView2 Evergreen Runtime provisioning to the installer.
+- Standardized Markdown documentation in English.
+- Added release and regression documentation for 1.1.3.

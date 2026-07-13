@@ -1,35 +1,48 @@
 # Changelog
 
+All notable changes to ShinaYuu Music are documented in this file.
+
+## 1.1.3 — 2026-07-13
+
+### YouTube lyrics
+
+- Added lyrics retrieval from the YouTube Music lyrics tab.
+- Kept YouTube caption timing as the first exact-video timing source.
+- Added LRCLIB fallback when native YouTube sources are unavailable.
+- Added local forced alignment for plain lyrics when word timing is missing.
+- Preserved the existing lyrics UI, Desktop Lyrics, 3D layout, and visual effects.
+
+### Master volume
+
+- Added a unified master volume path for YouTube and Spotify playback.
+- Added a local control endpoint between the Electron renderer and the hidden Spotify WebView2 host.
+- Applied Spotify volume through `Spotify.Player#setVolume()` instead of relying only on the Spotify Connect volume endpoint.
+- Restored the saved volume before Spotify playback starts and synchronized mute state.
+
+### WebView2 deployment
+
+- Added NSIS detection for Microsoft Edge WebView2 Runtime.
+- Added automatic Evergreen Bootstrapper installation when the Runtime is missing.
+- Kept application installation available when WebView2 installation fails, with a clear installer warning.
+
+### Release and documentation
+
+- Promoted patch line `1.1.2.4` to stable release `1.1.3`.
+- Updated package metadata, Windows build metadata, installer naming, User-Agent strings, tests, and build scripts.
+- Standardized project Markdown documentation in English.
+- Added the stable release document `RELEASE_1.1.3.md`.
+
 ## 1.1.2 — 2026-07-12
 
-### Lyrics và tiến độ phát
+- Added Spotify-native lyric timing and LRCLIB timing correction.
+- Added per-track lyric offset and timeline adjustment for non-native sources.
+- Added lyric visual pre-roll so transitions finish at the vocal timestamp.
+- Reworked Discord IPC connection, error reporting, and configuration UI.
+- Fixed NSIS installation-directory validation.
 
-- Ưu tiên timestamp lyrics theo dòng của Spotify và dùng cùng đồng hồ phát của Spotify SDK.
-- Giữ nguyên `startTimeMs`, `endTimeMs`, dòng trống và dữ liệu syllable khi nguồn Spotify cung cấp.
-- Đồng bộ lại vị trí bằng `Spotify.Player#getCurrentState()` và xử lý đúng khi tua, đổi bài hoặc đồng hồ phát nhảy vị trí.
-- Không áp dụng offset hoặc co giãn timeline LRCLIB lên lyrics Spotify nguyên bản.
-- Với LRCLIB, hỗ trợ `[offset:...]`, độ trễ riêng từng bài và điều chỉnh tốc độ timeline để sửa lệch tăng dần.
-- Giữ hiệu ứng fade, blur, trượt, scale, glow và particle nhưng chạy trước timestamp Spotify 180 ms; hiệu ứng hoàn tất đúng lúc lời bắt đầu.
-- Tiến độ karaoke vẫn bắt đầu đúng timestamp, không chạy sớm theo cửa sổ hiệu ứng.
-- Desktop Lyrics dùng hai lớp khi chuyển câu: câu cũ thoát ra trong lúc câu mới chuẩn bị, tránh độ trễ nhìn thấy.
+## 1.1.1 — Baseline
 
-### Discord
-
-- Thay decoder RPC cũ bằng Discord IPC client tích hợp.
-- Xử lý gói READY bị phân mảnh, PING/PONG, timeout và tự kết nối lại an toàn.
-- Phân biệt Discord chưa mở, IPC bị chặn và Application ID không hợp lệ.
-- Chuyển thiết lập Discord sang modal riêng và tự khôi phục Application ID đã lưu.
-
-### Cài đặt và đóng gói
-
-- Sửa kiểm tra hậu tố thư mục cài đặt `\ShinaYuu Music` trong NSIS.
-- Giữ quy trình build Electron + NSIS và tên bộ cài `ShinaYuu-Music-1.1.2-Setup.exe`.
-
-## 1.1.1 — nền tảng trước ngày 2026-07-12
-
-- Đổi thương hiệu Mineradio thành ShinaYuu Music.
-- Khôi phục Electron làm cửa sổ chính và Spotify WebView2 host chạy ẩn.
-- Spotify Web Playback SDK, YouTube yt-dlp, tìm kiếm hai nguồn và hàng chờ phát nhạc.
-- Sửa tua Spotify/YouTube, phân tích nhịp thời gian thực, fullscreen, Visual Effects và Desktop Lyrics.
-- Làm lại Spotify OAuth, cache hồ sơ và xử lý HTTP 429.
-- Thêm Discord Profile Card và Rich Presence cục bộ.
+- Rebranded Mineradio as ShinaYuu Music.
+- Restored Electron as the main window and added a hidden Spotify WebView2 host.
+- Added Spotify Web Playback SDK, YouTube playback through `yt-dlp`, mixed-provider search, and queue handling.
+- Added fullscreen, Visual Effects, Desktop Lyrics, real-time beat analysis, and Discord Rich Presence.

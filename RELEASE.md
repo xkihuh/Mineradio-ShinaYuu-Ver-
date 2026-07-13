@@ -1,6 +1,7 @@
-# ShinaYuu Music 1.1.2
+# Current Release
 
-Bản phát hành hiện tại là **1.1.2**.
+The current stable release is **ShinaYuu Music 1.1.3**.
 
-- Mốc nền tảng trước hôm nay: `RELEASE_1.1.1.md`.
-- Toàn bộ thay đổi ngày 2026-07-12: `RELEASE_1.1.2.md`.
+- Baseline release: `RELEASE_1.1.1.md`
+- Previous stable release: `RELEASE_1.1.2.md`
+- Current stable release: `RELEASE_1.1.3.md`

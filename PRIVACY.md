@@ -1,31 +1,34 @@
-# Quyền riêng tư / Privacy
+# Privacy
 
-ShinaYuu Music là ứng dụng desktop chạy cục bộ. Ứng dụng không được thiết kế để gửi lịch sử nghe nhạc, tìm kiếm, ảnh bìa tùy chỉnh, lời bài hát hoặc token đăng nhập về một máy chủ của dự án.
+ShinaYuu Music is a local desktop application. The project does not operate a telemetry service and is not designed to upload listening history, searches, custom artwork, lyrics, or account tokens to a ShinaYuu Music server.
 
-## Dữ liệu lưu trên máy / Locally stored data
+## Locally stored data
 
-Ứng dụng có thể lưu:
+The application may store the following data on the user's computer:
 
-- Spotify Client ID, market và ngôn ngữ trong `music-sources.json`.
-- Spotify OAuth access/refresh token trong `spotify-token.json`.
-- Lịch sử tìm kiếm.
-- Playlist cache và metadata cần cho giao diện.
-- Ảnh bìa, lời bài hát và bố cục lời tùy chỉnh.
-- Thiết lập visualizer, desktop lyrics và wallpaper.
-- Cache phân tích nhịp và file cập nhật.
+- Spotify Client ID, market, and language settings.
+- Spotify OAuth access and refresh tokens.
+- Search history and application-managed playlists.
+- Cached track metadata and artwork.
+- Lyric data, per-track lyric calibration, and layout settings.
+- Visualizer, Desktop Lyrics, wallpaper, Discord, and volume preferences.
+- Beat-analysis cache, YouTube lyric cache, and local forced-alignment cache.
+- Downloaded helper runtimes and models used for local alignment.
 
-These files stay on the local machine unless the user manually copies or uploads them.
+## Third-party services
 
-## Không được commit / Do not commit
+The application communicates directly with third-party services required for requested features, including Spotify, YouTube, YouTube Music, LRCLIB, Open-Meteo, and Microsoft WebView2 distribution endpoints. Each service is governed by its own privacy policy and terms.
+
+## Files that must not be committed
 
 - `music-sources.json`
 - `spotify-token.json`
 - `.cookie`
 - `.qq-cookie`
 - `node_modules/`
-- `dist/`, installers and unpacked builds
-- User music files, tokens or account information
+- `dist/`
+- User audio, tokens, cookies, or account data
 
-## Dịch vụ bên thứ ba / Third-party services
+## Security of credentials
 
-Spotify authorization is performed on Spotify's official authorization page. YouTube public playback and LRCLIB lyric requests are sent directly from the local server component to those services. Their own privacy policies and terms apply.
+Do not include tokens, cookies, or private account data in public issue reports. Sanitize logs before sharing them.

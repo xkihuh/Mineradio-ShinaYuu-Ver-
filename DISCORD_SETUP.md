@@ -1,41 +1,37 @@
-# Thiết lập Discord cho ShinaYuu Music 1.1.2
+# Discord Integration Setup
 
-## Mục tiêu
+## Purpose
 
-- Hiển thị hồ sơ Discord ở trang chủ ShinaYuu Music.
-- Hiển thị trạng thái **Đang sử dụng ShinaYuu Music** trên Discord.
-- Khi phát bài, cập nhật tên bài, nghệ sĩ và thời gian còn lại.
-- Không dùng Bot Token và không đọc tin nhắn Discord.
+ShinaYuu Music can display the local Discord profile on the home page and publish a Rich Presence activity such as **Using ShinaYuu Music** or the currently playing track.
 
-## Chuẩn bị Discord Application
+The integration does not use a bot token and does not read Discord messages.
 
-1. Mở Discord Developer Portal.
-2. Tạo application mới với tên `ShinaYuu Music`.
-3. Ở trang General Information, đặt icon cho application.
-4. Sao chép `Application ID`.
-5. Tùy chọn: trong Rich Presence Assets, tải ảnh và đặt key, ví dụ `shinayuu`.
+## Create a Discord application
 
-## Kết nối trong ứng dụng
+1. Open the Discord Developer Portal.
+2. Create an application named `ShinaYuu Music`.
+3. Set the application icon under **General Information**.
+4. Copy the numeric **Application ID**.
+5. Optionally upload a Rich Presence asset and note its asset key.
 
-1. Mở Discord Desktop và đăng nhập.
-2. Mở ShinaYuu Music.
-3. Tại thẻ Discord ở trang chủ, bấm **Thiết lập Discord**. Cửa sổ thiết lập riêng sẽ mở và không bị cắt theo chiều cao card.
-4. Nhập Application ID.
-4. Nhập Rich Presence Asset Key hoặc để trống để dùng icon application.
-6. Bấm `Lưu & kết nối`.
+## Connect from ShinaYuu Music
 
-Tích hợp kết nối trực tiếp tới Discord Desktop bằng bộ IPC tích hợp của ShinaYuu Music. Phiên bản 1.1.2 không còn phụ thuộc vào bộ giải mã `discord-rpc` cũ. Không cần Client Secret, Bot Token hay OAuth trình duyệt.
+1. Open and sign in to Discord Desktop.
+2. Open ShinaYuu Music.
+3. Select **Configure Discord** from the Discord card on the home page.
+4. Enter the Application ID.
+5. Enter the optional Rich Presence asset key.
+6. Select **Save and connect**.
 
-## Khi Discord vẫn hiện Spotify
+ShinaYuu Music uses its own Discord IPC client. A client secret, bot token, and browser OAuth flow are not required.
 
-Discord có thể hiển thị hoạt động Spotify riêng nếu tài khoản Spotify đã được liên kết. ShinaYuu Music vẫn xuất hiện dưới tên application riêng. Để chỉ giữ trạng thái ShinaYuu Music, vào Discord → User Settings → Connections → Spotify và tắt `Display Spotify as your status`.
+## Troubleshooting
 
-## Xử lý lỗi
+- **Discord is not running:** use Discord Desktop rather than the browser version.
+- **IPC is blocked:** close both applications completely and reopen them at the same privilege level.
+- **READY was not received:** wait until Discord finishes loading, then reconnect.
+- **Invalid Application ID:** use the numeric Application ID from General Information, not a user ID, public key, or token.
+- **Large image is missing:** leave the asset key empty or verify the exact key in Rich Presence Assets.
+- **Activity is hidden:** check Discord Activity Privacy settings.
 
-- `Discord chưa chạy`: mở ứng dụng Discord Desktop, không phải Discord trên trình duyệt, rồi bấm `Kết nối lại`.
-- `Discord đang mở nhưng IPC bị chặn`: thoát Discord hoàn toàn cả biểu tượng dưới khay hệ thống, mở lại Discord và ShinaYuu Music với cùng mức quyền. Không chạy một ứng dụng bằng Administrator trong khi ứng dụng còn lại chạy bình thường.
-- `Đã thấy Discord IPC nhưng chưa nhận gói READY`: chờ Discord tải xong rồi bấm `Kết nối lại`. Phiên bản 1.1.2 xử lý được gói IPC bị chia nhỏ và tự thử lại.
-- `Sai Discord Application ID`: phải dùng Application ID trong **General Information**; không dùng Discord User ID, Bot Token hoặc Public Key.
-- `Application ID không hợp lệ`: sao chép lại ID dạng số từ General Information.
-- Không hiện ảnh lớn: để trống Asset Key hoặc kiểm tra đúng key đã tải trong Rich Presence Assets.
-- Không hiện trạng thái: kiểm tra Activity Privacy của Discord và bảo đảm chia sẻ hoạt động đang bật.
+Discord may also show the account's native Spotify activity. Disable **Display Spotify as your status** in Discord Connections when only the ShinaYuu Music activity should be visible.
