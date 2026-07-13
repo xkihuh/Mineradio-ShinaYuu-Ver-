@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.3.1';
+const UA = 'ShinaYuu Music/1.1.3.2';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const LRCLIB_BASE = 'https://lrclib.net/api';
@@ -26,6 +26,8 @@ const spotifyAuthRequests = new Map();
 const spotifyAuthResults = new Map();
 const spotifyAudioAnalysisCache = new Map();
 const spotifyLyricsCache = new Map();
+const spotifyLyricsFailureCache = new Map();
+let spotifySessionLyricsProvider = null;
 const youtubeMusicLyricsCache = new Map();
 const youtubeStreamTokens = new Map();
 const youtubeYtDlpInfoCache = new Map();
@@ -713,54 +715,150 @@ function normalizeSpotifyLyricsPayload(payload, metadata = {}) {
   };
 }
 
+function setSpotifySessionLyricsProvider(provider) {
+  spotifySessionLyricsProvider = typeof provider === 'function' ? provider : null;
+}
+
+function spotifyLyricsCandidateIds(id, metadata = {}) {
+  const raw = [
+    metadata.currentTrackId,
+    id,
+    metadata.spotifyId,
+    metadata.id,
+    metadata.linkedFromId,
+    metadata.relinkedFromId,
+    ...(Array.isArray(metadata.candidateSpotifyIds) ? metadata.candidateSpotifyIds : []),
+  ];
+  const seen = new Set();
+  const result = [];
+  raw.forEach((value) => {
+    const candidate = spotifyLyricsTrackId(value);
+    if (!candidate || seen.has(candidate)) return;
+    seen.add(candidate);
+    result.push(candidate);
+  });
+  return result;
+}
+
+function spotifyLyricsEndpoint(trackId, market) {
+  const params = new URLSearchParams({
+    format: 'json',
+    vocalRemoval: 'false',
+    market: market || 'from_token',
+  });
+  return `${SPOTIFY_LYRICS_BASE}/${encodeURIComponent(trackId)}?${params.toString()}`;
+}
+
+function rememberSpotifyLyricsFailure(trackId, detail = {}) {
+  spotifyLyricsFailureCache.set(trackId, { at: Date.now(), ...detail });
+  if (spotifyLyricsFailureCache.size > 120) {
+    const oldest = [...spotifyLyricsFailureCache.entries()]
+      .sort((a, b) => a[1].at - b[1].at)
+      .slice(0, spotifyLyricsFailureCache.size - 96);
+    oldest.forEach(([key]) => spotifyLyricsFailureCache.delete(key));
+  }
+}
+
 async function spotifyNativeLyrics(id, metadata = {}) {
   if (/^(0|false|off|disabled)$/i.test(String(process.env.SPOTIFY_NATIVE_LYRICS || '').trim())) return null;
-  const trackId = spotifyLyricsTrackId(id || metadata.spotifyId || metadata.id);
-  if (!trackId) return null;
-  const cached = spotifyLyricsCache.get(trackId);
-  if (cached && Date.now() - cached.at < 6 * 60 * 60 * 1000) return cached.value;
+  const candidateIds = spotifyLyricsCandidateIds(id, metadata);
+  if (!candidateIds.length) return null;
+
+  for (const trackId of candidateIds) {
+    const cached = spotifyLyricsCache.get(trackId);
+    if (cached && Date.now() - cached.at < 6 * 60 * 60 * 1000) return cached.value;
+  }
 
   let token = await validSpotifyToken(false);
-  if (!token || !token.access_token) return null;
-  const endpoint = `${SPOTIFY_LYRICS_BASE}/${encodeURIComponent(trackId)}?format=json&vocalRemoval=false&market=from_token`;
-  const request = (accessToken) => fetchWithTimeout(endpoint, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-      'App-Platform': 'WebPlayer',
-      'User-Agent': UA,
-    },
-  }, 10000);
+  const configuredMarket = String(metadata.market || providerConfig().spotifyMarket || '').trim().toUpperCase();
+  const markets = ['from_token'];
+  if (configuredMarket && configuredMarket !== 'FROM_TOKEN') markets.push(configuredMarket);
+  const failures = [];
 
-  try {
-    let response = await request(token.access_token);
-    if (response.status === 401 && token.refresh_token) {
-      token = await refreshSpotifyAccessToken();
-      if (token && token.access_token) response = await request(token.access_token);
-    }
-    if (!response.ok) {
-      if (![401, 403, 404].includes(response.status)) {
-        console.warn('[SpotifyLyrics] HTTP', response.status, trackId);
+  if (token && token.access_token) {
+    for (const trackId of candidateIds) {
+      for (const market of markets) {
+        const endpoint = spotifyLyricsEndpoint(trackId, market);
+        const request = (accessToken) => fetchWithTimeout(endpoint, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+            'App-Platform': 'WebPlayer',
+            'User-Agent': UA,
+          },
+        }, 10000);
+        try {
+          let response = await request(token.access_token);
+          if (response.status === 401 && token.refresh_token) {
+            token = await refreshSpotifyAccessToken();
+            if (token && token.access_token) response = await request(token.access_token);
+          }
+          if (!response.ok) {
+            const body = await response.text().catch(() => '');
+            const detail = { status: response.status, market, body: body.slice(0, 300), transport: 'node' };
+            failures.push({ trackId, ...detail });
+            rememberSpotifyLyricsFailure(trackId, detail);
+            console.warn('[SpotifyLyrics] request failed', `status=${response.status}`, `track=${trackId}`, `market=${market}`, body.slice(0, 160));
+            continue;
+          }
+          const payload = await response.json().catch(() => null);
+          const value = normalizeSpotifyLyricsPayload(payload, {
+            ...metadata,
+            spotifyId: trackId,
+            id: trackId,
+          });
+          // Spotify also serves UNSYNCED lyrics. They are still valuable and
+          // must be displayed as plain text instead of being discarded merely
+          // because no line timestamps are available.
+          if (!value || !value.plainLyric) continue;
+          value.spotifyLyricsDiagnostics = { transport: 'node', requestedTrackId: trackId, market, failures };
+          candidateIds.forEach((candidateId) => spotifyLyricsCache.set(candidateId, { at: Date.now(), value }));
+          return value;
+        } catch (error) {
+          const detail = { status: 0, market, error: String(error && (error.message || error) || ''), transport: 'node' };
+          failures.push({ trackId, ...detail });
+          rememberSpotifyLyricsFailure(trackId, detail);
+          console.warn('[SpotifyLyrics]', trackId, detail.error);
+        }
       }
-      return null;
     }
-    const payload = await response.json().catch(() => null);
-    const value = normalizeSpotifyLyricsPayload(payload, {
-      ...metadata,
-      spotifyId: trackId,
-      id: trackId,
-    });
-    if (!value || value.source !== 'spotify-native') return null;
-    spotifyLyricsCache.set(trackId, { at: Date.now(), value });
-    if (spotifyLyricsCache.size > 120) {
-      const oldest = [...spotifyLyricsCache.entries()].sort((a, b) => a[1].at - b[1].at).slice(0, spotifyLyricsCache.size - 96);
-      oldest.forEach(([key]) => spotifyLyricsCache.delete(key));
-    }
-    return value;
-  } catch (error) {
-    console.warn('[SpotifyLyrics]', trackId, error && (error.message || error));
-    return null;
+  } else {
+    failures.push({ status: 401, error: 'SPOTIFY_ACCESS_TOKEN_MISSING', transport: 'node' });
   }
+
+  // The hidden WebView2 player owns the live Spotify playback session. When
+  // the Node request is rejected, ask that session to repeat the request with
+  // its browser context/cookies before falling back to LRCLIB.
+  if (spotifySessionLyricsProvider) {
+    try {
+      const sessionResult = await spotifySessionLyricsProvider(candidateIds, {
+        ...metadata,
+        market: configuredMarket,
+        failures,
+      });
+      const payload = sessionResult && (sessionResult.payload || sessionResult.data || sessionResult);
+      const resolvedTrackId = spotifyLyricsTrackId(sessionResult && sessionResult.trackId) || candidateIds[0];
+      const value = normalizeSpotifyLyricsPayload(payload, {
+        ...metadata,
+        spotifyId: resolvedTrackId,
+        id: resolvedTrackId,
+      });
+      if (value && value.plainLyric) {
+        value.spotifyLyricsDiagnostics = {
+          transport: 'webview2-session',
+          requestedTrackId: resolvedTrackId,
+          status: Number(sessionResult && sessionResult.status || 200),
+          failures,
+        };
+        candidateIds.forEach((candidateId) => spotifyLyricsCache.set(candidateId, { at: Date.now(), value }));
+        return value;
+      }
+    } catch (error) {
+      failures.push({ status: 0, error: String(error && (error.message || error) || ''), transport: 'webview2-session' });
+      console.warn('[SpotifyLyricsSession]', error && (error.message || error));
+    }
+  }
+  return null;
 }
 
 function normalizeSpotifyProfile(profile) {
@@ -1149,6 +1247,11 @@ function mapSpotifyTrack(track) {
     externalUrl: track.external_urls && track.external_urls.spotify || '',
     playbackTransport: 'spotify',
     lyricsMetadataProvider: 'spotify',
+    // Spotify can transparently relink a track for the user's market. Keep both
+    // identifiers so the lyrics bridge can try the exact playing item and the
+    // original catalog item instead of silently falling back to the wrong song.
+    linkedFromId: String(track.linked_from && track.linked_from.id || ''),
+    linkedFromUri: String(track.linked_from && track.linked_from.uri || ''),
   };
   if (song.id) spotifyTrackCache.set(song.id, song);
   return song;
@@ -1910,6 +2013,9 @@ async function spotifyMetadataForLyrics(id, query) {
       meta = meta || {};
     }
   }
+  const currentTrackId = spotifyLyricsTrackId(query.currentTrackId);
+  const requestedTrackId = spotifyLyricsTrackId(id);
+  const linkedFromId = spotifyLyricsTrackId(meta.linkedFromId || meta.relinkedFromId);
   return {
     ...meta,
     name: String(meta.name || query.track || '').trim(),
@@ -1917,6 +2023,9 @@ async function spotifyMetadataForLyrics(id, query) {
     album: String(meta.album || query.album || '').trim(),
     duration: Number(meta.duration || query.duration || 0),
     isrc: String(meta.isrc || meta.externalIds && meta.externalIds.isrc || ''),
+    currentTrackId,
+    linkedFromId,
+    candidateSpotifyIds: [currentTrackId, requestedTrackId, meta.spotifyId, meta.id, linkedFromId].filter(Boolean),
   };
 }
 
@@ -1961,6 +2070,10 @@ async function lyricsFor(id, provider, query = {}) {
     duration,
     isrc: String(meta.isrc || meta.externalIds && meta.externalIds.isrc || ''),
     spotifyId: provider === 'spotify' ? String(meta.spotifyId || meta.id || id || '') : '',
+    currentTrackId: provider === 'spotify' ? String(meta.currentTrackId || query.currentTrackId || '') : '',
+    linkedFromId: provider === 'spotify' ? String(meta.linkedFromId || '') : '',
+    candidateSpotifyIds: provider === 'spotify' ? (Array.isArray(meta.candidateSpotifyIds) ? meta.candidateSpotifyIds : []) : [],
+    market: provider === 'spotify' ? providerConfig().spotifyMarket : '',
   };
   // YouTube Music lyrics and regular YouTube captions are separate data
   // sources. Read the Lyrics tab through youtubei.js first so tracks that show
@@ -1999,8 +2112,8 @@ async function lyricsFor(id, provider, query = {}) {
   // lyric line changes use the same timestamps as the Spotify client. Any
   // rejection or unsupported track falls through to the existing LRCLIB path.
   if (provider === 'spotify') {
-    const spotifyTimed = await spotifyNativeLyrics(metadata.spotifyId || id, metadata);
-    if (spotifyTimed && spotifyTimed.lyric) return spotifyTimed;
+    const spotifyTimed = await spotifyNativeLyrics(metadata.currentTrackId || metadata.spotifyId || id, metadata);
+    if (spotifyTimed && (spotifyTimed.lyric || spotifyTimed.plainLyric)) return spotifyTimed;
   }
 
   const candidates = [];
@@ -2296,6 +2409,8 @@ module.exports = {
   spotifySeekPlayback,
   spotifySetPlaybackVolume,
   spotifyNativeLyrics,
+  setSpotifySessionLyricsProvider,
+  spotifyLyricsCandidateIds,
   normalizeSpotifyLyricsPayload,
   youtubeMusicNativeLyrics,
   normalizeYouTubeMusicLyricsShelf,

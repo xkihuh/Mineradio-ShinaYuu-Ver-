@@ -1,4 +1,4 @@
-# Modification Report — ShinaYuu Music 1.1.3.1 Patch Build
+# Modification Report — ShinaYuu Music 1.1.3.2 Patch Build
 
 ## Project relationship
 
@@ -21,8 +21,13 @@ ShinaYuu Music is a modified work based on the original Mineradio project. The p
 - Standardized Markdown documentation in English.
 - Added release and regression documentation for 1.1.3.
 
-## 1.1.3.1 patch changes
+## 1.1.3.2 patch changes
 
-- Fixed the NSIS warning 6000 failure caused by an unescaped PowerShell `$ProgressPreference` variable.
-- Updated current patch-facing version metadata and installer output naming.
-- Preserved `RELEASE_1.1.3.md` as the latest stable release document; no patch release document was added.
+- Preserved Spotify lyrics when the service returns `UNSYNCED` text instead of discarding the response.
+- Added exact live-track ID handoff from the Spotify Web Playback SDK to the lyrics provider.
+- Added original and market-relinked Spotify track ID candidates.
+- Added a bounded WebView2-session retry path that uses the active browser context before LRCLIB fallback.
+- Added explicit HTTP and transport diagnostics for failed Spotify lyrics requests.
+- Added a stale-track guard based on playback duration so the previous song ID cannot be reused during a fast track switch.
+- Retained the corrected NSIS build resources from patch 1.1.3.1.
+- Preserved `RELEASE_1.1.3.md` as the latest stable release document; no patch-specific release document was added.

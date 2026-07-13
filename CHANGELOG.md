@@ -2,6 +2,16 @@
 
 All notable changes to ShinaYuu Music are documented in this file.
 
+## 1.1.3.2 — 2026-07-13 (Patch Build)
+
+- Fixed Spotify lyrics being discarded when Spotify returns `UNSYNCED` text.
+- Uses the exact Spotify track ID reported by the live Web Playback SDK.
+- Tries market-relinked and original Spotify track IDs before falling back.
+- Added a WebView2-session lyrics retry path when the Node request receives an authentication, authorization, or catalog response.
+- Added explicit diagnostics for Spotify lyrics HTTP failures.
+- Preserved LRCLIB fallback when Spotify's private lyrics service is unavailable.
+- Kept the stable release document at `RELEASE_1.1.3.md`; no patch-specific release file was added.
+
 ## 1.1.3.1 — 2026-07-13 (Patch Build)
 
 ### Fixed

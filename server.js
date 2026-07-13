@@ -108,7 +108,67 @@ const spotifyHostState = {
   desiredVolume: 0.65,
   appliedVolume: null,
   volumeRevision: 1,
+  lyricsRequestRevision: 0,
+  lyricsRequest: null,
 };
+const spotifyHostLyricsCache = new Map();
+const spotifyHostLyricsWaiters = new Map();
+
+function spotifyHostLyricsCacheKey(trackId) {
+  return String(trackId || '').trim();
+}
+
+function completeSpotifyHostLyricsRequest(payload = {}) {
+  const requestId = String(payload.requestId || '');
+  if (!requestId) return;
+  const waiter = spotifyHostLyricsWaiters.get(requestId);
+  const trackId = spotifyHostLyricsCacheKey(payload.trackId);
+  const result = payload.ok && payload.payload ? {
+    payload: payload.payload,
+    trackId,
+    status: Number(payload.status || 200),
+    transport: 'webview2-session',
+  } : null;
+  if (result && trackId) spotifyHostLyricsCache.set(trackId, { at: Date.now(), value: result });
+  if (waiter) {
+    clearTimeout(waiter.timer);
+    spotifyHostLyricsWaiters.delete(requestId);
+    waiter.resolve(result);
+  }
+  if (spotifyHostState.lyricsRequest && spotifyHostState.lyricsRequest.requestId === requestId) {
+    spotifyHostState.lyricsRequest = null;
+  }
+}
+
+function requestSpotifyHostLyrics(candidateIds, metadata = {}) {
+  const ids = [...new Set((Array.isArray(candidateIds) ? candidateIds : [])
+    .map((value) => String(value || '').trim())
+    .filter((value) => /^[A-Za-z0-9]{16,32}$/.test(value)))];
+  if (!ids.length) return Promise.resolve(null);
+  for (const trackId of ids) {
+    const cached = spotifyHostLyricsCache.get(trackId);
+    if (cached && Date.now() - cached.at < 6 * 60 * 60 * 1000) return Promise.resolve(cached.value);
+  }
+  const host = publicSpotifyHostState();
+  if (!host.alive || !host.connected) return Promise.resolve(null);
+  const requestId = crypto.randomUUID();
+  spotifyHostState.lyricsRequestRevision += 1;
+  spotifyHostState.lyricsRequest = {
+    requestId,
+    revision: spotifyHostState.lyricsRequestRevision,
+    trackIds: ids,
+    market: String(metadata.market || ''),
+    language: String(metadata.language || ''),
+  };
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      spotifyHostLyricsWaiters.delete(requestId);
+      if (spotifyHostState.lyricsRequest && spotifyHostState.lyricsRequest.requestId === requestId) spotifyHostState.lyricsRequest = null;
+      resolve(null);
+    }, 4500);
+    spotifyHostLyricsWaiters.set(requestId, { resolve, timer });
+  });
+}
 
 function clampMasterVolume(value, fallback = 0.65) {
   const numeric = Number(value);
@@ -136,6 +196,8 @@ function publicSpotifyHostControl() {
     volume: spotifyHostState.desiredVolume,
     volumePercent: Math.round(spotifyHostState.desiredVolume * 100),
     revision: spotifyHostState.volumeRevision,
+    lyricsRequestRevision: spotifyHostState.lyricsRequestRevision,
+    lyricsRequest: spotifyHostState.lyricsRequest,
   };
 }
 
@@ -154,6 +216,7 @@ function updateSpotifyHostState(payload = {}) {
   if (payload.error != null) spotifyHostState.error = String(payload.error || '');
   if (payload.errorType != null) spotifyHostState.errorType = String(payload.errorType || '');
   if (payload.appliedVolume != null) spotifyHostState.appliedVolume = clampMasterVolume(payload.appliedVolume, spotifyHostState.desiredVolume);
+  if (payload.type === 'lyrics') completeSpotifyHostLyricsRequest(payload);
 }
 
 function publicSpotifyHostState() {
@@ -178,6 +241,10 @@ function publicSpotifyHostState() {
     volumeRevision: spotifyHostState.volumeRevision,
     lastSeen: spotifyHostState.lastSeen,
   };
+}
+
+if (typeof musicProviders.setSpotifySessionLyricsProvider === 'function') {
+  musicProviders.setSpotifySessionLyricsProvider(requestSpotifyHostLyrics);
 }
 
 function applySystemCertificateAuthorities() {
@@ -3691,11 +3758,23 @@ async function handleModernMusicRoute(req, res, url, pn) {
     try {
       const youtube = pn.includes('/qq/');
       const id = youtube ? (url.searchParams.get('mid') || url.searchParams.get('id') || '') : (url.searchParams.get('id') || '');
+      const hostState = youtube ? null : publicSpotifyHostState();
+      const requestedDuration = Math.max(0, Number(url.searchParams.get('duration') || 0));
+      const requestedDurationMs = requestedDuration > 10000 ? requestedDuration : requestedDuration * 1000;
+      const hostDurationMatches = !requestedDurationMs || !hostState || !hostState.durationMs
+        || Math.abs(Number(hostState.durationMs) - requestedDurationMs) <= 4000;
+      const currentTrackId = hostState && hostState.alive && hostDurationMatches
+        ? hostState.currentTrackId
+        : '';
       const data = await musicProviders.lyricsFor(id, youtube ? 'youtube' : 'spotify', {
         track: url.searchParams.get('track') || '',
         artist: url.searchParams.get('artist') || '',
         album: url.searchParams.get('album') || '',
         duration: url.searchParams.get('duration') || '',
+        // Use the exact ID reported by the live Spotify SDK when its duration
+        // matches the requested song. This fixes market relinking without ever
+        // reusing a stale ID from the previously played track.
+        currentTrackId,
       });
       sendJSON(res, data);
     } catch (error) {
