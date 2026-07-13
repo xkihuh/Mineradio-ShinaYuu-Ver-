@@ -93,6 +93,12 @@ The existing UI, UX, Desktop Lyrics, and visual effects remain unchanged. Only t
 - `NOTICE.md` — attribution and third-party notices.
 - `CHANGELOG.md` — release history.
 
+## Acknowledgments
+
+Mineradio was originally designed and developed by XxHuberrr, and is now being maintained and localized for global users by x.kihuh. Special thanks to **emily**, who co-created early concepts for the visual foundation and inspired the optimization direction for the `emily` visual preset.
+
+We also want to thank **小天才e宝**, **应春日**, **锋将军**, **軌跡**, **林中**, **骊**, **风痕**, and **花椰菜🥦** for their invaluable help with early hands-on testing, feedback, and release preparations.
+
 ## Copyright and License
 
 Copyright (C) 2026 XxHuberrr.
