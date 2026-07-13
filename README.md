@@ -1,4 +1,4 @@
-# ShinaYuu Music 1.1.3.2 Patch Build
+# ShinaYuu Music 1.1.3.3 Patch Build
 
 ShinaYuu Music is a Windows desktop visual music player with Spotify and YouTube playback, synchronized lyrics, Desktop Lyrics, real-time visual effects, Discord Rich Presence, and a unified in-app master volume control.
 
