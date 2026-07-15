@@ -7,7 +7,7 @@ npm install
 npm start
 ```
 
-The Electron application starts its local server, main renderer, and hidden WebView2 Spotify host.
+The Castlabs Electron application starts its local loopback server and the existing ShinaYuu Music renderer. The Spotify Web Playback SDK runs inside that renderer. No separate WebView2 host is launched.
 
 ## Spotify
 
@@ -24,6 +24,12 @@ http://127.0.0.1:43821/api/spotify/callback
 
 Required playback scopes include `streaming`, `user-read-playback-state`, and `user-modify-playback-state`.
 
+## Castlabs Electron and Widevine
+
+ShinaYuu Music uses Castlabs Electron for Content Security. On first launch, Castlabs Electron provisions the Widevine CDM through its component updater. The main process waits for `components.whenReady()` before creating the application window.
+
+A network connection is required for first-time Widevine provisioning. If provisioning fails, YouTube and local playback can still start, but Spotify protected playback remains unavailable until the component service succeeds.
+
 ## YouTube
 
 YouTube audio is resolved through `yt-dlp` and played through the application's HTML audio pipeline. The application can also use YouTube captions, YouTube Music lyrics, LRCLIB, and local forced alignment for lyrics.
@@ -31,17 +37,11 @@ YouTube audio is resolved through `yt-dlp` and played through the application's 
 ## Playback architecture
 
 ```text
-Spotify -> hidden WebView2 host -> Spotify Web Playback SDK
+Spotify -> Castlabs Electron renderer -> Spotify Web Playback SDK
 YouTube -> yt-dlp/youtubei.js -> application audio element
 ```
 
 Both paths are controlled by the same in-app master volume setting.
-
-## WebView2 Runtime
-
-The Windows installer checks for Microsoft Edge WebView2 Runtime. When it is missing, the installer downloads and silently installs the Evergreen Runtime before the application is launched.
-
-For source development, install WebView2 Runtime manually when the hidden Spotify host cannot start.
 
 ## Optional developer overrides
 

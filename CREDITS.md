@@ -10,6 +10,6 @@
 
 ## Open-source ecosystem
 
-ShinaYuu Music depends on the work of the Electron, WebView2, Spotify SDK, `yt-dlp`, `youtubei.js`, Three.js, GSAP, Whisper, FFmpeg, LRCLIB, and related open-source communities.
+ShinaYuu Music depends on the work of the Castlabs Electron, Electron, Spotify SDK, `yt-dlp`, `youtubei.js`, Three.js, GSAP, Whisper, FFmpeg, LRCLIB, and related open-source communities.
 
 See `NOTICE.md` and dependency license files for legal notices and complete attribution.

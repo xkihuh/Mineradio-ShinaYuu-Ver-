@@ -10,13 +10,13 @@ ShinaYuu Music is distributed under the GNU General Public License version 3 onl
 
 ShinaYuu Music adds or modifies functionality including:
 
-- Spotify playback through a hidden Microsoft Edge WebView2 host.
+- Spotify playback through the Spotify Web Playback SDK inside Castlabs Electron for Content Security.
 - YouTube playback through `yt-dlp` and `youtubei.js`.
 - Spotify-native, YouTube, YouTube Music, LRCLIB, and locally aligned lyrics.
 - Desktop Lyrics, 3D lyrics, visual effects, and beat-reactive rendering.
 - Discord profile display and Rich Presence IPC.
-- Unified master volume across the application audio pipeline and Spotify WebView2 playback.
-- Windows packaging, installer customization, and WebView2 Runtime provisioning.
+- Unified master volume across the application audio pipeline and Spotify playback in the Castlabs renderer.
+- Windows packaging, installer customization, Castlabs runtime integration, and audio-session grouping.
 
 The YouTube lyric and forced-alignment implementations in ShinaYuu Music were written for this project. They do not include BetterLyrics integration and do not copy lyric implementation code from MineradioVN.
 
@@ -24,8 +24,7 @@ The YouTube lyric and forced-alignment implementations in ShinaYuu Music were wr
 
 ShinaYuu Music uses or interoperates with independently licensed components and services, including:
 
-- Electron and Electron Builder.
-- Microsoft Edge WebView2 Runtime and Evergreen Bootstrapper.
+- Castlabs Electron for Content Security, Electron, and Electron Builder.
 - Spotify Web API, Spotify Accounts OAuth, and Spotify Web Playback SDK.
 - YouTube, YouTube Music, `yt-dlp`, and `youtubei.js`.
 - LRCLIB.
@@ -41,3 +40,8 @@ ShinaYuu Music is not an official client of Spotify, YouTube, LRCLIB, Microsoft,
 ## Compatibility aliases
 
 Selected internal identifiers inherited from Mineradio, including `netease`, `qq`, and `mineradio`, remain in compatibility paths to avoid destabilizing the existing UI and stored user data. They currently map to ShinaYuu Music behavior and do not restore the original providers.
+
+
+## Castlabs Electron for Content Security
+
+This build uses the Castlabs Electron for Content Security distribution as a replacement for stock Electron to provide Widevine CDM integration. Castlabs Electron is distributed under its own MIT license and third-party notices. The Castlabs runtime and Widevine components are not relicensed under GPL-3.0-only; their original licenses and service terms continue to apply.

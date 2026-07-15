@@ -1,15 +1,6 @@
-ShinaYuu Music 1.1.3.1 - build resources
+ShinaYuu Music 1.1.4 - Build resources
 
-This build folder is prepared for the ShinaYuu Music 1.1.3.1 patch.
+This build folder contains the official installer artwork, executable icon, NSIS include, resource injection hook, and EVS-aware release support for ShinaYuu Music 1.1.4.
 
-Included resources:
-- icon.ico: multi-resolution Windows and Electron application icon.
-- icon.png: 512 x 512 application icon.
-- icon-64.rgba: synchronized raw 64 x 64 RGBA icon data.
-- installerHeader.bmp: NSIS header artwork, 150 x 57 pixels, 24-bit RGB.
-- installerSidebar.bmp: NSIS sidebar artwork, 164 x 314 pixels, 24-bit RGB.
-- installer.nsh: customized NSIS installer logic, including the escaped PowerShell variable required by NSIS and the WebView2 Runtime check/install flow.
-- after-pack.js: applies the application icon and Windows executable metadata after packaging.
-- preview-win.js: Windows build preview helper.
-
-No stable release document was added for this patch version.
+Do not replace installer assets with files of incompatible dimensions or formats.
+The production build procedure is documented in docs/WINDOWS_SIGNING_AND_BUILD.md.

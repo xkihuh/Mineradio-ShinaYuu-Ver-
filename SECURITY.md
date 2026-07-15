@@ -2,7 +2,7 @@
 
 ## Supported release
 
-Security fixes are applied to the current stable release line. At the time of this document, the supported release is **1.1.3**.
+Security fixes are applied to the current stable release line. At the time of this document, the supported release is **1.1.4**.
 
 ## Reporting a vulnerability
 
@@ -22,7 +22,8 @@ Never include access tokens, refresh tokens, cookies, private Client IDs, or per
 - YouTube playback works without an API key by default.
 - Discord Rich Presence uses a public Application ID and local IPC; it does not require a bot token.
 - Runtime and model downloads must use their official or configured trusted sources.
+- EVS credentials, Authenticode certificates, and certificate passwords must never be committed to the repository.
 
 ## Build trust
 
-Install only binaries built from this source or published by a trusted release channel. Verify release hashes when provided.
+Install only binaries built from this source or published by a trusted release channel. Verify release hashes when provided. Official Castlabs/Spotify builds must complete EVS/VMP verification before the NSIS installer is published.

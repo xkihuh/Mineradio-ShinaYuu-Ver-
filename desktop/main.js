@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, desktopCapturer } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, desktopCapturer, components } = require('electron');
 const net = require('net');
 const path = require('path');
 const fs = require('fs');
@@ -8,8 +8,8 @@ const { DiscordPresenceManager } = require('./discord-presence');
 let mainWindow = null;
 let localServer = null;
 let mainServerPort = 0;
-let spotifyHostProcess = null;
-let spotifyHostStopping = false;
+let castlabsComponentState = { ready: false, status: null, error: '' };
+let audioSessionBridgeProcess = null;
 let discordPresence = null;
 let desktopLyricsWindow = null;
 let desktopLyricsState = {};
@@ -205,9 +205,9 @@ function configureMineradioGlobalHotkeys(bindings = []) {
         accelerator,
         ok: false,
         conflict: {
-          sourceName: '系统 / 其他软件',
+          sourceName: 'Hệ thống / Ứng dụng khác',
           sourceIcon: 'warning',
-          reason: '该组合键已被占用或被系统保留',
+          reason: 'Tổ hợp phím đã được sử dụng hoặc được Windows dành riêng',
         },
       });
     }
@@ -499,7 +499,7 @@ async function openNeteaseMusicLoginWindow(owner) {
       modal: false,
       show: false,
       autoHideMenuBar: true,
-      title: '网易云音乐登录',
+      title: 'Đăng nhập dịch vụ âm nhạc',
       backgroundColor: '#111111',
       icon: APP_ICON_ICO,
       webPreferences: {
@@ -571,9 +571,9 @@ async function openNeteaseMusicLoginWindow(owner) {
         const cookie = await readNeteaseLoginCookieHeader(cookieSession);
         resolve(neteaseCookieHasLogin(cookie)
           ? { ok: true, cookie, partial: !qqCookieHasPlaybackLogin(cookie) }
-          : { ok: false, cancelled: true, message: '网易云登录窗口已关闭' });
+          : { ok: false, cancelled: true, message: 'Cửa sổ đăng nhập đã đóng' });
       } catch (e) {
-        resolve({ ok: false, error: e.message || '网易云登录窗口已关闭' });
+        resolve({ ok: false, error: e.message || 'Cửa sổ đăng nhập đã đóng' });
       }
     });
 
@@ -601,7 +601,7 @@ async function openQQMusicLoginWindow(owner) {
       modal: false,
       show: false,
       autoHideMenuBar: true,
-      title: 'QQ 音乐登录',
+      title: 'Kết nối nguồn YouTube',
       backgroundColor: '#111111',
       icon: APP_ICON_ICO,
       webPreferences: {
@@ -673,9 +673,9 @@ async function openQQMusicLoginWindow(owner) {
         const cookie = await readQQLoginCookieHeader(cookieSession);
         resolve(qqCookieHasLogin(cookie)
           ? { ok: true, cookie }
-          : { ok: false, cancelled: true, message: 'QQ 登录窗口已关闭' });
+          : { ok: false, cancelled: true, message: 'Cửa sổ kết nối đã đóng' });
       } catch (e) {
-        resolve({ ok: false, error: e.message || 'QQ 登录窗口已关闭' });
+        resolve({ ok: false, error: e.message || 'Cửa sổ kết nối đã đóng' });
       }
     });
 
@@ -1477,71 +1477,95 @@ ipcMain.handle('shinayuu-discord-open-portal', async () => {
   return { ok: true };
 });
 
-function startSpotifyHostRuntime(port) {
-  if (process.platform !== 'win32') return false;
-  if (spotifyHostProcess && !spotifyHostProcess.killed) return true;
 
-  const runtimeScript = path.join(__dirname, 'spotify-host-runtime.js');
-  if (!fs.existsSync(runtimeScript)) {
-    console.warn('[SpotifyHost] Runtime script is missing:', runtimeScript);
-    return false;
-  }
-
-  spotifyHostStopping = false;
-  const env = {
-    ...process.env,
-    ELECTRON_RUN_AS_NODE: '1',
-    SHINAYUU_SPOTIFY_HOST_PORT: String(port),
-    SHINAYUU_WEBVIEW2_DATA_DIR: path.join(app.getPath('userData'), 'SpotifyHost'),
-  };
-
-  try {
-    spotifyHostProcess = spawn(process.execPath, [runtimeScript], {
-      cwd: app.getAppPath(),
-      env,
-      windowsHide: true,
-      detached: false,
-      stdio: app.isPackaged ? ['ignore', 'ignore', 'ignore'] : ['ignore', 'pipe', 'pipe'],
-    });
-
-    if (!app.isPackaged) {
-      spotifyHostProcess.stdout?.on('data', (chunk) => process.stdout.write(String(chunk || '')));
-      spotifyHostProcess.stderr?.on('data', (chunk) => process.stderr.write(String(chunk || '')));
-    }
-
-    spotifyHostProcess.once('error', (error) => {
-      console.warn('[SpotifyHost] Failed to start hidden WebView2 player:', error.message || error);
-      spotifyHostProcess = null;
-    });
-    spotifyHostProcess.once('exit', (code, signal) => {
-      if (!spotifyHostStopping && code) {
-        console.warn(`[SpotifyHost] Hidden player exited: code=${code} signal=${signal || ''}`);
-      }
-      spotifyHostProcess = null;
-    });
-    return true;
-  } catch (error) {
-    console.warn('[SpotifyHost] Failed to launch:', error.message || error);
-    spotifyHostProcess = null;
-    return false;
-  }
-}
-
-function stopSpotifyHostRuntime() {
-  spotifyHostStopping = true;
-  const child = spotifyHostProcess;
-  spotifyHostProcess = null;
+function stopAudioSessionBridge() {
+  const child = audioSessionBridgeProcess;
+  audioSessionBridgeProcess = null;
   if (!child || child.killed) return;
   try { child.kill('SIGTERM'); } catch (_) {}
   if (process.platform === 'win32' && child.pid) {
-    const timer = setTimeout(() => {
-      try {
-        execFile('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {});
-      } catch (_) {}
-    }, 1400);
-    timer.unref?.();
+    try { execFile('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {}); } catch (_) {}
   }
 }
+
+function startAudioSessionBridge(spotifyHostPid = 0) {
+  if (process.platform !== 'win32') return false;
+  stopAudioSessionBridge();
+  const bridgeScript = path.join(__dirname, 'audio-session-bridge.ps1');
+  if (!fs.existsSync(bridgeScript)) {
+    console.warn('[AudioSessionBridge] Script is missing:', bridgeScript);
+    return false;
+  }
+  const args = [
+    '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden',
+    '-ExecutionPolicy', 'Bypass', '-File', bridgeScript,
+    '-RootPid', String(process.pid),
+    '-SpotifyHostPid', String(Number(spotifyHostPid) || 0),
+    '-GroupingGuid', '5b9ce689-71e0-4bda-89df-126e572712fa',
+    '-DisplayName', APP_NAME,
+    '-IconPath', process.execPath,
+  ];
+  try {
+    audioSessionBridgeProcess = spawn('powershell.exe', args, {
+      cwd: app.getAppPath(),
+      windowsHide: true,
+      detached: false,
+      stdio: ['ignore', 'ignore', 'ignore'],
+    });
+    audioSessionBridgeProcess.once('error', (error) => {
+      console.warn('[AudioSessionBridge] Failed to start:', error.message || error);
+      audioSessionBridgeProcess = null;
+    });
+    audioSessionBridgeProcess.once('exit', () => { audioSessionBridgeProcess = null; });
+    return true;
+  } catch (error) {
+    console.warn('[AudioSessionBridge] Failed to launch:', error.message || error);
+    audioSessionBridgeProcess = null;
+    return false;
+  }
+}
+
+
+async function ensureCastlabsComponents() {
+  if (!components || typeof components.whenReady !== 'function') {
+    const error = new Error('CASTLABS_COMPONENTS_API_MISSING');
+    castlabsComponentState = { ready: false, status: null, error: error.message };
+    throw error;
+  }
+
+  try {
+    console.log('[Castlabs] Preparing Widevine components...');
+    const timeout = new Promise((_, reject) => {
+      const timer = setTimeout(() => reject(new Error('CASTLABS_COMPONENTS_TIMEOUT')), 60000);
+      timer.unref?.();
+    });
+    await Promise.race([components.whenReady(), timeout]);
+    const status = typeof components.status === 'function' ? components.status() : null;
+    castlabsComponentState = { ready: true, status, error: '' };
+    console.log('[Castlabs] Components ready:', status || 'ready');
+    return castlabsComponentState;
+  } catch (error) {
+    castlabsComponentState = {
+      ready: false,
+      status: typeof components.status === 'function' ? components.status() : null,
+      error: String(error && (error.message || error) || 'CASTLABS_COMPONENTS_FAILED'),
+    };
+    console.warn('[Castlabs] Widevine component initialization failed:', castlabsComponentState.error);
+    return castlabsComponentState;
+  }
+}
+
+ipcMain.handle('shinayuu-runtime-get-status', async () => {
+  if (!castlabsComponentState.ready) await ensureCastlabsComponents();
+  return {
+    engine: 'castlabs-electron',
+    electronVersion: process.versions.electron || '',
+    chromeVersion: process.versions.chrome || '',
+    widevineReady: !!castlabsComponentState.ready,
+    componentStatus: castlabsComponentState.status,
+    error: castlabsComponentState.error || '',
+  };
+});
 
 async function createWindow() {
   htmlFullscreenActive = false;
@@ -1579,7 +1603,7 @@ async function createWindow() {
   localServer = require(path.join(__dirname, '..', 'server.js'));
   await waitForServer(localServer);
   configureRealtimeAudioCaptureSession(session.defaultSession, port);
-  startSpotifyHostRuntime(port);
+  startAudioSessionBridge(0);
   ensureDiscordPresenceManager();
 
   const initialBounds = getWindowedBounds();
@@ -1663,7 +1687,7 @@ async function createWindow() {
     setTimeout(() => applyWindowedBounds(mainWindow), 50);
   });
 
-  await mainWindow.loadURL(`http://127.0.0.1:${port}`);
+  await mainWindow.loadURL(`http://127.0.0.1:${port}/?runtime=castlabs-electron`);
 }
 
 app.setName(APP_NAME);
@@ -1686,6 +1710,7 @@ if (!gotSingleInstanceLock) {
     });
     screen.on('display-added', () => scheduleWindowStateSend(mainWindow));
     screen.on('display-removed', () => scheduleWindowStateSend(mainWindow));
+    await ensureCastlabsComponents();
     await createWindow();
   });
 
@@ -1701,7 +1726,7 @@ if (!gotSingleInstanceLock) {
   app.on('before-quit', () => {
     unregisterMineradioGlobalHotkeys();
     closeOverlayWindows();
-    stopSpotifyHostRuntime();
+    stopAudioSessionBridge();
     if (discordPresence) discordPresence.shutdown().catch(() => {});
     if (localServer && localServer.close) localServer.close();
   });

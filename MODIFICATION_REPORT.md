@@ -1,41 +1,33 @@
-# Modification Report — ShinaYuu Music 1.1.3.3 Patch Build
+# Modification Report — ShinaYuu Music 1.1.4
 
-## Project relationship
+## Promotion baseline
 
-ShinaYuu Music is a modified work based on the original Mineradio project. The project preserves original attribution and remains licensed under GNU GPL version 3 only.
+ShinaYuu Music 1.1.4 is the stable promotion of the complete `1.1.3.10` patch source. The preserved 1.1.3.3 UI/UX structure remains the application baseline; later clean-source rewrites are not used.
 
-## Version promotion
+## Runtime architecture
 
-- `1.1.1` represents the stable baseline.
-- `1.1.2` contains the lyric transition, Spotify timing, Discord IPC, and installer-path work completed on 2026-07-12.
-- Patch revisions `1.1.2.1` through `1.1.2.4` were development builds.
-- Patch `1.1.2.4` was accepted and promoted to stable release `1.1.3`.
+- Castlabs Electron for Content Security `42.5.2+wvcus` remains the application runtime.
+- Spotify Web Playback SDK runs in the existing visible ShinaYuu Music renderer.
+- The separate hidden WebView2 Spotify host remains removed.
+- Castlabs `components.whenReady()` completes before the main window is created.
+- The loopback server remains limited to local API and OAuth callback handling.
 
-## 1.1.3 changes
+## Stabilized behavior
 
-- Added YouTube Music lyrics retrieval.
-- Preserved caption and LRCLIB fallback behavior.
-- Added local word alignment for unsynchronized YouTube lyrics.
-- Added unified master volume for Spotify WebView2 and YouTube playback.
-- Added WebView2 Evergreen Runtime provisioning to the installer.
-- Standardized Markdown documentation in English.
-- Added release and regression documentation for 1.1.3.
+- Spotify market-relinked tracks are accepted through SDK identity and strict metadata matching.
+- Live SDK state controls player title, artist, artwork, duration, position, and lyrics identity.
+- Progress and seek recovery clear stale drag previews and restart the independent SDK/UI clocks.
+- Spotify lyric failures continue through YouTube captions, YouTube Music, LRCLIB, local forced alignment, and plain-text fallbacks.
+- Existing lyrics calibration, Desktop Lyrics, Three.js scenes, GSAP transitions, visualizer, effects, Discord integration, and installer artwork are preserved.
 
-## 1.1.3.2 patch changes
+## Stable release updates
 
-- Preserved Spotify lyrics when the service returns `UNSYNCED` text instead of discarding the response.
-- Added exact live-track ID handoff from the Spotify Web Playback SDK to the lyrics provider.
-- Added original and market-relinked Spotify track ID candidates.
-- Added a bounded WebView2-session retry path that uses the active browser context before LRCLIB fallback.
-- Added explicit HTTP and transport diagnostics for failed Spotify lyrics requests.
-- Added a stale-track guard based on playback duration so the previous song ID cannot be reused during a fast track switch.
-- Retained the corrected NSIS build resources from patch 1.1.3.1.
-- Preserved `RELEASE_1.1.3.md` as the latest stable release document; no patch-specific release document was added.
+- Version metadata is standardized as `1.1.4`.
+- The installer artifact is `ShinaYuu-Music-1.1.4-Setup.exe`.
+- `RELEASE_1.1.4.md` documents the stable release.
+- The Windows production build now signs and verifies the packaged application with Castlabs EVS before creating NSIS.
+- Detailed signing and build instructions are available in `docs/WINDOWS_SIGNING_AND_BUILD.md`.
 
-## 1.1.3.3 patch changes
+## License
 
-- Added direct YouTube subtitle parsing for JSON3, TTML, SRV3, and WebVTT.
-- Added caption quality filtering and removal of non-lyric cue rows.
-- Preserved Spotify-native lyrics, YouTube Music lyrics, LRCLIB, plain lyrics, and local forced alignment.
-- Preserved the consolidated lyric calibration panel, expanded correction ranges, completed localization pass, and Windows audio-session bridge.
-- Preserved `RELEASE_1.1.3.md` as the latest stable release document; no patch-specific release document was added.
+The project remains `GPL-3.0-only`, with original-project attribution and third-party notices preserved.

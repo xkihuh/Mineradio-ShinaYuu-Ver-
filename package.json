@@ -1,20 +1,20 @@
 {
   "name": "shinayuu-music",
   "productName": "ShinaYuu Music",
-  "version": "1.1.3-patch.3",
-  "description": "A Windows visual music player with Spotify, YouTube, synchronized lyrics, Discord Rich Presence, and integrated master volume control.",
+  "version": "1.1.4",
+  "description": "A Windows visual music player powered by Castlabs Electron with Spotify, YouTube, synchronized lyrics, Discord Rich Presence, and integrated master volume control.",
   "author": "ShinaYuu",
   "main": "desktop/main.js",
   "private": true,
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "build:win": "electron-builder --win nsis",
-    "build:win:dir": "electron-builder --win dir",
+    "start": "node tools/ensure-castlabs-runtime.js && electron .",
+    "dev": "node tools/ensure-castlabs-runtime.js && electron .",
+    "build:win": "node tools/build-windows-release.js",
+    "build:win:dir": "node tools/ensure-castlabs-runtime.js && node tools/verify-castlabs-runtime.js && electron-builder --win dir",
     "preview:win": "node build/preview-win.js",
-    "test": "node tests/audio-session-bridge-regression.test.js && node tests/localization-regression.test.js && node tests/lyric-calibration-panel-regression.test.js && node tests/master-volume-regression.test.js && node tests/webview2-installer-regression.test.js && node tests/youtube-music-lyrics-regression.test.js && node tests/youtube-caption-lyrics-regression.test.js && node tests/youtube-forced-alignment-regression.test.js && node tests/provider-regression.test.js && node tests/spotify-auth-regression.test.js && node tests/spotify-direct-player-regression.test.js && node tests/realtime-playback-regression.test.js && node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js && node tests/ui-regression.test.js && node tests/packaging-regression.test.js && node tests/spotify-host-visibility-regression.test.js && node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
+    "test": "node tests/audio-session-bridge-regression.test.js && node tests/localization-regression.test.js && node tests/lyric-calibration-panel-regression.test.js && node tests/master-volume-regression.test.js && node tests/castlabs-electron-regression.test.js && node tests/youtube-music-lyrics-regression.test.js && node tests/youtube-caption-lyrics-regression.test.js && node tests/youtube-forced-alignment-regression.test.js && node tests/provider-regression.test.js && node tests/spotify-auth-regression.test.js && node tests/spotify-direct-player-regression.test.js && node tests/spotify-seek-lyrics-recovery-regression.test.js && node tests/realtime-playback-regression.test.js && node tests/lyrics-sync-regression.test.js && node tests/spotify-lyrics-regression.test.js && node tests/ui-regression.test.js && node tests/packaging-regression.test.js && node tests/discord-ipc-client-regression.test.js && node tests/discord-presence-regression.test.js",
     "test:providers": "node tests/provider-regression.test.js",
-    "test:spotify": "node tests/spotify-direct-player-regression.test.js",
+    "test:spotify": "node tests/spotify-direct-player-regression.test.js && node tests/spotify-seek-lyrics-recovery-regression.test.js",
     "test:ui": "node tests/ui-regression.test.js",
     "test:packaging": "node tests/packaging-regression.test.js",
     "test:spotify-auth": "node tests/spotify-auth-regression.test.js",
@@ -23,10 +23,18 @@
     "test:youtube-lyrics": "node tests/youtube-caption-lyrics-regression.test.js && node tests/youtube-forced-alignment-regression.test.js",
     "test:youtube-music-lyrics": "node tests/youtube-music-lyrics-regression.test.js",
     "test:volume": "node tests/master-volume-regression.test.js",
-    "test:webview2": "node tests/webview2-installer-regression.test.js",
     "test:audio-session": "node tests/audio-session-bridge-regression.test.js",
     "test:localization": "node tests/localization-regression.test.js",
-    "test:lyric-panel": "node tests/lyric-calibration-panel-regression.test.js"
+    "test:lyric-panel": "node tests/lyric-calibration-panel-regression.test.js",
+    "setup:castlabs": "node tools/ensure-castlabs-runtime.js",
+    "verify:castlabs": "node tools/verify-castlabs-runtime.js",
+    "test:castlabs": "node tests/castlabs-electron-regression.test.js",
+    "build:win:unsigned": "node tools/build-windows-release.js --unsigned",
+    "build:win:installer": "electron-builder --win nsis --prepackaged dist/win-unpacked",
+    "sign:evs:runtime": "node tools/evs-package.js sign node_modules/electron/dist",
+    "verify:evs:runtime": "node tools/evs-package.js verify node_modules/electron/dist",
+    "sign:evs:package": "node tools/evs-package.js sign dist/win-unpacked",
+    "verify:evs:package": "node tools/evs-package.js verify dist/win-unpacked"
   },
   "build": {
     "appId": "com.shinayuu.music",
@@ -56,7 +64,7 @@
     "win": {
       "executableName": "ShinaYuuMusic",
       "icon": "build/icon.ico",
-      "signAndEditExecutable": false,
+      "signAndEditExecutable": true,
       "target": [
         {
           "target": "nsis",
@@ -79,9 +87,10 @@
       "uninstallerSidebar": "build/installerSidebar.bmp",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh",
-      "artifactName": "ShinaYuu-Music-1.1.3.3-Setup.${ext}"
+      "artifactName": "ShinaYuu-Music-1.1.4-Setup.${ext}"
     },
-    "buildVersion": "1.1.3.3"
+    "buildVersion": "1.1.4",
+    "electronDist": "node_modules/electron/dist"
   },
   "mineradio": {
     "update": {
@@ -94,7 +103,6 @@
     }
   },
   "dependencies": {
-    "@webviewjs/webview": "0.4.0",
     "extract-zip": "^2.0.1",
     "ffmpeg-static": "^5.3.0",
     "gsap": "^3.15.0",
@@ -102,7 +110,7 @@
     "youtubei.js": "^17.2.0"
   },
   "devDependencies": {
-    "electron": "^42.4.1",
+    "electron": "file:vendor/castlabs-electron",
     "electron-builder": "^26.15.3",
     "rcedit": "^5.0.2"
   },
@@ -115,10 +123,12 @@
       "largeImageKey": "shinayuu",
       "largeImageText": "ShinaYuu Music"
     },
-    "displayVersion": "1.1.3.3",
-    "webview2": {
-      "distribution": "evergreen-bootstrapper",
-      "installWhenMissing": true
+    "displayVersion": "1.1.4",
+    "runtime": {
+      "engine": "castlabs-electron",
+      "electronVersion": "42.5.2+wvcus",
+      "widevineComponentUpdater": true,
+      "spotifyPlayback": "main-renderer"
     }
   },
   "license": "GPL-3.0-only"

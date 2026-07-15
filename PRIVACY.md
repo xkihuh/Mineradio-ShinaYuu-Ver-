@@ -17,7 +17,7 @@ The application may store the following data on the user's computer:
 
 ## Third-party services
 
-The application communicates directly with third-party services required for requested features, including Spotify, YouTube, YouTube Music, LRCLIB, Open-Meteo, and Microsoft WebView2 distribution endpoints. Each service is governed by its own privacy policy and terms.
+The application communicates directly with third-party services required for requested features, including Spotify, YouTube, YouTube Music, LRCLIB, Open-Meteo, and Castlabs Electron release and component-update endpoints. Each service is governed by its own privacy policy and terms.
 
 ## Files that must not be committed
 

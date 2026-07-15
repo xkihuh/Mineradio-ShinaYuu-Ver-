@@ -1,4 +1,55 @@
 # Changelog
+
+## 1.1.4 — 2026-07-15
+
+### Stable promotion
+
+- Promoted the complete `1.1.3.10` patch state to stable release `1.1.4`.
+- Updated package metadata, display version, Windows build version, installer naming, User-Agent, tests, build helpers, and release documentation.
+- Added `RELEASE_1.1.4.md` and updated the supported stable release line.
+
+### Castlabs and Spotify
+
+- Preserved Castlabs Electron for Content Security `42.5.2+wvcus` and the existing same-renderer Spotify Web Playback SDK architecture.
+- Preserved market-relinked track handling, authoritative SDK metadata, seek recovery, independent progress updates, and transient paused-state recovery.
+- Preserved the full Spotify lyric fallback chain and retry behavior from patch `1.1.3.10`.
+
+### Production build pipeline
+
+- Added an official two-stage Windows release build that packages `win-unpacked`, applies and verifies EVS production VMP signing, and builds NSIS from the signed prepackaged directory.
+- Added explicit development-only unsigned installer support.
+- Added SHA-256 generation for the final setup file.
+- Added detailed English documentation for EVS setup, runtime testing, production signing, optional Authenticode signing, NSIS packaging, and release smoke testing.
+
+## 1.1.3.10 - Spotify Seek Clock and Lyrics Recovery Patch
+
+- Fixed Spotify progress freezing after seeking by clearing stale drag previews and restarting the SDK/UI clocks.
+- Preserves the pre-seek play state when Spotify temporarily reports `paused=true` after a successful seek.
+- Accepts market-relinked Spotify track IDs during seek confirmation instead of requiring strict URI equality.
+- Added a dedicated 100 ms Spotify progress UI clock so the player bar remains responsive even when other UI work is delayed.
+- Added recovery reads after seek timeout and prevents stale SDK snapshots from pulling the progress bar back or stopping its clock.
+- Expanded Spotify-to-YouTube lyrics matching with normalized title/artist variants, album/ISRC queries, captions, YouTube Music text, and local alignment.
+- Made LRCLIB failures non-fatal and added controlled lyrics retries after the live Spotify SDK confirms the actual/relinked track metadata.
+- Preserved the existing UI, UX, effects, Castlabs runtime, lyrics renderer, and installer assets.
+- Kept 1.1.3 as the latest stable release; no patch-specific release document was added.
+## 1.1.3.8 - Castlabs Rebuild
+
+- Rebuilt directly from the preserved 1.1.3.3 source baseline.
+- Replaced stock Electron and the separate hidden WebView2 Spotify host with Castlabs Electron for Content Security.
+- Kept the original 1.1.3.3 UI, UX, effects, lyrics layout, visualizer, provider logic, and file structure.
+- Added a local Castlabs package wrapper and deterministic runtime setup/verification scripts for Windows.
+- Removed the WebView2 runtime dependency and installer bootstrapper.
+- Kept 1.1.3 as the latest stable release; no patch-specific release document was added.
+## 1.1.3.8 - Castlabs Electron Patch
+
+- Replaced stock Electron plus the separate hidden WebView2 Spotify host with Castlabs Electron for Content Security.
+- Added Castlabs `components.whenReady()` startup provisioning and runtime diagnostics.
+- Moved Spotify Web Playback SDK playback into the same renderer as the existing ShinaYuu Music UI.
+- Removed the WebView2 dependency, hidden host runtime, WebView2 reset helper, and NSIS WebView2 bootstrapper.
+- Configured `electron-builder` to package the installed Castlabs distribution through `electronDist`.
+- Preserved the existing UI, UX, visual effects, lyrics providers, Desktop Lyrics, YouTube playback, Discord integration, and master volume behavior.
+- Kept 1.1.3 as the latest stable release; no patch-specific release document was added.
+
 ## 1.1.3.3 - Patch
 
 - Added YouTube subtitle lyrics support for JSON3, TTML, SRV3, and WebVTT tracks exposed by the existing `yt-dlp` engine.

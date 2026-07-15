@@ -13,9 +13,9 @@ When reporting an issue, include:
 
 - Spotify Dashboard must contain `http://127.0.0.1:43821/api/spotify/callback` exactly.
 - Look for `[YouTubeEngine] Ready` in the terminal.
-- Look for `[SpotifyHost] Headless WebView2 player started` when testing Spotify.
+- Look for `[Castlabs] Components ready` when testing Spotify.
 - Use `YTDLP_PATH` when automatic `yt-dlp` provisioning is blocked.
-- Verify that Microsoft Edge WebView2 Runtime is installed when Spotify playback does not initialize.
+- Run `npm run setup:castlabs` and `npm run verify:castlabs` when Spotify playback does not initialize from source.
 - Test the in-app master volume before adjusting Windows Volume Mixer.
 
 Never share `spotify-token.json`, cookies, access tokens, or private account data.

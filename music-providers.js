@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.3.3';
+const UA = 'ShinaYuu Music/1.1.4';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const LRCLIB_BASE = 'https://lrclib.net/api';
@@ -27,6 +27,7 @@ const spotifyAuthResults = new Map();
 const spotifyAudioAnalysisCache = new Map();
 const spotifyLyricsCache = new Map();
 const spotifyLyricsFailureCache = new Map();
+const spotifyYoutubeLyricsCache = new Map();
 let spotifySessionLyricsProvider = null;
 const youtubeMusicLyricsCache = new Map();
 const youtubeStreamTokens = new Map();
@@ -777,6 +778,14 @@ async function spotifyNativeLyrics(id, metadata = {}) {
 
   if (token && token.access_token) {
     for (const trackId of candidateIds) {
+      const rememberedFailure = spotifyLyricsFailureCache.get(trackId);
+      const deterministicFailure = rememberedFailure
+        && Date.now() - Number(rememberedFailure.at || 0) < 5 * 60 * 1000
+        && [401, 403, 404].includes(Number(rememberedFailure.status || 0));
+      if (deterministicFailure) {
+        failures.push({ trackId, ...rememberedFailure, cached: true });
+        continue;
+      }
       for (const market of markets) {
         const endpoint = spotifyLyricsEndpoint(trackId, market);
         const request = (accessToken) => fetchWithTimeout(endpoint, {
@@ -1991,13 +2000,225 @@ function scoreLyricCandidate(candidate, meta) {
   return score;
 }
 
-async function fetchLrclibJson(pathname, params) {
-  const response = await fetch(`${LRCLIB_BASE}${pathname}?${params.toString()}`, {
-    headers: { 'User-Agent': UA, Accept: 'application/json' },
+
+function spotifyYoutubeVersionPenalty(candidateTitle, targetTitle) {
+  const candidate = normalizeLyricMatchText(candidateTitle);
+  const target = normalizeLyricMatchText(targetTitle);
+  const markers = [
+    'live', 'remix', 'cover', 'karaoke', 'instrumental', 'nightcore',
+    'sped up', 'speed up', 'slowed', 'slowed down', 'reverb', 'acoustic',
+    'demo', 'edit', 'version', 'performance', 'concert'
+  ];
+  let penalty = 0;
+  markers.forEach((marker) => {
+    if (candidate.includes(marker) && !target.includes(marker)) penalty += marker === 'version' || marker === 'edit' ? 18 : 58;
   });
+  return penalty;
+}
+
+function scoreSpotifyYoutubeReference(candidate, metadata = {}) {
+  if (!candidate || !candidate.id) return -Infinity;
+  const title = String(candidate.name || candidate.title || '');
+  const artist = String(candidate.artist || '');
+  const targetTitle = String(metadata.track || metadata.name || '');
+  const targetArtist = String(metadata.artist || '');
+  const titleA = normalizeLyricMatchText(title);
+  const titleB = normalizeLyricMatchText(targetTitle);
+  const titleOverlap = tokenOverlapScore(title, targetTitle);
+  const artistOverlap = tokenOverlapScore(artist, targetArtist);
+  let score = 0;
+  if (titleA && titleB && titleA === titleB) score += 100;
+  else if (titleA && titleB && (titleA.includes(titleB) || titleB.includes(titleA))) score += 72;
+  else score += titleOverlap * 62;
+  score += artistOverlap * 66;
+
+  const candidateDurationMs = Number(candidate.duration || 0);
+  let targetDurationMs = Number(metadata.duration || metadata.durationMs || 0);
+  if (targetDurationMs > 0 && targetDurationMs < 10000) targetDurationMs *= 1000;
+  if (candidateDurationMs > 0 && targetDurationMs > 0) {
+    const delta = Math.abs(candidateDurationMs - targetDurationMs) / 1000;
+    if (delta <= 1.5) score += 42;
+    else if (delta <= 3.5) score += 30;
+    else if (delta <= 6) score += 16;
+    else if (delta <= 10) score -= 12;
+    else score -= 78;
+  }
+  score -= spotifyYoutubeVersionPenalty(title, targetTitle);
+  if (/official audio|topic/i.test(`${title} ${artist}`)) score += 10;
+  return score;
+}
+
+function spotifyYoutubeLyricsSearchTerms(metadata = {}, query = {}) {
+  const track = String(metadata.track || metadata.name || query.track || '').trim();
+  const artist = String(metadata.artist || query.artist || '').trim();
+  const album = String(metadata.album || query.album || '').trim();
+  const terms = [];
+  const seen = new Set();
+  const add = (value) => {
+    const term = String(value || '').replace(/\s+/g, ' ').trim();
+    const key = normalizeLyricMatchText(term);
+    if (!term || !key || seen.has(key)) return;
+    seen.add(key);
+    terms.push(term);
+  };
+  if (metadata.isrc) add(String(metadata.isrc));
+  const titles = lyricTitleVariants(track).slice(0, 3);
+  const artists = lyricArtistVariants(artist).slice(0, 3);
+  titles.forEach((title, titleIndex) => {
+    (artists.length ? artists : ['']).forEach((artistName, artistIndex) => {
+      if (terms.length >= 10) return;
+      add(`${title} ${artistName}`);
+      if (titleIndex === 0 && artistIndex === 0) {
+        add(`${title} ${artistName} official audio`);
+        add(`${title} ${artistName} lyrics`);
+        if (album) add(`${title} ${artistName} ${album}`);
+      }
+    });
+  });
+  return terms.slice(0, 10);
+}
+
+async function spotifyYoutubeLyricsFallback(metadata = {}, query = {}) {
+  const track = String(metadata.track || metadata.name || query.track || '').trim();
+  const artist = String(metadata.artist || query.artist || '').trim();
+  if (!track || !artist) return null;
+  const durationSeconds = lyricSync.normalizeDurationSeconds(metadata.duration || metadata.durationMs || query.duration || 0);
+  const cacheKey = String(metadata.spotifyId || metadata.currentTrackId || metadata.isrc || `${track}|${artist}|${durationSeconds}`).toLowerCase();
+  const cached = spotifyYoutubeLyricsCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < (cached.value ? 30 * 60 * 1000 : 4 * 60 * 1000)) {
+    return cached.value ? { ...cached.value } : null;
+  }
+
+  const terms = spotifyYoutubeLyricsSearchTerms(metadata, query);
+  const candidates = [];
+  const seen = new Set();
+  for (const term of terms) {
+    let list = [];
+    try { list = await youtubeSearch(term, 12); } catch (_) { list = []; }
+    list.forEach((item) => {
+      if (!item || !item.id || seen.has(item.id)) return;
+      seen.add(item.id);
+      candidates.push(item);
+    });
+  }
+
+  const target = { ...metadata, track, artist, duration: durationSeconds };
+  const ranked = candidates
+    .map((candidate) => ({ candidate, score: scoreSpotifyYoutubeReference(candidate, target) }))
+    // Keep the duration/version rejection in scoreSpotifyYoutubeReference,
+    // but do not require an unrealistically perfect artist string. Spotify
+    // often returns multi-artist credits while YouTube Music uses one channel.
+    .filter((item) => item.score >= 90)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+
+  let bestPlain = null;
+  for (const item of ranked) {
+    const reference = item.candidate;
+    const match = {
+      score: Math.round(item.score),
+      track: reference.name || '',
+      artist: reference.artist || '',
+      duration: lyricSync.normalizeDurationSeconds(reference.duration || 0),
+      videoId: reference.id,
+      provider: 'youtube-reference',
+    };
+    try {
+      const timed = await youtubeCaptionService.fetchForVideo(reference.id, {
+        getInfo: youtubeInfoViaYtDlp,
+        userAgent: UA,
+        languages: [query.language, providerConfig().language, 'vi', 'en'].filter(Boolean),
+        log: false,
+      });
+      if (timed && (timed.yrc || timed.lyric)) {
+        const value = {
+          ...timed,
+          source: `spotify-${timed.source}`,
+          metadataProvider: 'spotify',
+          metadata,
+          match,
+          youtubeReference: { id: reference.id, title: reference.name || '', artist: reference.artist || '', score: Math.round(item.score) },
+        };
+        spotifyYoutubeLyricsCache.set(cacheKey, { at: Date.now(), value });
+        return { ...value };
+      }
+      if (timed && timed.plainLyric && !bestPlain) {
+        bestPlain = {
+          ...timed,
+          lyric: '',
+          yrc: '',
+          source: `spotify-${timed.source || 'youtube-caption-plain'}`,
+          metadataProvider: 'spotify',
+          metadata,
+          match,
+          youtubeReference: { id: reference.id, title: reference.name || '', artist: reference.artist || '', score: Math.round(item.score) },
+        };
+      }
+    } catch (_) {}
+
+    try {
+      const native = await youtubeMusicNativeLyrics(reference.id);
+      if (native && native.plainLyric) {
+        const base = {
+          lyric: '',
+          tlyric: '',
+          yrc: '',
+          plainLyric: native.plainLyric,
+          source: 'spotify-youtube-music',
+          metadataProvider: 'spotify',
+          metadata,
+          match,
+          youtubeReference: { id: reference.id, title: reference.name || '', artist: reference.artist || '', score: Math.round(item.score) },
+        };
+        const alignment = await youtubeForcedAlignmentService.request(reference.id, {
+          plainLyric: native.plainLyric,
+          duration: match.duration || durationSeconds,
+          language: query.language || providerConfig().language || 'auto',
+          track,
+          artist,
+        }, {
+          getYtDlpEngine: prepareYouTubeEngine,
+          findNodeRuntime,
+        });
+        if (alignment && alignment.status === 'ready' && alignment.result) {
+          const value = {
+            ...alignment.result,
+            source: 'spotify-youtube-forced-alignment',
+            metadataProvider: 'spotify',
+            metadata,
+            match,
+            youtubeReference: base.youtubeReference,
+            alignment: { status: 'ready', stage: 'ready' },
+          };
+          spotifyYoutubeLyricsCache.set(cacheKey, { at: Date.now(), value });
+          return { ...value };
+        }
+        base.alignment = alignment || { status: 'failed', stage: 'unavailable' };
+        if (!bestPlain) bestPlain = base;
+      }
+    } catch (_) {}
+  }
+
+  spotifyYoutubeLyricsCache.set(cacheKey, { at: Date.now(), value: bestPlain });
+  return bestPlain ? { ...bestPlain } : null;
+}
+
+async function fetchLrclibJson(pathname, params) {
+  const response = await fetchWithTimeout(`${LRCLIB_BASE}${pathname}?${params.toString()}`, {
+    headers: { 'User-Agent': UA, Accept: 'application/json' },
+  }, 8500);
   const data = await response.json().catch(() => (pathname === '/search' ? [] : {}));
   if (!response.ok) return pathname === '/search' ? [] : null;
   return data;
+}
+
+async function safeFetchLrclibJson(pathname, params) {
+  try {
+    return await fetchLrclibJson(pathname, params);
+  } catch (error) {
+    console.warn('[LRCLIB]', pathname, error && (error.message || error));
+    return pathname === '/search' ? [] : null;
+  }
 }
 
 async function spotifyMetadataForLyrics(id, query) {
@@ -2111,9 +2332,18 @@ async function lyricsFor(id, provider, query = {}) {
   // For Spotify playback, first request Spotify's own timed line data so the
   // lyric line changes use the same timestamps as the Spotify client. Any
   // rejection or unsupported track falls through to the existing LRCLIB path.
+  let spotifyYoutubeFallback = null;
+  let spotifyPlainFallback = null;
   if (provider === 'spotify') {
     const spotifyTimed = await spotifyNativeLyrics(metadata.currentTrackId || metadata.spotifyId || id, metadata);
-    if (spotifyTimed && (spotifyTimed.lyric || spotifyTimed.plainLyric)) return spotifyTimed;
+    if (spotifyTimed && spotifyTimed.lyric) return spotifyTimed;
+    if (spotifyTimed && spotifyTimed.plainLyric) spotifyPlainFallback = spotifyTimed;
+    spotifyYoutubeFallback = await spotifyYoutubeLyricsFallback(metadata, query);
+    // A high-confidence timed caption/alignment result is more useful than an
+    // unrelated LRCLIB match and follows the exact SDK playback clock.
+    if (spotifyYoutubeFallback && (spotifyYoutubeFallback.yrc || spotifyYoutubeFallback.lyric)) {
+      return spotifyYoutubeFallback;
+    }
   }
 
   const candidates = [];
@@ -2129,7 +2359,7 @@ async function lyricsFor(id, provider, query = {}) {
   if (artistName) exactParams.set('artist_name', artistName);
   if (albumName) exactParams.set('album_name', albumName);
   if (duration > 0) exactParams.set('duration', String(duration));
-  addCandidate(await fetchLrclibJson('/get', exactParams));
+  addCandidate(await safeFetchLrclibJson('/get', exactParams));
 
   // Then search several safe title/artist variants and score all returned
   // candidates instead of taking the first result blindly.
@@ -2144,7 +2374,7 @@ async function lyricsFor(id, provider, query = {}) {
       searches.push(params);
     });
   });
-  const searchResults = await Promise.all(searches.slice(0, 5).map((params) => fetchLrclibJson('/search', params).catch(() => [])));
+  const searchResults = await Promise.all(searches.slice(0, 7).map((params) => safeFetchLrclibJson('/search', params)));
   searchResults.forEach((list) => (Array.isArray(list) ? list : []).slice(0, 12).forEach(addCandidate));
 
   const targetMeta = { name: trackName, artist: artistName, album: albumName, durationSeconds: duration };
@@ -2190,6 +2420,32 @@ async function lyricsFor(id, provider, query = {}) {
       syncType: youtubeMusicLyric.syncType || 'UNSYNCED',
     } : undefined,
   };
+
+  if (provider === 'spotify' && spotifyYoutubeFallback && !baseResult.lyric) {
+    return {
+      ...spotifyYoutubeFallback,
+      plainLyric: spotifyYoutubeFallback.plainLyric || baseResult.plainLyric || (spotifyPlainFallback && spotifyPlainFallback.plainLyric) || '',
+      metadataProvider: 'spotify',
+      metadata,
+      match: spotifyYoutubeFallback.match || match,
+    };
+  }
+  if (provider === 'spotify' && baseResult.plainLyric && !baseResult.lyric) {
+    return {
+      ...baseResult,
+      metadataProvider: 'spotify',
+      metadata,
+      match,
+    };
+  }
+  if (provider === 'spotify' && spotifyPlainFallback && !baseResult.lyric) {
+    return {
+      ...spotifyPlainFallback,
+      metadataProvider: 'spotify',
+      metadata,
+      match: match || spotifyPlainFallback.match || null,
+    };
+  }
 
   // When YouTube has no usable caption track, keep YouTube Music/LRCLIB text
   // visible immediately and start a local forced-alignment job in the background. whisper.cpp
@@ -2412,6 +2668,8 @@ module.exports = {
   setSpotifySessionLyricsProvider,
   spotifyLyricsCandidateIds,
   normalizeSpotifyLyricsPayload,
+  scoreSpotifyYoutubeReference,
+  spotifyYoutubeLyricsFallback,
   youtubeMusicNativeLyrics,
   normalizeYouTubeMusicLyricsShelf,
   normalizeYouTubeMusicLyricsText,

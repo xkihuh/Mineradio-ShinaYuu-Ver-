@@ -54,7 +54,15 @@
     seekSerial: 0,
     seeking: false,
     seekTargetMs: 0,
-    seekStartedAt: 0
+    seekStartedAt: 0,
+    seekWasPlaying: false,
+    seekRecoveryUntil: 0,
+    lastSdkSamplePositionMs: 0,
+    lastSdkSampleAt: 0,
+    uiClockTimer: null,
+    lastUiTrackId: '',
+    lastLyricsTrackId: '',
+    lyricsRefreshTimer: null
   };
 
   window.spotifyDirectState = spotifyDirectState;
@@ -379,6 +387,140 @@
     return /^[A-Za-z0-9]{16,32}$/.test(candidate) ? candidate : '';
   }
 
+
+  function normalizeSpotifyTrackText(value) {
+    return String(value || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\b(feat(?:uring)?|ft)\.?\s+[^)\]-]+/g, ' ')
+      .replace(/\((?:[^)]*(?:remaster(?:ed)?|version|edit|explicit)[^)]*)\)/g, ' ')
+      .replace(/[^a-z0-9\u00c0-\u024f\u1e00-\u1eff]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function spotifyTextOverlap(left, right) {
+    var a = normalizeSpotifyTrackText(left).split(' ').filter(Boolean);
+    var b = normalizeSpotifyTrackText(right).split(' ').filter(Boolean);
+    if (!a.length || !b.length) return 0;
+    var setA = {};
+    a.forEach(function (token) { setA[token] = true; });
+    var common = 0;
+    b.forEach(function (token) { if (setA[token]) common++; });
+    return common / Math.max(a.length, b.length);
+  }
+
+  function spotifySdkCurrentTrack(state) {
+    return state && state.track_window && state.track_window.current_track || null;
+  }
+
+  function spotifySdkTrackIdentity(track) {
+    track = track || {};
+    var linked = track.linked_from || track.linkedFrom || {};
+    var uri = String(track.uri || (track.id ? 'spotify:track:' + track.id : '') || '');
+    var id = String(track.id || spotifyTrackIdFromUri(uri) || '');
+    var linkedUri = String(linked.uri || (linked.id ? 'spotify:track:' + linked.id : '') || '');
+    var linkedId = String(linked.id || spotifyTrackIdFromUri(linkedUri) || '');
+    return { uri: uri, id: id, linkedUri: linkedUri, linkedId: linkedId };
+  }
+
+  function spotifySdkArtistText(track) {
+    var artists = track && Array.isArray(track.artists) ? track.artists : [];
+    return artists.map(function (artist) { return String(artist && (artist.name || artist) || '').trim(); }).filter(Boolean).join(' / ');
+  }
+
+  function spotifySdkCover(track) {
+    var images = track && track.album && Array.isArray(track.album.images) ? track.album.images : [];
+    return String(images[0] && (images[0].url || images[0].uri) || '');
+  }
+
+  function spotifySdkTrackMatch(track, expectedUri, song) {
+    var identity = spotifySdkTrackIdentity(track);
+    var expectedId = spotifyTrackIdFromUri(expectedUri);
+    if (!identity.uri && !identity.id) return { matched: false, actualUri: '', actualId: '' };
+    if (identity.uri === expectedUri || identity.linkedUri === expectedUri
+        || (expectedId && (identity.id === expectedId || identity.linkedId === expectedId))) {
+      return { matched: true, relinked: identity.uri !== expectedUri, actualUri: identity.uri || expectedUri, actualId: identity.id || expectedId, linkedId: identity.linkedId };
+    }
+
+    // Spotify can transparently relink catalog IDs for the listener's market.
+    // Some SDK snapshots omit linked_from, so accept the actual item only when
+    // title, artist and duration all identify the selected song. This still
+    // rejects stale snapshots from the previously playing track.
+    song = song || currentSong() || {};
+    var actualTitle = String(track && track.name || '');
+    var actualArtist = spotifySdkArtistText(track);
+    var expectedTitle = String(song.name || song.title || '');
+    var expectedArtist = String(song.artist || '');
+    var titleA = normalizeSpotifyTrackText(actualTitle);
+    var titleB = normalizeSpotifyTrackText(expectedTitle);
+    var titleMatches = !!titleA && !!titleB && (titleA === titleB || spotifyTextOverlap(titleA, titleB) >= 0.84);
+    var artistMatches = !expectedArtist || !actualArtist || spotifyTextOverlap(actualArtist, expectedArtist) >= 0.58;
+    var actualDuration = Number(track && (track.duration_ms || track.duration) || 0);
+    var expectedDuration = Number(song.duration || 0);
+    if (expectedDuration > 0 && expectedDuration < 10000) expectedDuration *= 1000;
+    var durationMatches = !actualDuration || !expectedDuration || Math.abs(actualDuration - expectedDuration) <= 5500;
+    if (titleMatches && artistMatches && durationMatches) {
+      return { matched: true, relinked: true, metadataMatched: true, actualUri: identity.uri || expectedUri, actualId: identity.id || expectedId, linkedId: identity.linkedId };
+    }
+    return { matched: false, actualUri: identity.uri, actualId: identity.id, linkedId: identity.linkedId };
+  }
+
+  function scheduleSpotifyLyricsRefresh(song, trackId) {
+    trackId = String(trackId || '');
+    if (!trackId || !song || typeof window.fetchLyric !== 'function') return;
+    if (spotifyDirectState.lastLyricsTrackId === trackId) return;
+    if (spotifyDirectState.lyricsRefreshTimer) clearTimeout(spotifyDirectState.lyricsRefreshTimer);
+    var token = Number(window.trackSwitchToken || 0);
+    spotifyDirectState.lyricsRefreshTimer = setTimeout(function () {
+      spotifyDirectState.lyricsRefreshTimer = null;
+      if (!isSpotifyActive() || token !== Number(window.trackSwitchToken || 0) || currentSong() !== song) return;
+      spotifyDirectState.lastLyricsTrackId = trackId;
+      try { window.fetchLyric(song, token); } catch (_) {}
+    }, 180);
+  }
+
+  function syncSpotifySdkSongMetadata(track, state, reason) {
+    if (!track) return null;
+    var song = currentSong();
+    if (!song) return null;
+    var identity = spotifySdkTrackIdentity(track);
+    var previousTrackId = String(song.currentTrackId || song.actualSpotifyId || '');
+    var title = String(track.name || '').trim();
+    var artist = spotifySdkArtistText(track);
+    var cover = spotifySdkCover(track);
+    var duration = Number(state && state.duration || track.duration_ms || track.duration || 0);
+    var changed = false;
+
+    if (identity.id && song.currentTrackId !== identity.id) { song.currentTrackId = identity.id; song.actualSpotifyId = identity.id; changed = true; }
+    if (identity.uri && song.actualSpotifyUri !== identity.uri) { song.actualSpotifyUri = identity.uri; changed = true; }
+    if (identity.linkedId && !song.linkedFromId) { song.linkedFromId = identity.linkedId; changed = true; }
+    if (title && song.name !== title) { song.name = title; changed = true; }
+    if (artist && song.artist !== artist) { song.artist = artist; changed = true; }
+    if (cover && song.cover !== cover) { song.cover = cover; changed = true; }
+    if (duration > 0 && Math.abs(Number(song.duration || 0) - duration) > 50) { song.duration = duration; changed = true; }
+
+    if (changed || spotifyDirectState.lastUiTrackId !== identity.id) {
+      spotifyDirectState.lastUiTrackId = identity.id;
+      var titleEl = document.getElementById('thumb-title');
+      var artistEl = document.getElementById('thumb-artist');
+      if (titleEl) titleEl.textContent = song.name || '';
+      if (artistEl) artistEl.textContent = song.artist || '';
+      try { if (typeof window.updateControlTrackInfo === 'function') window.updateControlTrackInfo(song); } catch (_) {}
+      try { if (typeof window.updateLikeButtons === 'function') window.updateLikeButtons(song); } catch (_) {}
+      try { if (typeof window.safeRenderQueuePanel === 'function') window.safeRenderQueuePanel('spotify-sdk-metadata', { scrollCurrent: false }); } catch (_) {}
+      try { if (typeof window.scheduleShelfRebuild === 'function') window.scheduleShelfRebuild('spotify-sdk-metadata', true); } catch (_) {}
+      if (cover) {
+        try { if (typeof window.loadCoverFromUrl === 'function') window.loadCoverFromUrl(cover, { trackToken: window.trackSwitchToken, deferHeavy: true, delay: 80, timeout: 1400 }); } catch (_) {}
+      }
+    }
+
+    if (previousTrackId && identity.id && previousTrackId !== identity.id && !spotifyDirectState.switchingTrack) {
+      scheduleSpotifyLyricsRefresh(song, identity.id);
+    }
+    return { song: song, identity: identity, reason: reason || '' };
+  }
+
   function exactSpotifyTrackUri(song, descriptor) {
     var candidates = [
       descriptor && descriptor.spotifyUri,
@@ -403,6 +545,46 @@
 
   function monotonicNowMs() {
     return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+  }
+
+  function clearSpotifyProgressPreview() {
+    var drag = window.progressDragState;
+    if (drag) {
+      drag.active = false;
+      drag.previewSec = null;
+      drag.committing = false;
+    }
+    var bar = document.getElementById('progress-bar');
+    if (bar) bar.classList.remove('is-dragging');
+  }
+
+  function spotifySdkPlaybackMoving(state, actualPositionMs) {
+    var now = Date.now();
+    var previousPosition = Number(spotifyDirectState.lastSdkSamplePositionMs || 0);
+    var previousAt = Number(spotifyDirectState.lastSdkSampleAt || 0);
+    var elapsed = previousAt > 0 ? now - previousAt : 0;
+    var delta = Number(actualPositionMs || 0) - previousPosition;
+    var moving = elapsed > 0 && elapsed < 2600 && delta >= Math.max(80, elapsed * 0.18);
+    spotifyDirectState.lastSdkSamplePositionMs = Math.max(0, Number(actualPositionMs) || 0);
+    spotifyDirectState.lastSdkSampleAt = now;
+    if (state && state.paused === false) return true;
+    if (moving) return true;
+    return !!(spotifyDirectState.seekWasPlaying && now < Number(spotifyDirectState.seekRecoveryUntil || 0));
+  }
+
+  function startSpotifyUiClock() {
+    if (spotifyDirectState.uiClockTimer) clearInterval(spotifyDirectState.uiClockTimer);
+    spotifyDirectState.uiClockTimer = setInterval(function () {
+      if (!isSpotifyActive()) return;
+      try { if (typeof window.updatePlaybackProgressUi === 'function') window.updatePlaybackProgressUi(); } catch (_) {}
+    }, 100);
+  }
+
+  function stopSpotifyUiClock() {
+    if (spotifyDirectState.uiClockTimer) {
+      clearInterval(spotifyDirectState.uiClockTimer);
+      spotifyDirectState.uiClockTimer = null;
+    }
   }
 
   function nowPositionMs() {
@@ -446,6 +628,10 @@
       } else if (seekAge < 4200) {
         next = Object.assign({}, next);
         delete next.positionMs;
+        // A stale snapshot can also report paused=true immediately after a
+        // successful seek even while audio keeps playing. Preserve the
+        // pre-seek playback state until the SDK clock reaches the target.
+        if (spotifyDirectState.seekWasPlaying && next.isPlaying === false) delete next.isPlaying;
       } else {
         spotifyDirectState.seeking = false;
       }
@@ -515,10 +701,10 @@
     var raw = String(error && (error.message || error.error) || error || '');
     if (/premium/i.test(raw)) return localized('Spotify Premium là bắt buộc để phát trực tiếp.', 'Spotify Premium is required for direct playback.');
     if (/scope|permission|403|reauthor/i.test(raw)) return localized('Hãy ngắt kết nối rồi đăng nhập lại Spotify để cấp quyền phát nhạc.', 'Disconnect and reconnect Spotify to grant playback permissions.');
-    if (/SPOTIFY_HOST_NOT_READY/i.test(raw)) return localized('Bộ phát Spotify WebView2 ẩn chưa sẵn sàng. Hãy chờ vài giây hoặc kết nối lại Spotify.', 'The hidden Spotify WebView2 player is not ready. Wait a few seconds or reconnect Spotify.');
+    if (/CASTLABS_COMPONENTS|WIDEVINE|SPOTIFY_HOST_NOT_READY/i.test(raw)) return localized('Thành phần phát Spotify của Castlabs Electron chưa sẵn sàng. Hãy kiểm tra mạng, chờ Widevine hoàn tất rồi thử lại.', 'The Castlabs Electron Spotify component is not ready. Check the network, wait for Widevine, and try again.');
     if (/device|NO_ACTIVE_DEVICE|404/i.test(raw)) return localized('Không thể tạo bộ phát Spotify bên trong ShinaYuu Music. Hãy kết nối lại Spotify.', 'Could not create the Spotify player inside ShinaYuu Music. Reconnect Spotify.');
     if (/account|token|login|401/i.test(raw)) return localized('Hãy kết nối lại tài khoản Spotify.', 'Reconnect your Spotify account.');
-    if (/SPOTIFY_IN_APP_RUNTIME_REQUIRED/i.test(raw)) return localized('Spotify phải chạy trong ứng dụng ShinaYuu Music bản WebView2. Hãy chạy bằng npm start.', 'Spotify must run in the WebView2 edition of ShinaYuu Music. Start it with npm start.');
+    if (/SPOTIFY_IN_APP_RUNTIME_REQUIRED/i.test(raw)) return localized('Spotify phải chạy trong bản ShinaYuu Music dùng Castlabs Electron.', 'Spotify must run in the Castlabs Electron edition of ShinaYuu Music.');
     if (/SPOTIFY_AUDIO_NOT_ACTIVATED|AUTOPLAY/i.test(raw)) return localized('Âm thanh Spotify chưa được kích hoạt. Hãy nhấn trực tiếp nút Phát một lần nữa.', 'Spotify audio is not activated yet. Press the Play button once more.');
     if (/SPOTIFY_WRONG_TRACK|DESCRIPTOR_MISMATCH/i.test(raw)) return localized('Spotify vẫn giữ bài cũ nên ShinaYuu Music đã chặn trạng thái sai. Hãy bấm lại bài vừa chọn.', 'Spotify kept the previous track, so ShinaYuu Music blocked the incorrect state. Press the selected track again.');
     if (/SPOTIFY_SDK_PLAYBACK_NOT_CONFIRMED/i.test(raw)) return localized('Bộ phát Spotify không xác nhận được âm thanh trong ứng dụng. Hãy kết nối lại Spotify rồi thử lại.', 'The Spotify player could not confirm in-app audio. Reconnect Spotify and try again.');
@@ -579,7 +765,14 @@
     return current && current.uri || '';
   }
 
+  function runtimeName() {
+    try { return new URLSearchParams(location.search).get('runtime') || ''; } catch (_) { return ''; }
+  }
+
   function usesRemoteSpotifyHost() {
+    // Castlabs Electron provides Widevine directly to this renderer, so the
+    // Spotify Web Playback SDK runs inside the visible ShinaYuu Music window.
+    if (runtimeName() === 'castlabs-electron') return false;
     return /\bElectron\//i.test(String(navigator.userAgent || ''));
   }
 
@@ -618,7 +811,7 @@
     throw new Error('SPOTIFY_HOST_NOT_READY' + suffix);
   }
 
-  async function waitForSdkPlayback(uri, timeoutMs) {
+  async function waitForSdkPlayback(uri, timeoutMs, expectedSong) {
     if (usesRemoteSpotifyHost()) {
       var remoteStarted = Date.now();
       var remoteLastPosition = -1;
@@ -654,20 +847,31 @@
     var lastPosition = -1;
     var wrongUri = '';
     var wrongSince = 0;
+    var lastPlaybackError = '';
     timeoutMs = Math.max(2500, Number(timeoutMs) || 10000);
     while (Date.now() - started < timeoutMs) {
-      if (spotifyDirectState.sdkPlaybackError) throw new Error(spotifyDirectState.sdkPlaybackError);
+      // Castlabs/Spotify can emit a short-lived generic playback_error while
+      // the matching track is already starting. Treat the SDK state as the
+      // source of truth and only surface the error if playback never confirms.
+      if (spotifyDirectState.sdkPlaybackError) {
+        lastPlaybackError = String(spotifyDirectState.sdkPlaybackError || '');
+      }
       var state = await player.getCurrentState().catch(function () { return null; });
-      var actualUri = sdkTrackUri(state);
-      if (state && actualUri === uri && state.paused === false) {
+      var currentTrack = spotifySdkCurrentTrack(state);
+      var match = spotifySdkTrackMatch(currentTrack, uri, expectedSong);
+      var actualUri = match.actualUri || sdkTrackUri(state);
+      if (state && match.matched && state.paused === false) {
+        spotifyDirectState.sdkPlaybackError = '';
+        lastPlaybackError = '';
+        syncSpotifySdkSongMetadata(currentTrack, state, 'playback-confirm');
         var position = Number(state.position || 0);
         if (lastPosition < 0) lastPosition = position;
         else if (position > lastPosition + 20 || (position === 0 && Date.now() - started > 800)) return state;
-      } else if (state && actualUri && actualUri !== uri && state.paused === false) {
+      } else if (state && actualUri && !match.matched && state.paused === false) {
         if (wrongUri !== actualUri) {
           wrongUri = actualUri;
           wrongSince = Date.now();
-        } else if (Date.now() - wrongSince > 900) {
+        } else if (Date.now() - wrongSince > 1200) {
           var wrongTrackError = new Error('SPOTIFY_WRONG_TRACK:' + actualUri);
           wrongTrackError.actualUri = actualUri;
           wrongTrackError.expectedUri = uri;
@@ -676,10 +880,11 @@
       }
       await spotifyDelay(180);
     }
+    if (lastPlaybackError) throw new Error(lastPlaybackError);
     throw new Error(spotifyDirectState.audioActivated ? 'SPOTIFY_SDK_PLAYBACK_NOT_CONFIRMED' : 'SPOTIFY_AUDIO_NOT_ACTIVATED');
   }
 
-  async function playSpotifyUriExactly(device, uri, positionMs, requestId) {
+  async function playSpotifyUriExactly(device, uri, positionMs, requestId, expectedSong) {
     if (!device || !device.id) throw new Error('SPOTIFY_SDK_NOT_READY');
     if (!spotifyTrackIdFromUri(uri)) throw new Error('SPOTIFY_TRACK_URI_REQUIRED');
 
@@ -710,7 +915,7 @@
           requestId: requestId,
           forceTrack: true
         });
-        return await waitForSdkPlayback(uri, attempt === 1 ? 4200 : 6200);
+        return await waitForSdkPlayback(uri, attempt === 1 ? 4200 : 6200, expectedSong);
       } catch (error) {
         lastError = error;
         console.warn('[SpotifyPlayback] exact-track attempt failed', requestId, attempt, error && (error.message || error));
@@ -797,6 +1002,12 @@
 
   async function ensureSdkDevice(timeoutMs) {
     timeoutMs = Math.max(1200, Number(timeoutMs) || 4500);
+    if (runtimeName() === 'castlabs-electron' && window.desktopWindow && typeof window.desktopWindow.getRuntimeStatus === 'function') {
+      var runtimeStatus = await window.desktopWindow.getRuntimeStatus().catch(function () { return null; });
+      if (!runtimeStatus || runtimeStatus.widevineReady !== true) {
+        throw new Error((runtimeStatus && runtimeStatus.error) || 'CASTLABS_COMPONENTS_NOT_READY');
+      }
+    }
     if (usesRemoteSpotifyHost()) {
       return waitForRemoteHostReady(Math.max(timeoutMs, 12000));
     }
@@ -855,27 +1066,31 @@
             if (!state) return;
             spotifyDirectState.sdkStateReceivedAt = Date.now();
             spotifyDirectState.sdkPlaybackError = '';
-            var current = state.track_window && state.track_window.current_track;
-            var uri = current && current.uri || '';
+            var current = spotifySdkCurrentTrack(state);
+            var match = spotifySdkTrackMatch(current, spotifyDirectState.requestedUri || spotifyDirectState.currentUri, currentSong());
+            var uri = match.actualUri || current && current.uri || '';
+            var actualId = match.actualId || spotifyTrackIdFromUri(uri);
             spotifyDirectState.lastActualUri = uri;
 
-            if (spotifyDirectState.switchingTrack && spotifyDirectState.requestedUri && uri && uri !== spotifyDirectState.requestedUri) {
+            if (spotifyDirectState.switchingTrack && spotifyDirectState.requestedUri && uri && !match.matched) {
               if (!spotifyDirectState.wrongTrackSince) spotifyDirectState.wrongTrackSince = Date.now();
               console.warn('[SpotifySDK] stale-track state ignored request=' + spotifyDirectState.playRequestId + ' expected=' + spotifyDirectState.requestedUri + ' actual=' + uri);
               return;
             }
-            if (uri && spotifyDirectState.requestedUri && uri === spotifyDirectState.requestedUri) {
+            if (match.matched || !spotifyDirectState.switchingTrack) {
               spotifyDirectState.switchingTrack = false;
               spotifyDirectState.wrongTrackSince = 0;
+              syncSpotifySdkSongMetadata(current, state, 'player-state');
             }
 
+            var sdkPosition = Number(state.position || 0);
             updateSpotifyState({
               mode: 'sdk',
               currentUri: uri || spotifyDirectState.currentUri,
-              currentTrackId: uri ? uri.split(':').pop() : spotifyDirectState.currentTrackId,
-              positionMs: Number(state.position || 0),
+              currentTrackId: actualId || spotifyDirectState.currentTrackId,
+              positionMs: sdkPosition,
               durationMs: Number(state.duration || current && current.duration_ms || 0),
-              isPlaying: !state.paused
+              isPlaying: spotifySdkPlaybackMoving(state, sdkPosition)
             }, 'sdk');
           });
           var connected = await player.connect();
@@ -905,13 +1120,12 @@
   }
 
   function isSupportedSpotifyRuntime() {
-    // The visible application is the original Electron shell. On Windows,
-    // protected Spotify audio is rendered by an off-screen WebView2 host, so
-    // the renderer remains fully compatible with the original Mineradio UI.
+    // Castlabs Electron exposes Widevine to the same renderer that hosts the
+    // existing ShinaYuu Music UI, so no separate WebView2/browser host is used.
+    var runtime = runtimeName();
+    if (runtime === 'castlabs-electron') return true;
     if (usesRemoteSpotifyHost()) return true;
-    var runtime = '';
-    try { runtime = new URLSearchParams(location.search).get('runtime') || ''; } catch (_) {}
-    return runtime === 'native-webview2' || runtime === 'spotify-web-shell' || !runtime;
+    return runtime === 'spotify-web-shell' || !runtime;
   }
 
   async function resolveSpotifyDevice() {
@@ -941,13 +1155,16 @@
     try {
       var state = await spotifyDirectState.sdkPlayer.getCurrentState().catch(function () { return null; });
       if (!state || !isSpotifyActive()) return;
-      var current = state.track_window && state.track_window.current_track;
-      var uri = current && current.uri || '';
-      if (spotifyDirectState.currentUri && uri && spotifyDirectState.currentUri !== uri) return;
+      var current = spotifySdkCurrentTrack(state);
+      var match = spotifySdkTrackMatch(current, spotifyDirectState.currentUri || spotifyDirectState.requestedUri, currentSong());
+      var uri = match.actualUri || current && current.uri || '';
+      if (spotifyDirectState.currentUri && uri && spotifyDirectState.currentUri !== uri && !match.matched) return;
+      syncSpotifySdkSongMetadata(current, state, 'clock-sync');
       var actualMs = Math.max(0, Number(state.position || 0));
       var estimatedMs = nowPositionMs();
       var driftMs = actualMs - estimatedMs;
-      var playingChanged = spotifyDirectState.isPlaying !== !state.paused;
+      var sdkIsPlaying = spotifySdkPlaybackMoving(state, actualMs);
+      var playingChanged = spotifyDirectState.isPlaying !== sdkIsPlaying;
       // player_state_changed is documented to arrive at random intervals.
       // Re-anchor to the SDK clock when drift reaches roughly two frames so
       // lyric transitions use the same playback position as Spotify.
@@ -955,10 +1172,10 @@
         updateSpotifyState({
           mode: 'sdk',
           currentUri: uri || spotifyDirectState.currentUri,
-          currentTrackId: uri ? uri.split(':').pop() : spotifyDirectState.currentTrackId,
+          currentTrackId: match.actualId || (uri ? uri.split(':').pop() : spotifyDirectState.currentTrackId),
           positionMs: actualMs,
           durationMs: Number(state.duration || current && current.duration_ms || spotifyDirectState.durationMs || 0),
-          isPlaying: !state.paused
+          isPlaying: sdkIsPlaying
         }, 'sdk-clock-sync');
       }
     } catch (error) {
@@ -981,6 +1198,7 @@
       spotifyDirectState.pollTimer = null;
     }
     stopSpotifyClockSync();
+    stopSpotifyUiClock();
   }
 
   async function pollSpotifyState() {
@@ -1023,6 +1241,7 @@
 
   function startSpotifyPolling() {
     stopSpotifyPolling();
+    startSpotifyUiClock();
     // The SDK state is the source of truth for in-app playback. Polling the
     // Web API here can make the UI look active even when local audio failed.
     if (spotifyDirectState.mode === 'sdk' && spotifyDirectState.sdkPlayer) {
@@ -1087,9 +1306,18 @@
     while (Date.now() - started < timeoutMs) {
       if (serial !== spotifyDirectState.seekSerial || !isSpotifyActive()) return null;
       var state = await readSpotifySeekState();
+      var currentTrack = spotifySdkCurrentTrack(state);
       var uri = sdkTrackUri(state);
       var position = Number(state && state.position || 0);
-      var sameTrack = !spotifyDirectState.currentUri || !uri || uri === spotifyDirectState.currentUri;
+      var match = spotifySdkTrackMatch(
+        currentTrack,
+        spotifyDirectState.currentUri || spotifyDirectState.requestedUri,
+        currentSong()
+      );
+      // Spotify can relink a track ID for the listener's market. URI equality
+      // alone made valid seeks time out on those tracks and left the progress
+      // preview frozen at the clicked position.
+      var sameTrack = match.matched || !spotifyDirectState.currentUri || !uri || uri === spotifyDirectState.currentUri;
       if (state && sameTrack && Math.abs(position - targetMs) <= 1800) return state;
       await spotifyDelay(120);
     }
@@ -1098,6 +1326,8 @@
 
   async function seekSpotifyDirect(seconds) {
     if (!isSpotifyActive()) return false;
+    var wasPlaying = !!spotifyDirectState.isPlaying;
+    clearSpotifyProgressPreview();
     var durationMs = Math.max(0, Number(spotifyDirectState.durationMs || 0));
     var requestedMs = Math.max(0, Math.round(Number(seconds || 0) * 1000));
     var positionMs = durationMs > 250 ? Math.min(requestedMs, durationMs - 120) : requestedMs;
@@ -1105,6 +1335,8 @@
     spotifyDirectState.seeking = true;
     spotifyDirectState.seekTargetMs = positionMs;
     spotifyDirectState.seekStartedAt = Date.now();
+    spotifyDirectState.seekWasPlaying = wasPlaying;
+    spotifyDirectState.seekRecoveryUntil = Date.now() + 7000;
 
     // Optimistic UI update, but do not synthesize playback advancement until
     // the SDK/host confirms the new position.
@@ -1128,12 +1360,25 @@
       var confirmedState = await confirmSpotifySeek(positionMs, serial, 6500);
       if (serial !== spotifyDirectState.seekSerial || !confirmedState) return false;
       spotifyDirectState.seeking = false;
+      // Some SDK builds transiently report paused=true after seek while the
+      // audio output is already advancing. Preserve playback and explicitly
+      // resume only when the user was playing before the seek.
+      if (wasPlaying && confirmedState.paused === true && spotifyDirectState.sdkPlayer) {
+        activateSpotifyAudioFromGesture();
+        await spotifyDirectState.sdkPlayer.resume().catch(function () {});
+        await spotifyDelay(80);
+        confirmedState = await readSpotifySeekState() || confirmedState;
+      }
+      var confirmedPosition = Number(confirmedState.position || positionMs);
+      var inferredPlaying = wasPlaying || spotifySdkPlaybackMoving(confirmedState, confirmedPosition);
       updateSpotifyState({
         currentUri: sdkTrackUri(confirmedState) || spotifyDirectState.currentUri,
-        positionMs: Number(confirmedState.position || positionMs),
+        positionMs: confirmedPosition,
         durationMs: Number(confirmedState.duration || spotifyDirectState.durationMs || 0),
-        isPlaying: confirmedState.paused !== true
+        isPlaying: inferredPlaying
       }, 'seek-confirmed');
+      startSpotifyClockSync();
+      setTimeout(syncSpotifySdkClock, 0);
       if (typeof window.onPlaybackClockDiscontinuity === 'function') window.onPlaybackClockDiscontinuity(Number(confirmedState.position || positionMs) / 1000, 'spotify-seek-confirmed');
       return true;
     } catch (error) {
@@ -1141,12 +1386,15 @@
         spotifyDirectState.seeking = false;
         var latest = await readSpotifySeekState().catch(function () { return null; });
         if (latest) {
+          var latestPosition = Number(latest.position || spotifyDirectState.positionMs || 0);
           updateSpotifyState({
             currentUri: sdkTrackUri(latest) || spotifyDirectState.currentUri,
-            positionMs: Number(latest.position || spotifyDirectState.positionMs || 0),
+            positionMs: latestPosition,
             durationMs: Number(latest.duration || spotifyDirectState.durationMs || 0),
-            isPlaying: latest.paused !== true
+            isPlaying: wasPlaying || spotifySdkPlaybackMoving(latest, latestPosition)
           }, 'seek-recovery');
+          startSpotifyClockSync();
+          setTimeout(syncSpotifySdkClock, 0);
         }
       }
       console.warn('[SpotifySeek]', error && (error.message || error));
@@ -1157,6 +1405,16 @@
         ));
       }
       return false;
+    } finally {
+      if (serial === spotifyDirectState.seekSerial) {
+        clearSpotifyProgressPreview();
+        spotifyDirectState.seeking = false;
+        setTimeout(function () {
+          if (serial !== spotifyDirectState.seekSerial) return;
+          spotifyDirectState.seekWasPlaying = false;
+          spotifyDirectState.seekRecoveryUntil = 0;
+        }, 7200);
+      }
     }
   }
 
@@ -1223,24 +1481,29 @@
       device,
       targetUri,
       spotifyDirectState.positionMs,
-      requestId
+      requestId,
+      song
     );
     if (token !== window.trackSwitchToken) return false;
 
-    var confirmedUri = sdkTrackUri(confirmedState);
-    if (confirmedUri !== targetUri) {
-      throw new Error('SPOTIFY_WRONG_TRACK:' + (confirmedUri || 'unknown'));
+    var confirmedTrack = spotifySdkCurrentTrack(confirmedState);
+    var confirmedMatch = spotifySdkTrackMatch(confirmedTrack, targetUri, song);
+    if (!confirmedMatch.matched) {
+      throw new Error('SPOTIFY_WRONG_TRACK:' + (confirmedMatch.actualUri || sdkTrackUri(confirmedState) || 'unknown'));
     }
+    var confirmedUri = confirmedMatch.actualUri || targetUri;
+    var confirmedId = confirmedMatch.actualId || targetId;
     spotifyDirectState.switchingTrack = false;
     spotifyDirectState.requestedUri = targetUri;
     spotifyDirectState.wrongTrackSince = 0;
+    syncSpotifySdkSongMetadata(confirmedTrack, confirmedState, 'start-confirmed');
 
     updateSpotifyState({
       mode: device.mode,
       deviceId: device.id,
       deviceName: device.name,
-      currentUri: targetUri,
-      currentTrackId: targetId,
+      currentUri: confirmedUri,
+      currentTrackId: confirmedId,
       positionMs: Number(confirmedState.position || spotifyDirectState.positionMs || 0),
       durationMs: Number(confirmedState.duration || spotifyDirectState.durationMs || 0),
       isPlaying: !confirmedState.paused
@@ -1366,6 +1629,7 @@
       var started = await startSpotifyTrack(song, descriptor, opts, token);
       if (!started || token !== window.trackSwitchToken) return;
 
+      spotifyDirectState.lastLyricsTrackId = String(song.currentTrackId || spotifyDirectState.currentTrackId || selectedSpotifyTrackId(song) || '');
       try { window.beginListenSession(song, playbackContext); } catch (_) {}
       if (song.type === 'podcast') {
         try {
@@ -1407,6 +1671,7 @@
     spotifyDirectState.active = false;
     stopSpotifyPolling();
     stopSpotifyRealtimeCapture();
+    if (spotifyDirectState.lyricsRefreshTimer) clearTimeout(spotifyDirectState.lyricsRefreshTimer);
     document.body.classList.remove('spotify-direct-active');
     window.activePlaybackTransport = 'html-audio';
     return originalPlayQueueAt.call(window, idx, opts);

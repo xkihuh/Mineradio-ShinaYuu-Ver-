@@ -49,3 +49,8 @@ tmp/
 *.png.tmp
 verification/
 screenshots/
+
+# Castlabs runtime downloaded during source setup
+vendor/castlabs-electron/dist/
+vendor/castlabs-electron/path.txt
+vendor/castlabs-electron/electron.d.ts

@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('desktopWindow', {
   isDesktop: true,
+  runtime: 'castlabs-electron',
+  getRuntimeStatus: () => ipcRenderer.invoke('shinayuu-runtime-get-status'),
   minimize: () => ipcRenderer.invoke('desktop-window-minimize'),
   toggleMaximize: () => ipcRenderer.invoke('desktop-window-toggle-maximize'),
   toggleFullscreen: () => ipcRenderer.invoke('desktop-window-toggle-fullscreen'),
@@ -60,4 +62,7 @@ contextBridge.exposeInMainWorld('desktopWindow', {
 window.addEventListener('DOMContentLoaded', () => {
   document.documentElement.classList.add('desktop-shell-root');
   document.body.classList.add('desktop-shell');
+  document.body.classList.add('castlabs-electron-runtime');
+  window.dispatchEvent(new CustomEvent('shinayuu-castlabs-runtime-ready'));
+  window.dispatchEvent(new CustomEvent('shinayuu-native-runtime-ready'));
 });

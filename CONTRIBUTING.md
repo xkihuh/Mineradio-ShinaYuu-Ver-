@@ -13,7 +13,7 @@ Contributions are welcome when they preserve the current UI/UX, respect user dat
 
 ## Versioning
 
-Development fixes on a stable release use patch-build notation such as `1.1.3.1` in project-facing discussions. Do not add a dedicated release document for patch builds. Create a new `RELEASE_x.y.z.md` only when the maintainer promotes the work to a stable release.
+Development fixes on a stable release use patch-build notation such as `1.1.4.1` in project-facing discussions. Do not add a dedicated release document for patch builds. Create a new `RELEASE_x.y.z.md` only when the maintainer promotes the work to a stable release.
 
 ## Licensing
 

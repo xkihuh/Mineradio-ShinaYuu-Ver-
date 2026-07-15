@@ -61,7 +61,6 @@
 !macroend
 
 !macro customInstall
-  Call ShinaYuuEnsureWebView2Runtime
   FileOpen $0 "$INSTDIR\${MINERADIO_INSTALL_MARKER}" w
   ${IfNot} ${Errors}
     FileWrite $0 "ShinaYuu Music install root$\r$\n"
@@ -105,52 +104,6 @@
 !macroend
 
 !ifndef BUILD_UNINSTALLER
-Function ShinaYuuReadWebView2Version
-  StrCpy $R8 ""
-  ${If} ${RunningX64}
-    SetRegView 64
-    ReadRegStr $R8 HKLM "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
-    ${If} $R8 == ""
-      ReadRegStr $R8 HKCU "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
-    ${EndIf}
-    SetRegView 32
-  ${Else}
-    ReadRegStr $R8 HKLM "SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
-    ${If} $R8 == ""
-      ReadRegStr $R8 HKCU "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
-    ${EndIf}
-  ${EndIf}
-  Push $R8
-FunctionEnd
-
-Function ShinaYuuEnsureWebView2Runtime
-  Call ShinaYuuReadWebView2Version
-  Pop $R8
-  ${If} $R8 != ""
-  ${AndIf} $R8 != "0.0.0.0"
-    DetailPrint "Microsoft Edge WebView2 Runtime detected: $R8"
-    Return
-  ${EndIf}
-
-  DetailPrint "Microsoft Edge WebView2 Runtime is missing. Installing the Evergreen Runtime..."
-  StrCpy $R9 "$PLUGINSDIR\MicrosoftEdgeWebview2Setup.exe"
-  ; Escape the PowerShell dollar sign for NSIS. $$ becomes a literal $ at runtime.
-  nsExec::ExecToStack 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "$$ProgressPreference = ''SilentlyContinue''; Invoke-WebRequest -UseBasicParsing -Uri ''https://go.microsoft.com/fwlink/p/?LinkId=2124703'' -OutFile ''$R9''"'
-  Pop $R7
-  Pop $R6
-  ${If} $R7 != "0"
-    MessageBox MB_ICONEXCLAMATION|MB_OK "ShinaYuu Music could not download Microsoft Edge WebView2 Runtime. Spotify playback may be unavailable until WebView2 Runtime is installed."
-    Return
-  ${EndIf}
-
-  ExecWait '"$R9" /silent /install' $R7
-  ${If} $R7 != "0"
-  ${AndIf} $R7 != "3010"
-    MessageBox MB_ICONEXCLAMATION|MB_OK "Microsoft Edge WebView2 Runtime installation returned code $R7. ShinaYuu Music will still be installed, but Spotify playback may require WebView2 Runtime."
-  ${Else}
-    DetailPrint "Microsoft Edge WebView2 Runtime installation completed."
-  ${EndIf}
-FunctionEnd
 
 Function MineradioGuiInit
   System::Call 'dwmapi::DwmSetWindowAttribute(p $HWNDPARENT, i 20, *i 1, i 4) i .r0'
@@ -879,7 +832,7 @@ Function MineradioWelcomeShow
   SendMessage $0 ${WM_SETFONT} $MineradioBodyFont 1
   SetCtlColors $0 "4B5263" "FFFFFF"
 
-  ${NSD_CreateLabel} 22u 130u 238u 12u "默认位置：$INSTDIR"
+  ${NSD_CreateLabel} 22u 130u 238u 12u "Thư mục mặc định: $INSTDIR"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioTitleFont 1
   SetCtlColors $0 "3257F7" "FFFFFF"
@@ -914,17 +867,17 @@ Function MineradioDirectoryShow
   CreateFont $MineradioBodyFont "Segoe UI" 9 400
   CreateFont $MineradioSmallFont "Segoe UI" 8 500
 
-  ${NSD_CreateLabel} 22u 12u 238u 20u "选择安装位置"
+  ${NSD_CreateLabel} 22u 12u 238u 20u "Chọn thư mục cài đặt"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioTitleFont 1
   SetCtlColors $0 "111217" "FFFFFF"
 
-  ${NSD_CreateLabel} 22u 40u 238u 24u "你可以使用默认路径，也可以选择其它磁盘或文件夹。安装器会自动创建缺失的目录。"
+  ${NSD_CreateLabel} 22u 40u 238u 24u "Bạn có thể dùng đường dẫn mặc định hoặc chọn ổ đĩa/thư mục khác. Trình cài đặt sẽ tự tạo thư mục còn thiếu."
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioBodyFont 1
   SetCtlColors $0 "4B5263" "FFFFFF"
 
-  ${NSD_CreateLabel} 22u 76u 238u 10u "安装目录"
+  ${NSD_CreateLabel} 22u 76u 238u 10u "Thư mục cài đặt"
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioSmallFont 1
   SetCtlColors $0 "3257F7" "FFFFFF"
@@ -934,7 +887,7 @@ Function MineradioDirectoryShow
   SendMessage $MineradioDirectoryInput ${WM_SETFONT} $MineradioBodyFont 1
   SetCtlColors $MineradioDirectoryInput "111217" "FFFFFF"
 
-  ${NSD_CreateBrowseButton} 210u 93u 50u 17u "浏览..."
+  ${NSD_CreateBrowseButton} 210u 93u 50u 17u "Duyệt..."
   Pop $0
   SendMessage $0 ${WM_SETFONT} $MineradioSmallFont 1
   ${NSD_OnClick} $0 MineradioDirectoryBrowse
@@ -950,7 +903,7 @@ FunctionEnd
 Function MineradioDirectoryLeave
   ${NSD_GetText} $MineradioDirectoryInput $0
   ${If} $0 == ""
-    MessageBox MB_ICONEXCLAMATION|MB_OK "请选择安装文件夹。"
+    MessageBox MB_ICONEXCLAMATION|MB_OK "Hãy chọn thư mục cài đặt."
     Abort
   ${EndIf}
   Push "$0"

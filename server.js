@@ -3763,9 +3763,10 @@ async function handleModernMusicRoute(req, res, url, pn) {
       const requestedDurationMs = requestedDuration > 10000 ? requestedDuration : requestedDuration * 1000;
       const hostDurationMatches = !requestedDurationMs || !hostState || !hostState.durationMs
         || Math.abs(Number(hostState.durationMs) - requestedDurationMs) <= 4000;
-      const currentTrackId = hostState && hostState.alive && hostDurationMatches
+      const rendererCurrentTrackId = String(url.searchParams.get('currentTrackId') || '').trim();
+      const currentTrackId = rendererCurrentTrackId || (hostState && hostState.alive && hostDurationMatches
         ? hostState.currentTrackId
-        : '';
+        : '');
       const data = await musicProviders.lyricsFor(id, youtube ? 'youtube' : 'spotify', {
         track: url.searchParams.get('track') || '',
         artist: url.searchParams.get('artist') || '',

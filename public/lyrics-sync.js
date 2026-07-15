@@ -20,7 +20,7 @@
   function normalizeDelaySeconds(value, fallback = 0.35) {
     const parsed = Number(value);
     const defaultValue = Number(fallback);
-    return clamp(Number.isFinite(parsed) ? parsed : (Number.isFinite(defaultValue) ? defaultValue : 0.35), -5, 5);
+    return clamp(Number.isFinite(parsed) ? parsed : (Number.isFinite(defaultValue) ? defaultValue : 0.35), -15, 15);
   }
 
   function resolveDelaySeconds(defaultDelay, trackDelay) {
@@ -62,7 +62,7 @@
   function normalizeTimelineRate(value, fallback = 1) {
     const parsed = Number(value);
     const defaultValue = Number(fallback);
-    return clamp(Number.isFinite(parsed) ? parsed : (Number.isFinite(defaultValue) ? defaultValue : 1), 0.94, 1.06);
+    return clamp(Number.isFinite(parsed) ? parsed : (Number.isFinite(defaultValue) ? defaultValue : 1), 0.80, 1.20);
   }
 
   // Return a conservative automatic timeline stretch. The rate represents how
