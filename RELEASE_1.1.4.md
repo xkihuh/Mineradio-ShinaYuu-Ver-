@@ -1,6 +1,6 @@
 # ShinaYuu Music 1.1.4
 
-ShinaYuu Music 1.1.4 is the stable release promoted from the `1.1.3.10` patch build.
+ShinaYuu Music 1.1.4 is the stable release promoted from the `1.1.3.2` patch build.
 
 ## Castlabs Electron runtime
 
