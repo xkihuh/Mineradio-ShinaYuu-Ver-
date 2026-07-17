@@ -156,6 +156,19 @@ Spotify now runs in the same Castlabs Electron renderer as the application UI. T
 - `NOTICE.md` — attribution and third-party notices.
 - `CHANGELOG.md` — release history.
 
-## License
+## Acknowledgments
+
+Mineradio was originally designed and developed by XxHuberrr, and is now being maintained and localized for global users by x.kihuh. Special thanks to **emily**, who co-created early concepts for the visual foundation and inspired the optimization direction for the `emily` visual preset.
+
+We also want to thank akimiya7742 and MIKUHOLIC for their support during the development of the application.
+
+## Copyright and License
+
+Copyright (C) 2026 XxHuberrr.
+Copyright (C) 2026 X.kihuh (For modifications and maintenance).
+ShinaYuu Music is licensed under `GPL-3.0-only`. Redistribution of source or binaries must preserve the license, copyright notices, attribution, and the corresponding source obligations described by GPLv3.
+This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE) file for details.
+
+The ShinaYuu Logo, the name "ShinaYuu," the UI visual design, and original visual assets belong entirely to the original author. Third-party dependencies and services follow their respective open-source licenses and terms of service.
 
 ShinaYuu Music is licensed under `GPL-3.0-only`. Redistribution of source or binaries must preserve the license, copyright notices, attribution, and corresponding-source obligations described by GPLv3. Third-party runtime components retain their own licenses and notices.
