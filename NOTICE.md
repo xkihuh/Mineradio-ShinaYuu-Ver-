@@ -26,11 +26,11 @@ ShinaYuu Music uses or interoperates with independently licensed components and 
 
 - Castlabs Electron for Content Security, Electron, and Electron Builder.
 - Spotify Web API, Spotify Accounts OAuth, and Spotify Web Playback SDK.
-- YouTube, YouTube Music, `yt-dlp`, and `youtubei.js`.
+- Google OAuth, YouTube Data API, YouTube, YouTube Music, `yt-dlp`, and `youtubei.js`.
 - LRCLIB.
 - `whisper.cpp` and Whisper model data for optional local alignment.
 - FFmpeg and `ffmpeg-static`.
-- Three.js, GSAP, music-tempo, mpg123-decoder, and extract-zip.
+- Three.js, GSAP, music-tempo, mpg123-decoder, extract-zip, music-metadata, chokidar, node-7z, and 7zip-bin.
 - Open-Meteo.
 
 Each component remains subject to its own license and terms. Dependency license files distributed with packaged modules must not be removed.

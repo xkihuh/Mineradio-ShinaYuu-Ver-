@@ -1,56 +1,34 @@
-"use strict";
-
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
-const path = require("node:path");
 
-function runCommand(command, args, cwd) {
-  const result = spawnSync(command, args, {
-    cwd,
-    stdio: "inherit",
-    shell: false,
-    windowsHide: true
-  });
-
-  if (result.error) {
-    return {
-      ok: false,
-      error: result.error.message
-    };
-  }
-
-  return {
-    ok: result.status === 0,
-    error: `Exit code ${result.status}`
-  };
-}
-
-function runEvs(argumentsList, cwd) {
-  const candidates = process.platform === "win32"
+function runPython(args, cwd) {
+  const commands = process.platform === "win32"
     ? [
-        ["py", ["-3", ...argumentsList]],
-        ["python", argumentsList]
+        ["py", ["-3", ...args]],
+        ["python", args],
       ]
     : [
-        ["python3", argumentsList],
-        ["python", argumentsList]
+        ["python3", args],
+        ["python", args],
       ];
 
-  const errors = [];
+  let lastError = "";
 
-  for (const [command, args] of candidates) {
-    const result = runCommand(command, args, cwd);
+  for (const [command, commandArgs] of commands) {
+    const result = spawnSync(command, commandArgs, {
+      cwd,
+      stdio: "inherit",
+      shell: false,
+    });
 
-    if (result.ok) {
+    if (!result.error && result.status === 0) {
       return;
     }
 
-    errors.push(`${command}: ${result.error}`);
+    lastError = result.error?.message || `Exit code ${result.status}`;
   }
 
-  throw new Error(
-    `Unable to execute Castlabs EVS:\n${errors.join("\n")}`
-  );
+  throw new Error(`EVS command failed: ${lastError}`);
 }
 
 exports.default = async function evsAfterSign(context) {
@@ -58,44 +36,25 @@ exports.default = async function evsAfterSign(context) {
     return;
   }
 
-  const appOutDir = context.appOutDir;
-  const executablePath = path.join(
-    appOutDir,
-    "ShinaYuuMusic.exe"
-  );
+  const appDirectory = context.appOutDir;
 
-  if (!fs.existsSync(executablePath)) {
-    throw new Error(
-      `Packaged executable was not found: ${executablePath}`
-    );
+  if (!fs.existsSync(appDirectory)) {
+    throw new Error(`Packaged app directory was not found: ${appDirectory}`);
   }
 
-  console.log("");
-  console.log("[EVS] Signing production VMP package...");
-  console.log(`[EVS] Package: ${appOutDir}`);
+  console.log(`[EVS] Signing packaged app: ${appDirectory}`);
 
-  runEvs(
-    [
-      "-m",
-      "castlabs_evs.vmp",
-      "sign-pkg",
-      appOutDir
-    ],
-    appOutDir
+  runPython(
+    ["-m", "castlabs_evs.vmp", "sign-pkg", appDirectory],
+    context.outDir
   );
 
-  console.log("[EVS] Verifying production VMP signature...");
+  console.log("[EVS] Verifying VMP signature...");
 
-  runEvs(
-    [
-      "-m",
-      "castlabs_evs.vmp",
-      "verify-pkg",
-      appOutDir
-    ],
-    appOutDir
+  runPython(
+    ["-m", "castlabs_evs.vmp", "verify-pkg", appDirectory],
+    context.outDir
   );
 
-  console.log("[EVS] VMP signing and verification completed.");
-  console.log("");
+  console.log("[EVS] Production VMP signing completed.");
 };

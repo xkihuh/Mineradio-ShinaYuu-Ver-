@@ -8,21 +8,26 @@ The application may store the following data on the user's computer:
 
 - Spotify Client ID, market, and language settings.
 - Spotify OAuth access and refresh tokens.
-- Search history and application-managed playlists.
+- Optional Google/YouTube OAuth access and refresh tokens.
+- Search history, synchronized playlist metadata, and application-managed playlists.
+- Paths to local music folders or archives selected by the user.
 - Cached track metadata and artwork.
 - Lyric data, per-track lyric calibration, and layout settings.
 - Visualizer, Desktop Lyrics, wallpaper, Discord, and volume preferences.
 - Beat-analysis cache, YouTube lyric cache, and local forced-alignment cache.
 - Downloaded helper runtimes and models used for local alignment.
+- Cached archive extraction, embedded artwork, and local-library scan metadata.
 
 ## Third-party services
 
-The application communicates directly with third-party services required for requested features, including Spotify, YouTube, YouTube Music, LRCLIB, Open-Meteo, and Castlabs Electron release and component-update endpoints. Each service is governed by its own privacy policy and terms.
+The application communicates directly with third-party services required for requested features, including Spotify, Google OAuth, YouTube Data API, YouTube, YouTube Music, LRCLIB, Open-Meteo, and Castlabs Electron release and component-update endpoints. Each service is governed by its own privacy policy and terms.
 
 ## Files that must not be committed
 
 - `music-sources.json`
 - `spotify-token.json`
+- `youtube-token.json`
+- `local-library.json`
 - `.cookie`
 - `.qq-cookie`
 - `node_modules/`

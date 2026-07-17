@@ -848,6 +848,13 @@ body.login-guide-active #login-guide-canvas{opacity:1}
 #qr-status.scan{color:#7ee2a8}
 #qr-status.fail{color:#f08080}
 #qr-status.preview{color:rgba(191,214,107,.86)}
+.youtube-device-code-card{display:none;align-items:center;justify-content:space-between;gap:12px;margin:-2px 0 14px;padding:12px 14px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.025));box-shadow:inset 0 1px 0 rgba(255,255,255,.10);backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35)}
+.youtube-device-code-card.show{display:flex}
+.youtube-device-code-copy{min-width:0}
+.youtube-device-code-label{font-size:10px;font-weight:760;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.45)}
+.youtube-device-code-value{display:block;margin-top:4px;font-size:22px;line-height:1;font-weight:820;letter-spacing:.16em;color:#fff;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(255,255,255,.18)}
+.youtube-device-code-card .modal-btn{flex:0 0 auto;padding:8px 11px}
+.youtube-oauth-panel{border-color:rgba(255,255,255,.10);background:rgba(0,0,0,.12)}
 .account-provider-chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;margin-bottom:10px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);font-size:10.5px;letter-spacing:.5px;color:rgba(255,255,255,.58)}
 .account-provider-chip.netease{border-color:rgba(217,91,103,.26);color:#ffd7dc;background:rgba(217,91,103,.08)}
 .account-provider-chip.qq{border-color:rgba(191,214,107,.26);color:#f3ffd1;background:rgba(191,214,107,.08)}
@@ -2053,6 +2060,174 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 .discord-setup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 @media(max-height:720px){.discord-setup-dialog{padding:18px}.discord-setup-copy{margin:10px 0 13px}.discord-setup-field{margin-top:9px}.discord-setup-actions{margin-top:13px}}
 
+
+/* ShinaYuu 1.1.4.3 - near-transparent home liquid glass */
+#empty-home{--liquid-x:50%;--liquid-y:30%;--liquid-tilt-x:0deg;--liquid-tilt-y:0deg;isolation:isolate;perspective:1200px}
+#empty-home::before{content:"";position:absolute;inset:-30px;z-index:-1;pointer-events:none;background:radial-gradient(circle at var(--liquid-x) var(--liquid-y),rgba(111,246,229,.10),transparent 34%),radial-gradient(circle at calc(100% - var(--liquid-x)) calc(100% - var(--liquid-y)),rgba(91,126,255,.08),transparent 32%);filter:blur(28px);opacity:.72;transition:opacity .35s ease}
+body.empty-home-active #empty-home .home-hero,
+body.empty-home-active #empty-home .home-card,
+body.empty-home-active #empty-home .home-tile,
+body.empty-home-active #empty-home .home-mosaic-cell{
+  position:relative;overflow:hidden;background-color:rgba(5,10,15,.045)!important;
+  background:
+    radial-gradient(circle at var(--liquid-local-x,var(--liquid-x)) var(--liquid-local-y,var(--liquid-y)),rgba(255,255,255,.19),rgba(255,255,255,.032) 24%,transparent 58%),
+    linear-gradient(138deg,rgba(255,255,255,.078),rgba(255,255,255,.020) 44%,rgba(4,14,20,.095) 100%)!important;
+  border:1px solid rgba(255,255,255,.23)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(255,255,255,.045),0 18px 54px rgba(3,9,14,.18),0 2px 12px rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(24px) saturate(1.72) brightness(1.08)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(1.72) brightness(1.08)!important;
+  transform:translateZ(0) rotateX(var(--liquid-tilt-x)) rotateY(var(--liquid-tilt-y));transition:transform .45s cubic-bezier(.16,1,.3,1),border-color .35s ease,box-shadow .45s ease,background .35s ease;
+}
+body.empty-home-active #empty-home .home-hero{background-color:rgba(5,10,15,.072)!important}
+body.empty-home-active #empty-home .home-card,
+body.empty-home-active #empty-home .home-tile,
+body.empty-home-active #empty-home .home-mosaic-cell{background-color:rgba(5,10,15,.028)!important}
+body.empty-home-active #empty-home .home-hero::before,
+body.empty-home-active #empty-home .home-card::before,
+body.empty-home-active #empty-home .home-tile::before,
+body.empty-home-active #empty-home .home-mosaic-cell::before{
+  content:""!important;display:block!important;position:absolute!important;inset:-18%!important;pointer-events:none!important;z-index:0!important;
+  background:linear-gradient(112deg,transparent 16%,rgba(255,255,255,.25) 34%,rgba(255,255,255,.025) 47%,transparent 58%,rgba(82,241,225,.075) 72%,transparent 86%)!important;
+  opacity:.44!important;mix-blend-mode:screen!important;transform:translate3d(-12%,0,0) skewX(-9deg)!important;transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .35s ease!important;
+}
+body.empty-home-active #empty-home .home-hero:hover::before,
+body.empty-home-active #empty-home .home-card:hover::before,
+body.empty-home-active #empty-home .home-tile:hover::before,
+body.empty-home-active #empty-home .home-mosaic-cell:hover::before{transform:translate3d(10%,0,0) skewX(-9deg)!important;opacity:.58!important}
+body.empty-home-active #empty-home .home-hero::after,
+body.empty-home-active #empty-home .home-card::after,
+body.empty-home-active #empty-home .home-tile::after,
+body.empty-home-active #empty-home .home-mosaic-cell::after{
+  content:""!important;display:block!important;position:absolute!important;left:8%!important;right:8%!important;top:0!important;height:1px!important;z-index:1!important;pointer-events:none!important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.78),rgba(108,246,231,.34),transparent)!important;opacity:.60!important;
+}
+body.empty-home-active #empty-home .home-hero>* ,body.empty-home-active #empty-home .home-card>* ,body.empty-home-active #empty-home .home-tile>* ,body.empty-home-active #empty-home .home-mosaic-cell>*{position:relative;z-index:2}
+body.empty-home-active #empty-home .home-card:hover,body.empty-home-active #empty-home .home-tile:hover,body.empty-home-active #empty-home .home-mosaic-cell:hover{transform:translate3d(0,-4px,18px) scale(1.008) rotateX(var(--liquid-tilt-x)) rotateY(var(--liquid-tilt-y));border-color:rgba(255,255,255,.40)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.46),0 25px 64px rgba(4,14,22,.24),0 0 32px rgba(94,239,222,.075)!important}
+.youtube-oauth-panel.show{display:block}
+.local-library-toolbar{align-items:flex-start;gap:8px;flex-wrap:wrap}
+.tag-source.local{color:#b8ffe7!important;border-color:rgba(105,255,205,.28)!important;background:rgba(105,255,205,.10)!important}
+.local-source-remove{width:26px;height:26px;padding:0!important;border-radius:50%!important}
+@media (prefers-reduced-motion:reduce){body.empty-home-active #empty-home .home-card,body.empty-home-active #empty-home .home-tile,body.empty-home-active #empty-home .home-mosaic-cell{transition:none!important}}
+
+/* ShinaYuu 1.1.4.3 - fully transparent Home liquid glass */
+body.empty-home-active #empty-home .home-hero,
+body.empty-home-active #empty-home .home-card,
+body.empty-home-active #empty-home .home-tile,
+body.empty-home-active #empty-home .home-mosaic-cell,
+body.empty-home-active #empty-home .discord-home-card{
+  background:transparent!important;
+  background-color:transparent!important;
+  border-color:rgba(255,255,255,.18)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.025),0 14px 44px rgba(0,0,0,.10)!important;
+  backdrop-filter:blur(28px) saturate(1.78) brightness(1.10)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.78) brightness(1.10)!important;
+}
+body.empty-home-active #empty-home .home-hero::before,
+body.empty-home-active #empty-home .home-card::before,
+body.empty-home-active #empty-home .home-tile::before,
+body.empty-home-active #empty-home .home-mosaic-cell::before{
+  background:linear-gradient(112deg,transparent 19%,rgba(255,255,255,.14) 35%,rgba(255,255,255,.008) 48%,transparent 61%,rgba(82,241,225,.035) 74%,transparent 88%)!important;
+  opacity:.30!important;
+}
+body.empty-home-active #empty-home .home-hero::after,
+body.empty-home-active #empty-home .home-card::after,
+body.empty-home-active #empty-home .home-tile::after,
+body.empty-home-active #empty-home .home-mosaic-cell::after{
+  opacity:.34!important;
+}
+body.empty-home-active #empty-home .discord-home-card::before{
+  background:radial-gradient(circle at var(--liquid-x) var(--liquid-y),rgba(129,92,246,.055),transparent 38%),radial-gradient(circle at 90% 20%,rgba(95,228,190,.04),transparent 34%)!important;
+  opacity:.44!important;
+}
+body.empty-home-active #empty-home .discord-card-banner{
+  background:linear-gradient(105deg,rgba(112,70,210,.07),rgba(52,31,93,.025) 48%,rgba(42,130,116,.045))!important;
+  border-bottom-color:rgba(255,255,255,.045)!important;
+}
+body.empty-home-active #empty-home .discord-now-playing{
+  background:transparent!important;
+  border-color:rgba(255,255,255,.10)!important;
+  backdrop-filter:blur(18px) saturate(1.45)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.45)!important;
+}
+
+/* ShinaYuu 1.1.5 - persistent clear liquid glass lock.
+   Home is intentionally excluded from the delayed panel/SVG glass layers. */
+html body.empty-home-active #empty-home::before{
+  background:none!important;
+  filter:none!important;
+  opacity:0!important;
+}
+html body.empty-home-active #empty-home .home-hero,
+html body.empty-home-active #empty-home .home-card,
+html body.empty-home-active #empty-home .home-tile,
+html body.empty-home-active #empty-home .home-mosaic-cell,
+html body.empty-home-active #empty-home .discord-home-card,
+html.control-glass-svg-ok body.empty-home-active #empty-home .home-hero,
+html.control-glass-svg-ok body.empty-home-active #empty-home .home-card,
+html.control-glass-svg-ok body.empty-home-active #empty-home .home-tile,
+html.control-glass-svg-ok body.empty-home-active #empty-home .home-mosaic-cell,
+html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
+  background:none!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  border-color:rgba(255,255,255,.22)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(255,255,255,.035),0 12px 38px rgba(0,0,0,.07)!important;
+  backdrop-filter:saturate(1.22) contrast(1.035)!important;
+  -webkit-backdrop-filter:saturate(1.22) contrast(1.035)!important;
+  isolation:isolate;
+}
+html body.empty-home-active #empty-home .home-hero::before,
+html body.empty-home-active #empty-home .home-card::before,
+html body.empty-home-active #empty-home .home-tile::before,
+html body.empty-home-active #empty-home .home-mosaic-cell::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:-35% -55%!important;
+  z-index:0!important;
+  pointer-events:none!important;
+  background:
+    radial-gradient(circle at var(--liquid-local-x,var(--liquid-x)) var(--liquid-local-y,var(--liquid-y)),rgba(255,255,255,.18),transparent 18%),
+    linear-gradient(108deg,transparent 34%,rgba(255,255,255,.12) 45%,rgba(112,247,233,.045) 50%,rgba(255,255,255,.025) 55%,transparent 66%)!important;
+  opacity:.34!important;
+  transform:translate3d(calc((var(--liquid-x) - 50%) * .08),calc((var(--liquid-y) - 50%) * .05),0) skewX(-8deg)!important;
+  mix-blend-mode:screen!important;
+  filter:none!important;
+  transition:transform .22s ease,opacity .22s ease!important;
+}
+html body.empty-home-active #empty-home .home-hero::after,
+html body.empty-home-active #empty-home .home-card::after,
+html body.empty-home-active #empty-home .home-tile::after,
+html body.empty-home-active #empty-home .home-mosaic-cell::after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  left:7%!important;
+  right:7%!important;
+  top:0!important;
+  bottom:auto!important;
+  height:1px!important;
+  z-index:1!important;
+  pointer-events:none!important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.82),rgba(94,239,222,.26),transparent)!important;
+  opacity:.52!important;
+}
+html body.empty-home-active #empty-home .home-mosaic-cell.has-cover,
+html.control-glass-svg-ok body.empty-home-active #empty-home .home-mosaic-cell.has-cover{
+  background-image:var(--home-liquid-cover-image,none)!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+html body.empty-home-active #empty-home .discord-card-banner,
+html body.empty-home-active #empty-home .discord-now-playing{
+  background:none!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
 </style>
 </head>
 <body>
@@ -2628,9 +2803,13 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
     <div id="queue-list" class="queue-list"></div>
   </div>
   <div id="pl-pane" style="display:none">
-    <div class="queue-toolbar">
-      <div class="queue-chip">Kết nối Spotify để hiện playlist; YouTube dùng nguồn công khai</div>
-      <button class="fx-mini-btn ghost" onclick="refreshUserPlaylists(true)" style="height:26px;padding:0 10px;font-size:11px">Làm mới</button>
+    <div class="queue-toolbar local-library-toolbar">
+      <div class="queue-chip">Spotify · YouTube · Nhạc local</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="fx-mini-btn ghost" onclick="addLocalMusicSource()" style="height:26px;padding:0 10px;font-size:11px">+ Thêm nhạc local</button>
+        <button class="fx-mini-btn ghost" onclick="refreshLocalMusicSources()" style="height:26px;padding:0 10px;font-size:11px">Quét lại local</button>
+        <button class="fx-mini-btn ghost" onclick="refreshUserPlaylists(true)" style="height:26px;padding:0 10px;font-size:11px">Làm mới</button>
+      </div>
     </div>
     <div id="pl-list" style="margin-top:6px"></div>
   </div>
@@ -2823,6 +3002,10 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
       <button id="qq-web-login-card" class="qq-login-mark" type="button" onclick="openProviderWebLogin()"><b>SP</b><span>Kết nối Spotify</span></button>
     </div>
     <div id="qr-status">Đang kiểm tra cấu hình…</div>
+    <div id="youtube-device-code-card" class="youtube-device-code-card" aria-live="polite">
+      <div class="youtube-device-code-copy"><span class="youtube-device-code-label">Mã xác nhận YouTube</span><strong id="youtube-device-code-value" class="youtube-device-code-value">—</strong></div>
+      <button class="modal-btn" type="button" onclick="copyYouTubeDeviceCode()">Sao chép mã</button>
+    </div>
     <div id="qq-cookie-panel" class="qq-cookie-panel spotify-config-panel show">
       <input id="spotify-client-id-input" class="qq-cookie-input spotify-client-id-input" spellcheck="false" autocomplete="off" placeholder="Spotify Client ID">
       <div class="spotify-redirect-card">
@@ -2836,6 +3019,23 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
       <div class="qq-cookie-actions">
         <div class="qq-cookie-note" data-i18n="spotifyConfigNote">Trong Settings của ứng dụng Spotify, thêm đúng URI ở trên, nhấn Add rồi Save.</div>
         <button id="qq-cookie-save-btn" class="modal-btn primary" type="button" onclick="saveSpotifyConfig()">Lưu / Save</button>
+      </div>
+    </div>
+    <div id="youtube-oauth-panel" class="qq-cookie-panel youtube-oauth-panel">
+      <input id="youtube-client-id-input" class="qq-cookie-input spotify-client-id-input" spellcheck="false" autocomplete="off" placeholder="Google OAuth Client ID for Desktop app">
+      <input id="youtube-client-secret-input" class="qq-cookie-input spotify-client-id-input" type="password" spellcheck="false" autocomplete="off" placeholder="Client secret (optional for PKCE)">
+      <div class="spotify-redirect-card">
+        <div class="spotify-redirect-label">YouTube OAuth loopback redirect URI</div>
+        <code id="youtube-redirect-uri" class="spotify-redirect-uri">http://127.0.0.1:43821/api/youtube/callback</code>
+        <div class="spotify-redirect-actions">
+          <button class="modal-btn" type="button" onclick="copyYouTubeRedirectUri()">Sao chép Redirect URI</button>
+          <button class="modal-btn" type="button" onclick="openGoogleCloudConsole()">Mở Google Cloud Console</button>
+        </div>
+      </div>
+      <div class="qq-cookie-actions">
+        <div class="qq-cookie-note">Tùy chọn nâng cao dành cho nhà phát hành: dùng OAuth Client ID riêng và YouTube Data API v3. Người dùng bình thường không cần nhập các trường này.</div>
+        <button id="youtube-config-save-btn" class="modal-btn" type="button" onclick="saveYouTubeConfig()">Lưu cấu hình</button>
+        <button id="youtube-official-login-btn" class="modal-btn primary" type="button" onclick="openYouTubeOfficialLogin()">Đăng nhập OAuth nâng cao</button>
       </div>
     </div>
     <div class="btn-row">
@@ -3478,12 +3678,13 @@ var qqWebLoginBusy = false;
 var qqManualCookieOpen = false;
 var loginStatusChecked = false, loginStatusCheckFailed = false;
 var qrPollTimer = null, qrKey = null;
+var youtubePendingCode = '', youtubePendingVerificationUrl = '';
 var volumeTween = null, trackSwitchToken = 0;
 var audioFadeTimer = null, audioElementFadeFrame = 0, audioFadeSerial = 0;
 var AUDIO_FADE_IN_MS = 460;
 var AUDIO_FADE_OUT_MS = 420;
 var AUDIO_SILENCE_GAIN = 0.0001;
-var userPlaylists = [], qqPlaylists = [], myPodcastCollections = [], myPodcastItems = {}, playlistCoverCache = {};
+var userPlaylists = [], qqPlaylists = [], localPlaylists = [], localLibraryState = {sources:[],playlists:[],tracks:[]}, myPodcastCollections = [], myPodcastItems = {}, playlistCoverCache = {};
 var APP_PLAYLIST_STORE_KEY = 'shinayuu-app-playlists-v1';
 var appPlaylistRegistry = readAppPlaylistRegistry();
 var CUSTOM_COVER_STORE_KEY = 'mineradio-custom-covers';
@@ -18766,13 +18967,14 @@ updateSearchModeTabs();
 function songProviderKey(song) {
   song = song || {};
   var provider = String(song.realProvider || song.playbackProvider || song.provider || song.source || song.type || '').toLowerCase();
+  if (provider === 'local' || song.localFileId || song.localId || song.localUrl) return 'local';
   if (provider === 'youtube' || provider === 'yt' || provider === 'qq' || song.youtubeId || song.videoId || song.mid || song.songmid) return 'qq';
   if (provider === 'spotify' || provider === 'netease' || song.spotifyId || song.spotifyUri || /^spotify:track:/i.test(String(song.uri || ''))) return 'netease';
   return 'netease';
 }
 function songSourceTagHtml(song) {
   var key = songProviderKey(song);
-  var label = key === 'qq' ? 'YouTube' : 'Spotify';
+  var label = key === 'qq' ? 'YouTube' : (key === 'local' ? 'Local' : 'Spotify');
   return '<span class="tag-source ' + key + '">' + label + '</span>';
 }
 function searchResultMetaText(song) {
@@ -18949,6 +19151,18 @@ async function fetchMusicSearchResults(q, mode) {
   if (result[1].status === 'rejected') console.warn('YouTube search failed:', result[1].reason);
   return mergeSongSearchResults(neteaseSongs, qqSongs, 20, q, true);
 }
+function prefetchSearchResult(index) {
+  var song = playlist && playlist[index];
+  if (!song || typeof resolvePlaybackDescriptor !== 'function') return;
+  var quality = normalizePlaybackQuality(playbackQuality);
+  resolvePlaybackDescriptor(song, quality, { prefetch: true }).catch(function(){});
+}
+function prefetchInitialSearchResults() {
+  [0, 1, 2].forEach(function(index, order){
+    if (!playlist[index]) return;
+    setTimeout(function(){ prefetchSearchResult(index); }, 90 + order * 150);
+  });
+}
 function renderSongSearchResults(songs) {
   playlist = songs || [];
   var rows = [];
@@ -18968,7 +19182,7 @@ function renderSongSearchResults(songs) {
     var imgTag = thumb
       ? '<img src="' + thumb + '" alt="" loading="lazy" onerror="this.style.opacity=0.2">'
       : '<div style="width:40px;height:40px;border-radius:6px;background:rgba(255,255,255,0.06);flex-shrink:0"></div>';
-    rows.push('<div class="search-result ' + sourceClass + '">' +
+    rows.push('<div class="search-result ' + sourceClass + '" onpointerenter="prefetchSearchResult(' + i + ')">' +
       '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0" onclick="playSearchResult(' + i + ')">' +
         imgTag +
         '<div class="search-result-info">' +
@@ -18984,6 +19198,7 @@ function renderSongSearchResults(songs) {
   $results.innerHTML = rows.join('');
   $results.classList.add('show');
   syncLikeStatusForSongs(playlist);
+  prefetchInitialSearchResults();
   if (window.gsap) animateListItems($results, '.search-result', { x: 0, y: 6, stagger: 0.012, duration: 0.18, limit: 20 });
 }
 
@@ -19681,6 +19896,44 @@ function scheduleAudioResumePosition(media, seconds, token) {
   applyResume();
 }
 
+var playbackDescriptorCache = new Map();
+function playbackDescriptorKey(song, quality) {
+  var provider = songProviderKey(song);
+  var id = provider === 'qq' ? (song.mid || song.songmid || song.youtubeId || song.videoId || song.id || '') : (provider === 'local' ? (song.localFileId || song.localId || song.id || '') : (song.spotifyId || song.id || ''));
+  return provider + ':' + String(id) + ':' + String(quality || '');
+}
+async function resolvePlaybackDescriptor(song, quality, options) {
+  options = options || {};
+  var provider = songProviderKey(song);
+  if (provider === 'local') return {url:song.localUrl || song.audioUrl || ('/api/local/file?id=' + encodeURIComponent(song.localFileId || song.localId || song.id || '')),proxyUrl:song.localUrl || song.audioUrl || ('/api/local/file?id=' + encodeURIComponent(song.localFileId || song.localId || song.id || '')),playable:true,provider:'local',transport:'local',metadata:song};
+  var key = playbackDescriptorKey(song, quality);
+  var cached = playbackDescriptorCache.get(key);
+  var now = Date.now();
+  if (cached && cached.value && cached.expiresAt > now) return cached.value;
+  if (cached && cached.promise) return cached.promise;
+  var qualityParam='&quality='+encodeURIComponent(quality || '');
+  var request = provider === 'qq'
+    ? apiJson('/api/qq/song/url?mid='+encodeURIComponent(song.mid||song.songmid||song.id||'')+'&mediaMid='+encodeURIComponent(song.mediaMid||song.media_mid||'')+qualityParam)
+    : apiJson('/api/song/url?id='+encodeURIComponent(song.spotifyId||song.id||'')+qualityParam);
+  var promise=Promise.resolve(request).then(function(value){
+    playbackDescriptorCache.set(key,{value:value,expiresAt:Date.now()+(provider==='qq'?90000:30000)});
+    return value;
+  }).catch(function(error){playbackDescriptorCache.delete(key);throw error;});
+  playbackDescriptorCache.set(key,{promise:promise,expiresAt:now+20000});
+  return promise;
+}
+function prefetchQueuePlayback(index) {
+  if (!playQueue || !playQueue.length) return;
+  var target=((Number(index)||0)+playQueue.length)%playQueue.length;
+  var song=playQueue[target];
+  if(!song||songProviderKey(song)==='local')return;
+  var quality=normalizePlaybackQuality(playbackQuality);
+  resolvePlaybackDescriptor(song,quality,{prefetch:true}).catch(function(){});
+}
+function scheduleNextPlaybackPrefetch(index) {
+  setTimeout(function(){prefetchQueuePlayback((Number(index)||0)+1);},220);
+}
+
 async function playQueueAt(idx, opts) {
   opts = opts || {};
   if (idx < 0 || idx >= playQueue.length) return;
@@ -19709,7 +19962,6 @@ async function playQueueAt(idx, opts) {
   activeRadioContext = playbackContext || null;
   safeRenderQueuePanel('play-queue-at-switch', { scrollCurrent: miniQueueOpen });
   safePlaybackStep('shelf-preview-suppress', suppressShelfPreviewForPlaybackSwitch);
-  pauseCurrentAudioForTrackSwitch();
   var bmKey = safePlaybackStep('beatmap-key', function(){ return beatMapSongKey(song); }) || '';
   var podcastDjMode = !!safePlaybackStep('podcast-mode', function(){ return isPodcastSong(song); });
   safePlaybackStep('dj-mode', function(){ setDjModeActive(podcastDjMode, song); });
@@ -19755,16 +20007,13 @@ async function playQueueAt(idx, opts) {
 
   try {
     markPlayPhase('source-url');
-    var isQQPlayback = songProviderKey(song) === 'qq';
+    var playbackProvider = songProviderKey(song);
+    var isQQPlayback = playbackProvider === 'qq';
+    var isLocalPlayback = playbackProvider === 'local';
     var requestedQuality = normalizePlaybackQuality(opts.qualityOverride || playbackQuality);
-    if (!isQQPlayback && requestedQuality === 'jymaster' && !hasProviderSvip('netease', loginStatus)) requestedQuality = 'hires';
-    if (isQQPlayback && qqPlaybackQualityCeiling && (requestedQuality === 'jymaster' || requestedQuality === 'hires' || requestedQuality === 'lossless')) {
-      requestedQuality = qqPlaybackQualityCeiling;
-    }
-    var qualityParam = '&quality=' + encodeURIComponent(requestedQuality);
-    var data = isQQPlayback
-      ? await apiJson('/api/qq/song/url?mid=' + encodeURIComponent(song.mid || song.songmid || song.id || '') + '&mediaMid=' + encodeURIComponent(song.mediaMid || song.media_mid || '') + qualityParam)
-      : await apiJson('/api/song/url?id=' + song.id + qualityParam);
+    if (!isQQPlayback && !isLocalPlayback && requestedQuality === 'jymaster' && !hasProviderSvip('netease', loginStatus)) requestedQuality = 'hires';
+    if (isQQPlayback && qqPlaybackQualityCeiling && (requestedQuality === 'jymaster' || requestedQuality === 'hires' || requestedQuality === 'lossless')) requestedQuality = qqPlaybackQualityCeiling;
+    var data = await resolvePlaybackDescriptor(song, requestedQuality, { prefetch: false });
     if (token !== trackSwitchToken) return;
     if (!data.url && !data.proxyUrl) {
       if (isQQPlayback && !isPlaybackEngineFailure(data) && await retryQQPlaybackWithCompatibleQuality(song, idx, token, opts, data, requestedQuality)) return;
@@ -19793,7 +20042,12 @@ async function playQueueAt(idx, opts) {
       document.getElementById('trial-banner').classList.add('show');
     }
     markPlayPhase('audio-element');
-    if (!audio) { audio = new Audio(); audio.crossOrigin = 'anonymous'; }
+    if (typeof window.beforeHtmlAudioSourceSwitch === 'function') {
+      await window.beforeHtmlAudioSourceSwitch(song).catch(function(error){ console.warn('[PlaybackSwitchHook]', error); });
+    }
+    pauseCurrentAudioForTrackSwitch();
+    if (isLocalPlayback) currentLocalSong = song;
+    if (!audio) { audio = new Audio(); audio.crossOrigin = 'anonymous'; audio.preload = 'auto'; }
     else {
       audioFadeSerial++;
       clearAudioFadeTimers();
@@ -19801,7 +20055,7 @@ async function playQueueAt(idx, opts) {
     }
     bindPlaybackProgressEvents(audio);
     applyVolumeToAudio();
-    var proxyAudioUrl = data.proxyUrl || ('/api/audio?url=' + encodeURIComponent(data.url));
+    var proxyAudioUrl = isLocalPlayback ? (data.proxyUrl || data.url) : (data.proxyUrl || ('/api/audio?url=' + encodeURIComponent(data.url)));
     audio.src = proxyAudioUrl;
     updatePlaybackProgressUi();
     audio.onended = function(){
@@ -19896,6 +20150,7 @@ async function playQueueAt(idx, opts) {
       return;
     }
     forcePlaybackControlsInteractive();
+    scheduleNextPlaybackPrefetch(idx);
     markPlayPhase('session-begin');
     safePlaybackStep('listen-session-begin', function(){ beginListenSession(song, playbackContext); });
     markPlayPhase('lyrics-fetch');
@@ -20334,7 +20589,10 @@ async function fetchLyric(songOrId, token, alignmentAttempt) {
     var song = (songOrId && typeof songOrId === 'object') ? songOrId : null;
     var provider = songProviderKey(song);
     var endpoint;
-    if (provider === 'qq') {
+    if (provider === 'local') {
+      var localId = song ? (song.localFileId || song.localId || song.id || '') : songOrId;
+      endpoint = '/api/local/lyrics?id=' + encodeURIComponent(localId);
+    } else if (provider === 'qq') {
       var mid = song.mid || song.songmid || song.id || '';
       var qqId = song.qqId || (/^\d+$/.test(String(song.id || '')) ? song.id : '');
       endpoint = '/api/qq/lyric?mid=' + encodeURIComponent(mid) + '&id=' + encodeURIComponent(qqId);
@@ -20921,59 +21179,69 @@ function renderQueuePanel(opts) {
   renderMiniQueuePanel({ scrollCurrent: miniQueueOpen });
 }
 async function refreshUserPlaylists(force) {
-  if (!loginStatus.loggedIn && !qqLoginStatus.loggedIn) {
-    resetPlaylistPanelRenderLimit();
-    document.getElementById('pl-list').innerHTML = '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">登录后显示个人歌单</div>';
-    var podcastListLoggedOut = document.getElementById('podcast-list');
-    if (podcastListLoggedOut) podcastListLoggedOut.innerHTML = '<div style="text-align:center;padding:14px 0;color:rgba(255,255,255,.28);font-size:11.5px">登录后显示我的播客</div>';
-    return;
-  }
   if (force) resetPlaylistPanelRenderLimit();
-  var hasCachedQQPlaylists = userPlaylists.some(function(pl){ return pl && pl.provider === 'qq'; });
-  var needsQQRefresh = qqLoginStatus.loggedIn && !hasCachedQQPlaylists;
-  if (!force && !needsQQRefresh && (userPlaylists.length || myPodcastCollections.length)) {
-    var cachedAnimate = isPlaylistPanelVisibleForRender();
-    renderUserPlaylistsList({ animate: cachedAnimate });
-    renderMyPodcastCollections({ animate: cachedAnimate });
-    return;
-  }
   var $pl = document.getElementById('pl-list');
-  if ($pl) {
-    $pl.innerHTML = miniQueueSkeleton();
-    if (window.gsap) animateListItems($pl, '.mini-queue-skeleton', { x: 0, y: 6, stagger: 0.018, duration: 0.18, limit: 3 });
+  if ($pl) $pl.innerHTML = miniQueueSkeleton();
+  function safePlaylistRequest(promise, fallback, label) {
+    return Promise.resolve(promise).then(function(value){
+      if (value && (value.ok === false || value.error)) {
+        var failure = new Error(value.error || (label + '_SYNC_FAILED'));
+        failure.diagnostics = value.diagnostics || null;
+        throw failure;
+      }
+      return value || fallback;
+    }).catch(function(error){
+      console.warn('[PlaylistSync][' + label + ']', error, error && error.diagnostics || '');
+      return Object.assign({}, fallback, {
+        syncError: error && error.message ? error.message : String(error || 'SYNC_FAILED'),
+        diagnostics: error && error.diagnostics || null
+      });
+    });
   }
-  var $pod = document.getElementById('podcast-list');
-  if ($pod) $pod.innerHTML = miniQueueSkeleton();
-  try {
-    var result = await Promise.all([
-      loginStatus.loggedIn ? apiJson('/api/user/playlists') : Promise.resolve({ playlists: [] }),
-      loginStatus.loggedIn ? apiJson('/api/podcast/my') : Promise.resolve({ collections: [], loggedIn: false }),
-      qqLoginStatus.loggedIn ? apiJson('/api/qq/user/playlists') : Promise.resolve({ playlists: [] })
-    ]);
-    var neteaseLists = (result[0].playlists || []).map(function(pl){ pl.provider = 'netease'; pl.source = 'netease'; pl.appManaged = isAppManagedPlaylist(pl); return pl; });
-    qqPlaylists = (result[2].playlists || []).map(function(pl){ pl.provider = 'qq'; pl.source = 'qq'; pl.appManaged = isAppManagedPlaylist(pl); return pl; });
-    userPlaylists = neteaseLists.concat(qqPlaylists);
-    myPodcastCollections = result[1].collections || [];
-    var animatePanel = isPlaylistPanelVisibleForRender();
-    renderUserPlaylistsList({ animate: animatePanel, reset: true });
-    renderMyPodcastCollections({ animate: animatePanel });
-    if (emptyHomeActive) renderHomeDiscover();
-    scheduleShelfRebuild('refresh-user-playlists', true);
-  } catch (e) { console.warn(e); }
+  var result = await Promise.all([
+    loginStatus.loggedIn ? safePlaylistRequest(apiJson('/api/user/playlists?limit=200&t=' + Date.now()), { playlists: [] }, 'spotify') : Promise.resolve({ playlists: [] }),
+    loginStatus.loggedIn ? safePlaylistRequest(apiJson('/api/podcast/my?t=' + Date.now()), { collections: [], loggedIn: false }, 'podcast') : Promise.resolve({ collections: [], loggedIn: false }),
+    qqLoginStatus.loggedIn ? safePlaylistRequest(apiJson('/api/qq/user/playlists?limit=200&t=' + Date.now(), { timeoutMs: 60000 }), { playlists: [] }, 'youtube') : Promise.resolve({ playlists: [] }),
+    safePlaylistRequest(getLocalLibraryState(force), { playlists: localPlaylists || [] }, 'local')
+  ]);
+  var neteaseLists = (result[0].playlists || []).map(function(pl){ return Object.assign({},pl,{provider:'netease',source:'netease',appManaged:isAppManagedPlaylist(pl)}); });
+  qqPlaylists = (result[2].playlists || []).map(function(pl){ return Object.assign({},pl,{provider:'qq',source:'qq',appManaged:isAppManagedPlaylist(pl)}); });
+  localPlaylists = (result[3] && result[3].playlists || localPlaylists || []).map(function(pl){ return Object.assign({},pl,{provider:'local',source:'local'}); });
+  userPlaylists = neteaseLists.concat(qqPlaylists, localPlaylists);
+  myPodcastCollections = result[1].collections || [];
+  qqLoginStatus.playlistSyncError = result[2].syncError || '';
+  qqLoginStatus.playlistSyncDiagnostics = result[2].diagnostics || null;
+  qqLoginStatus.syncedPlaylistCount = qqPlaylists.length;
+  var animatePanel = isPlaylistPanelVisibleForRender();
+  renderUserPlaylistsList({ animate: animatePanel, reset: true });
+  renderMyPodcastCollections({ animate: animatePanel });
+  if (emptyHomeActive) renderHomeDiscover();
+  scheduleShelfRebuild('refresh-user-playlists', true);
+  if (force && qqLoginStatus.loggedIn && result[2].syncError) {
+    var syncDetail = result[2].syncError;
+    showToast((appLanguage === 'en' ? 'YouTube playlist sync failed: ' : 'Đồng bộ playlist YouTube thất bại: ') + syncDetail);
+  } else if (force && qqLoginStatus.loggedIn && !qqPlaylists.length) {
+    showToast(appLanguage === 'en' ? 'YouTube returned no accessible playlists for this channel.' : 'YouTube không trả về playlist nào có thể truy cập cho kênh đang chọn.');
+  }
+  if ($pl && !userPlaylists.length) $pl.innerHTML = '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">' + (appLanguage==='en'?'No playlists found.':'Chưa tìm thấy playlist.') + '</div>';
+  return { spotify: neteaseLists.length, youtube: qqPlaylists.length, local: localPlaylists.length, youtubeError: result[2].syncError || '' };
 }
 var playlistPanelDetailState = { key: '', loading: false, playlist: null, tracks: [], token: 0, renderLimit: PLAYLIST_DETAIL_INITIAL_RENDER };
 function playlistPanelKey(provider, id) {
-  return (provider === 'qq' ? 'qq' : 'netease') + ':' + String(id || '');
+  provider = provider === 'qq' ? 'qq' : (provider === 'local' ? 'local' : 'netease');
+  return provider + ':' + String(id || '');
 }
 function playlistPanelProviderId(provider, id) {
-  return provider === 'qq' ? ('qq:' + id) : id;
+  if (provider === 'qq') return 'qq:' + id;
+  if (provider === 'local') return 'local:' + id;
+  return id;
 }
 function playlistPanelDetailHtml(pl, provider) {
   var key = playlistPanelKey(provider, pl && pl.id);
   if (playlistPanelDetailState.key !== key) return '';
   var tracks = playlistPanelDetailState.tracks || [];
   var loading = playlistPanelDetailState.loading;
-  var cover = pl && pl.cover ? (provider === 'qq' ? pl.cover : (pl.cover + '?param=96y96')) : '';
+  var cover = pl && pl.cover ? (provider === 'netease' ? (pl.cover + '?param=96y96') : pl.cover) : '';
   var img = cover ? '<img class="pl-detail-cover" src="' + escHtml(cover) + '" alt="" decoding="async" onerror="this.style.opacity=0.2">' : '<div class="pl-detail-cover"></div>';
   var renderLimit = loading ? 0 : Math.max(PLAYLIST_DETAIL_INITIAL_RENDER, playlistPanelDetailState.renderLimit || PLAYLIST_DETAIL_INITIAL_RENDER);
   renderLimit = Math.min(tracks.length, renderLimit);
@@ -20997,7 +21265,7 @@ function playlistPanelDetailHtml(pl, provider) {
   }
   return '<div class="pl-inline-detail" data-pl-detail="' + escHtml(key) + '">' +
     '<div class="pl-detail-sticky">' +
-      '<div class="pl-detail-head">' + img + '<div style="flex:1;min-width:0"><div class="pl-detail-title">' + escHtml(pl.name || '歌单详情') + '</div><div class="pl-detail-sub">' + escHtml((pl.trackCount || tracks.length || 0) + ' ' + localizeFixedText('首') + ' · ' + (pl.creator || (provider === 'qq' ? 'YouTube' : 'Spotify'))) + '</div></div><div class="pl-detail-count">' + (loading ? '载入中' : (renderLimit + '/' + tracks.length)) + '</div></div>' +
+      '<div class="pl-detail-head">' + img + '<div style="flex:1;min-width:0"><div class="pl-detail-title">' + escHtml(pl.name || '歌单详情') + '</div><div class="pl-detail-sub">' + escHtml((pl.trackCount || tracks.length || 0) + ' ' + localizeFixedText('首') + ' · ' + (pl.creator || (provider === 'qq' ? 'YouTube' : (provider === 'local' ? 'Local' : 'Spotify')))) + '</div></div><div class="pl-detail-count">' + (loading ? '载入中' : (renderLimit + '/' + tracks.length)) + '</div></div>' +
       '<div class="pl-detail-actions"><button class="pl-detail-play" type="button" data-pl-detail-play="' + escHtml(key) + '"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>播放歌单</button><button class="fx-mini-btn ghost pl-detail-top-btn" type="button" data-pl-detail-top="1">回到顶部</button></div>' +
     '</div>' +
     '<div class="pl-detail-list">' + rows + '</div>' +
@@ -21033,47 +21301,29 @@ function scrollPlaylistPanelDetailIntoView(key) {
 }
 async function openPlaylistPanelDetail(provider, pid, title) {
   if (!pid) return;
-  provider = provider === 'qq' ? 'qq' : 'netease';
+  provider = provider === 'qq' ? 'qq' : (provider === 'local' ? 'local' : 'netease');
   var key = playlistPanelKey(provider, pid);
-  var pl = userPlaylists.find(function(item){ return playlistPanelKey(item.provider === 'qq' ? 'qq' : 'netease', item.id) === key; }) || { id: pid, provider: provider, name: title || '歌单详情' };
+  var pl = userPlaylists.find(function(item){
+    var p = item.provider === 'qq' ? 'qq' : (item.provider === 'local' ? 'local' : 'netease');
+    return playlistPanelKey(p, item.id) === key;
+  }) || { id: pid, provider: provider, name: title || (appLanguage==='en'?'Playlist details':'Chi tiết playlist') };
   if (playlistPanelDetailState.key === key && !playlistPanelDetailState.loading && playlistPanelDetailState.tracks.length) {
-    playlistPanelDetailState.key = '';
-    playlistPanelDetailState.tracks = [];
-    playlistPanelDetailState.playlist = null;
-    playlistPanelDetailState.renderLimit = PLAYLIST_DETAIL_INITIAL_RENDER;
-    renderPlaylistPanelDetailState();
-    return;
+    playlistPanelDetailState.key='';playlistPanelDetailState.tracks=[];playlistPanelDetailState.playlist=null;playlistPanelDetailState.renderLimit=PLAYLIST_DETAIL_INITIAL_RENDER;renderPlaylistPanelDetailState();return;
   }
-  var token = ++playlistPanelDetailState.token;
-  playlistPanelDetailState = { key: key, loading: true, playlist: pl, tracks: [], token: token, renderLimit: PLAYLIST_DETAIL_INITIAL_RENDER };
-  renderPlaylistPanelDetailState();
-  scrollPlaylistPanelDetailIntoView(key);
+  var token=++playlistPanelDetailState.token;
+  playlistPanelDetailState={key:key,loading:true,playlist:pl,tracks:[],token:token,renderLimit:PLAYLIST_DETAIL_INITIAL_RENDER};
+  renderPlaylistPanelDetailState();scrollPlaylistPanelDetailIntoView(key);
   try {
-    var r = provider === 'qq'
-      ? await apiJson('/api/qq/playlist/tracks?id=' + encodeURIComponent(pid))
-      : await apiJson('/api/playlist/tracks?id=' + encodeURIComponent(pid));
-    if (playlistPanelDetailState.token !== token) return;
-    playlistPanelDetailState.loading = false;
-    playlistPanelDetailState.tracks = (r && r.tracks || []).map(cloneSong);
-    playlistPanelDetailState.renderLimit = Math.min(playlistPanelDetailState.tracks.length, PLAYLIST_DETAIL_INITIAL_RENDER);
-    renderPlaylistPanelDetailState();
-  } catch (e) {
-    console.warn('[PlaylistPanelDetail]', pid, e);
-    if (playlistPanelDetailState.token !== token) return;
-    playlistPanelDetailState.loading = false;
-    playlistPanelDetailState.tracks = [];
-    playlistPanelDetailState.renderLimit = PLAYLIST_DETAIL_INITIAL_RENDER;
-    renderPlaylistPanelDetailState();
-    showToast('歌单详情加载失败');
-  }
+    var endpoint = provider === 'qq' ? '/api/qq/playlist/tracks?id=' : (provider === 'local' ? '/api/local/playlist?id=' : '/api/playlist/tracks?id=');
+    var r=await apiJson(endpoint+encodeURIComponent(pid));
+    if(playlistPanelDetailState.token!==token)return;
+    playlistPanelDetailState.loading=false;playlistPanelDetailState.tracks=(r&&r.tracks||[]).map(cloneSong);playlistPanelDetailState.renderLimit=Math.min(playlistPanelDetailState.tracks.length,PLAYLIST_DETAIL_INITIAL_RENDER);renderPlaylistPanelDetailState();
+  } catch(e){console.warn('[PlaylistPanelDetail]',pid,e);if(playlistPanelDetailState.token!==token)return;playlistPanelDetailState.loading=false;playlistPanelDetailState.tracks=[];playlistPanelDetailState.renderLimit=PLAYLIST_DETAIL_INITIAL_RENDER;renderPlaylistPanelDetailState();showToast(appLanguage==='en'?'Playlist details failed to load.':'Không thể tải chi tiết playlist.');}
 }
 function playPlaylistPanelDetail() {
-  var st = playlistPanelDetailState;
-  if (!st || !st.key) return;
-  var parts = st.key.split(':');
-  var provider = parts[0] === 'qq' ? 'qq' : 'netease';
-  var pid = parts.slice(1).join(':');
-  loadPlaylistIntoQueueById(playlistPanelProviderId(provider, pid), true, st.playlist && st.playlist.name || '');
+  var st=playlistPanelDetailState;if(!st||!st.key)return;
+  var parts=st.key.split(':');var provider=parts[0]==='qq'?'qq':(parts[0]==='local'?'local':'netease');var pid=parts.slice(1).join(':');
+  loadPlaylistIntoQueueById(playlistPanelProviderId(provider,pid),true,st.playlist&&st.playlist.name||'');
 }
 function playPlaylistPanelDetailTrack(index) {
   var tracks = playlistPanelDetailState.tracks || [];
@@ -21137,43 +21387,32 @@ function renderUserPlaylistsList(opts) {
   var $pl = document.getElementById('pl-list');
   var seq = ++playlistRenderSeq;
   if (!userPlaylists.length) {
-    $pl.innerHTML = '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">未找到歌单</div>';
+    $pl.innerHTML = '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">' + (appLanguage==='en'?'No playlists found. Add a local folder or connect an account.':'Chưa tìm thấy playlist. Hãy thêm thư mục local hoặc kết nối tài khoản.') + '</div>';
     return;
   }
   function playlistCardHtml(pl) {
-    var provider = pl.provider === 'qq' ? 'qq' : 'netease';
-    var providerLabel = provider === 'qq' ? 'YouTube' : 'Spotify';
-    var thumb = pl.cover ? (provider === 'qq' ? pl.cover : (pl.cover + '?param=88y88')) : '';
+    var provider = pl.provider === 'qq' ? 'qq' : (pl.provider === 'local' ? 'local' : 'netease');
+    var providerLabel = provider === 'qq' ? 'YouTube' : (provider === 'local' ? 'Local' : 'Spotify');
+    var thumb = pl.cover ? (provider === 'netease' ? (pl.cover + '?param=88y88') : pl.cover) : '';
     var imgTag = thumb ? '<img src="' + thumb + '" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">' : '<div style="width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,.06);flex-shrink:0"></div>';
     var key = playlistPanelKey(provider, pl.id);
     var expanded = playlistPanelDetailState.key === key ? ' expanded' : '';
+    var remove = provider === 'local' ? '<button class="fx-mini-btn ghost local-source-remove" type="button" title="Remove local source" onclick="event.stopPropagation();removeLocalMusicSource(\'' + escHtml(String(pl.id||'')) + '\')">×</button>' : '';
     return '<div class="pl-card' + expanded + '" data-playlist-provider="' + provider + '" data-playlist-id="' + escHtml(String(pl.id || '')) + '" data-playlist-title="' + escHtml(pl.name || '') + '">' +
-      imgTag +
-      '<div style="flex:1;min-width:0"><div class="pl-name">' + escHtml(pl.name) + '<span class="tag-source ' + provider + '" style="margin-left:6px;vertical-align:1px">' + providerLabel + '</span></div><div class="pl-sub">' + pl.trackCount + ' ' + localizeFixedText('首') + ' · ' + escHtml(pl.creator || '') + '</div></div>' +
+      imgTag + '<div style="flex:1;min-width:0"><div class="pl-name">' + escHtml(pl.name) + '<span class="tag-source ' + provider + '" style="margin-left:6px;vertical-align:1px">' + providerLabel + '</span></div><div class="pl-sub">' + Number(pl.trackCount||0) + ' ' + (appLanguage==='en'?'tracks':'bài') + ' · ' + escHtml(pl.creator || '') + '</div></div>' + remove +
     '</div>' + playlistPanelDetailHtml(pl, provider);
   }
   var groups = [
-    { key:'netease', label:'Playlist Spotify', items:userPlaylists.filter(function(pl){ return pl.provider !== 'qq'; }) },
-    { key:'qq', label:'Playlist YouTube', items:userPlaylists.filter(function(pl){ return pl.provider === 'qq'; }) }
+    { label:'Playlist Spotify', items:userPlaylists.filter(function(pl){ return pl.provider === 'netease'; }) },
+    { label:'Playlist YouTube', items:userPlaylists.filter(function(pl){ return pl.provider === 'qq'; }) },
+    { label:appLanguage==='en'?'Local music':'Nhạc local', items:userPlaylists.filter(function(pl){ return pl.provider === 'local'; }) }
   ];
   if (opts.reset) resetPlaylistPanelRenderLimit();
   playlistPanelRenderLimit = Math.max(PLAYLIST_PANEL_BATCH_SIZE, Math.min(userPlaylists.length, playlistPanelRenderLimit || PLAYLIST_PANEL_BATCH_SIZE));
   var renderedCount = 0;
-  function visibleGroupItems(items) {
-    var room = playlistPanelRenderLimit - renderedCount;
-    if (room <= 0) return [];
-    var visible = items.slice(0, room);
-    renderedCount += visible.length;
-    return visible;
-  }
-  $pl.innerHTML = groups.map(function(group){
-    var items = visibleGroupItems(group.items);
-    if (!items.length) return '';
-    return '<div class="pl-section-label">' + group.label + '</div>' + items.map(playlistCardHtml).join('');
-  }).join('') || '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">未找到歌单</div>';
-  if (userPlaylists.length > renderedCount) {
-    $pl.insertAdjacentHTML('beforeend', '<button type="button" class="fx-mini-btn ghost pl-load-more" data-pl-load-more="1">加载更多 ' + renderedCount + '/' + userPlaylists.length + '</button>');
-  }
+  function visibleGroupItems(items) { var room=playlistPanelRenderLimit-renderedCount;if(room<=0)return[];var visible=items.slice(0,room);renderedCount+=visible.length;return visible; }
+  $pl.innerHTML = groups.map(function(group){var items=visibleGroupItems(group.items);return items.length?'<div class="pl-section-label">'+group.label+'</div>'+items.map(playlistCardHtml).join(''):'';}).join('');
+  if (userPlaylists.length > renderedCount) $pl.insertAdjacentHTML('beforeend','<button type="button" class="fx-mini-btn ghost pl-load-more" data-pl-load-more="1">'+(appLanguage==='en'?'Load more ':'Tải thêm ')+renderedCount+'/'+userPlaylists.length+'</button>');
   if (opts.animate && seq === playlistRenderSeq) animateVisiblePanelList($pl, '.pl-card', document.getElementById('playlist-panel'));
 }
 function renderMyPodcastCollections(opts) {
@@ -21340,50 +21579,25 @@ async function loadPodcastRadioIntoQueue(id, autoplay, title) {
 }
 async function loadPlaylistIntoQueueById(id, autoplay, title) {
   if (!id) return;
-  homeForcedOpen = false;
-  homeSuppressed = false;
-  updateEmptyHomeVisibility();
-  showLoading();
-  var qqPlaylistId = String(id || '').indexOf('qq:') === 0 ? String(id).slice(3) : '';
-  var r = null;
+  homeForcedOpen = false; homeSuppressed = false; updateEmptyHomeVisibility(); showLoading();
+  var rawId = String(id || '');
+  var qqPlaylistId = rawId.indexOf('qq:') === 0 ? rawId.slice(3) : '';
+  var localPlaylistId = rawId.indexOf('local:') === 0 ? rawId.slice(6) : '';
   try {
-    r = qqPlaylistId
-      ? await apiJson('/api/qq/playlist/tracks?id=' + encodeURIComponent(qqPlaylistId))
-      : await apiJson('/api/playlist/tracks?id=' + encodeURIComponent(id));
-  } catch (e) {
-    console.warn('[PlaylistLoadApi]', id, e);
-    showToast('歌单加载失败');
-    hideLoading();
-    return;
-  }
-  try {
-    if (r.error) { showToast('歌单加载失败: ' + r.error); return; }
-    if (!r.tracks || !r.tracks.length) { showToast('歌单为空'); return; }
-    playQueue = r.tracks.map(cloneSong);
-    if (!qqPlaylistId && isLikedPlaylistContext(id, title, r.playlist)) markSongsLiked(playQueue, true);
-    if (!qqPlaylistId) syncLikeStatusForSongs(playQueue);
-    currentIdx = 0;
-    safeRenderQueuePanel('playlist-load');
-    safeSwitchPlaylistTab('queue', 'playlist-load');
-    safeShelfRebuild('playlist-load', true);
-    forcePlaybackControlsInteractive();
-    if (autoplay) {
-      try {
-        await playQueueAt(0);
-      } catch (playErr) {
-        console.warn('[PlaylistAutoplay]', id, playErr);
-        showToast('歌单已载入，播放启动失败');
-      }
-    }
-    forcePlaybackControlsInteractive();
-    showToast('载入: ' + (title || ('歌单 ' + id)));
-  } catch (e) {
-    console.warn('[PlaylistLoadState]', id, e);
-    forcePlaybackControlsInteractive();
-    showToast('歌单已载入，界面刷新失败');
-  } finally {
-    hideLoading();
-  }
+    var r = localPlaylistId
+      ? await apiJson('/api/local/playlist?id=' + encodeURIComponent(localPlaylistId))
+      : qqPlaylistId
+        ? await apiJson('/api/qq/playlist/tracks?id=' + encodeURIComponent(qqPlaylistId))
+        : await apiJson('/api/playlist/tracks?id=' + encodeURIComponent(rawId));
+    if (r.error || !r.tracks || !r.tracks.length) { showToast(r.error || (appLanguage==='en'?'The playlist is empty.':'Playlist đang trống.')); return; }
+    playQueue = r.tracks.map(cloneSong); currentIdx = 0;
+    if (!qqPlaylistId && !localPlaylistId && isLikedPlaylistContext(rawId, title, r.playlist)) markSongsLiked(playQueue, true);
+    if (!qqPlaylistId && !localPlaylistId) syncLikeStatusForSongs(playQueue);
+    safeRenderQueuePanel('playlist-load'); safeSwitchPlaylistTab('queue','playlist-load'); safeShelfRebuild('playlist-load',true); forcePlaybackControlsInteractive();
+    if (autoplay) await playQueueAt(0);
+    showToast((appLanguage==='en'?'Loaded: ':'Đã tải: ') + (title || (r.playlist && r.playlist.name) || rawId));
+  } catch(e){console.warn('[PlaylistLoad]',rawId,e);showToast(appLanguage==='en'?'Playlist loading failed.':'Không thể tải playlist.');}
+  finally{hideLoading();}
 }
 
 // 进度条
@@ -24959,7 +25173,7 @@ async function refreshLoginStatus(force) {
       loadHomeDiscover(true);
       syncLikeStatusForSongs(playQueue.concat(playlist || []));
     } else {
-      userPlaylists = qqPlaylists.slice();
+      userPlaylists = qqPlaylists.concat(localPlaylists || []);
       myPodcastCollections = [];
       myPodcastItems = {};
       likedSongMap = {};
@@ -24977,17 +25191,25 @@ async function refreshLoginStatus(force) {
 function normalizeQQLoginStatus(info) {
   info = info || {};
   return {
-    provider:'youtube', loggedIn:true, preview:false, nickname:'YouTube', userId:'public', avatar:'', vipType:0,
+    provider:'youtube', loggedIn:!!info.loggedIn, configured:info.configured !== false,
+    preview:false, nickname:info.nickname || 'YouTube', userId:info.userId || '', avatar:info.avatar || '', vipType:0,
     playbackKeyReady: !!info.playbackKeyReady,
-    engine: info.engine || {},
-    stale:false, publicSource:true
+    engine: info.engine || {}, stale:false, publicSource:true,
+    quickLoginAvailable: info.quickLoginAvailable !== false,
+    advancedConfigured: !!info.advancedConfigured,
+    authMode: info.authMode || 'device',
+    redirectUri: info.redirectUri || ''
   };
 }
 async function refreshQQLoginStatus() {
   try {
-    qqLoginStatus = normalizeQQLoginStatus(await apiJson('/api/qq/login/status?t=' + Date.now()));
+    var status = await apiJson('/api/youtube/login/status?t=' + Date.now());
+    var engine = await apiJson('/api/youtube/engine/status?t=' + Date.now()).catch(function(){ return {ready:false}; });
+    status.playbackKeyReady = !!engine.ready;
+    status.engine = engine;
+    qqLoginStatus = normalizeQQLoginStatus(status);
   } catch (_) {
-    qqLoginStatus = normalizeQQLoginStatus({playbackKeyReady:false, engine:{message:'unavailable'}});
+    qqLoginStatus = normalizeQQLoginStatus({loggedIn:false,configured:false,playbackKeyReady:false,engine:{message:'unavailable'}});
   }
   renderUserBtn();
   return qqLoginStatus;
@@ -25045,34 +25267,45 @@ function updateLoginProviderUi() {
   var shell = document.getElementById('qr-shell');
   var st = document.getElementById('qr-status');
   var refreshBtn = document.getElementById('refresh-qr-btn');
-  var configPanel = document.getElementById('qq-cookie-panel');
+  var spotifyPanel = document.getElementById('qq-cookie-panel');
+  var youtubePanel = document.getElementById('youtube-oauth-panel');
   var configToggle = document.getElementById('qq-cookie-toggle-btn');
   var card = document.getElementById('qq-web-login-card');
   var spotifyBtn = document.getElementById('login-provider-netease');
   var youtubeBtn = document.getElementById('login-provider-qq');
   if (spotifyBtn) { spotifyBtn.classList.toggle('active', !isYouTube); spotifyBtn.textContent = 'Spotify'; }
   if (youtubeBtn) { youtubeBtn.classList.toggle('active', isYouTube); youtubeBtn.textContent = 'YouTube'; }
-  if (title) title.textContent = isYouTube ? 'YouTube' : tr('spotifyConnect');
-  if (desc) desc.textContent = isYouTube ? tr('youtubeDescription') : (appLanguage === 'en' ? 'Enter a Spotify Client ID once, then authorize through Spotify.' : 'Nhập Spotify Client ID một lần, sau đó đăng nhập bằng trang ủy quyền chính thức.');
+  if (title) title.textContent = isYouTube ? (appLanguage === 'en' ? 'Connect YouTube' : 'Kết nối YouTube') : tr('spotifyConnect');
+  if (desc) desc.textContent = isYouTube
+    ? (appLanguage === 'en' ? 'Sign in with Google to synchronize your YouTube playlists. Search and playback remain available without signing in.' : 'Đăng nhập Google để đồng bộ playlist YouTube. Tìm kiếm và phát nhạc vẫn dùng được khi chưa đăng nhập.')
+    : (appLanguage === 'en' ? 'Enter a Spotify Client ID once, then authorize through Spotify.' : 'Nhập Spotify Client ID một lần, sau đó đăng nhập bằng trang ủy quyền chính thức.');
   if (shell) { shell.classList.add('web-login-preview'); shell.classList.toggle('qq-preview', isYouTube); shell.classList.toggle('netease-preview', !isYouTube); }
-  if (configPanel) configPanel.classList.toggle('show', !isYouTube && (qqManualCookieOpen || !(loginStatus && loginStatus.configured)));
-  if (configToggle) { configToggle.style.display = isYouTube ? 'none' : ''; configToggle.textContent = tr('settings'); }
+  if (spotifyPanel) spotifyPanel.classList.toggle('show', !isYouTube && (qqManualCookieOpen || !(loginStatus && loginStatus.configured)));
+  if (youtubePanel) youtubePanel.classList.toggle('show', isYouTube && qqManualCookieOpen);
+  if (configToggle) { configToggle.style.display = ''; configToggle.textContent = isYouTube ? (appLanguage === 'en' ? 'Advanced' : 'Nâng cao') : tr('settings'); }
   if (card) {
-    card.disabled = isYouTube ? false : !!neteaseWebLoginBusy;
+    card.disabled = !isYouTube && !!neteaseWebLoginBusy;
     var mark = card.querySelector('b'), label = card.querySelector('span');
     if (mark) mark.textContent = isYouTube ? 'YT' : 'SP';
-    if (label) label.textContent = isYouTube ? ((qqLoginStatus && qqLoginStatus.playbackKeyReady) ? tr('youtubeReady') : (appLanguage === 'en' ? 'Preparing engine…' : 'Đang chuẩn bị…')) : (neteaseWebLoginBusy ? tr('spotifyConnecting') : tr('spotifyConnect'));
+    if (label) label.textContent = isYouTube
+      ? ((qqLoginStatus && qqLoginStatus.loggedIn) ? (appLanguage === 'en' ? 'YouTube connected' : 'YouTube đã kết nối') : (appLanguage === 'en' ? 'Sign in to YouTube' : 'Đăng nhập YouTube'))
+      : (neteaseWebLoginBusy ? tr('spotifyConnecting') : tr('spotifyConnect'));
   }
   if (st) {
     var youtubeEngineReady = !!(qqLoginStatus && qqLoginStatus.playbackKeyReady);
-    st.className = isYouTube ? (youtubeEngineReady ? 'scan' : 'preview') : (loginStatus && loginStatus.loggedIn ? 'scan' : 'preview');
+    var youtubeLoggedIn = !!(qqLoginStatus && qqLoginStatus.loggedIn);
+    st.className = isYouTube ? ((youtubeLoggedIn || youtubeEngineReady) ? 'scan' : 'preview') : (loginStatus && loginStatus.loggedIn ? 'scan' : 'preview');
     st.textContent = isYouTube
-      ? (youtubeEngineReady ? tr('youtubeReady') : (appLanguage === 'en' ? 'Preparing the YouTube playback engine…' : 'Đang chuẩn bị bộ máy phát YouTube…'))
+      ? (youtubeLoggedIn ? ((appLanguage === 'en' ? 'YouTube connected · ' : 'YouTube đã kết nối · ') + (qqLoginStatus.nickname || 'YouTube')) : (youtubeEngineReady ? (appLanguage === 'en' ? 'Ready · sign in to synchronize playlists.' : 'Sẵn sàng · đăng nhập để đồng bộ playlist.') : (appLanguage === 'en' ? 'YouTube uses secure sign-in in your default browser.' : 'YouTube sẽ đăng nhập an toàn bằng trình duyệt mặc định.')))
       : (loginStatus && loginStatus.loggedIn ? (tr('spotifyConnected') + ' · ' + (loginStatus.nickname || 'Spotify')) : ((loginStatus && loginStatus.configured) ? tr('spotifyConnect') : tr('spotifyNeedsClient')));
   }
+  var deviceCard = document.getElementById('youtube-device-code-card');
+  var deviceValue = document.getElementById('youtube-device-code-value');
+  if (deviceCard) deviceCard.classList.toggle('show', isYouTube && !!youtubePendingCode);
+  if (deviceValue) deviceValue.textContent = youtubePendingCode || '—';
   if (refreshBtn) {
     refreshBtn.disabled = !isYouTube && !!neteaseWebLoginBusy;
-    refreshBtn.textContent = isYouTube ? ((qqLoginStatus && qqLoginStatus.playbackKeyReady) ? (appLanguage === 'en' ? 'Ready' : 'Sẵn sàng') : (appLanguage === 'en' ? 'Check again' : 'Kiểm tra lại')) : (neteaseWebLoginBusy ? tr('spotifyConnecting') : tr('spotifyConnect'));
+    refreshBtn.textContent = isYouTube ? ((qqLoginStatus && qqLoginStatus.loggedIn) ? (appLanguage === 'en' ? 'Connected' : 'Đã kết nối') : (appLanguage === 'en' ? 'Sign in to YouTube' : 'Đăng nhập YouTube')) : (neteaseWebLoginBusy ? tr('spotifyConnecting') : tr('spotifyConnect'));
     refreshBtn.onclick = isYouTube ? openQQWebLogin : openNeteaseWebLogin;
   }
 }
@@ -25081,9 +25314,15 @@ async function refreshProviderConfig() {
     var cfg = await apiJson('/api/providers/config?t=' + Date.now());
     var input = document.getElementById('spotify-client-id-input');
     var redirect = document.getElementById('spotify-redirect-uri');
+    var ytInput = document.getElementById('youtube-client-id-input');
+    var ytSecret = document.getElementById('youtube-client-secret-input');
+    var ytRedirect = document.getElementById('youtube-redirect-uri');
     if (input && !input.value) input.value = cfg.spotifyClientId || '';
     if (redirect) redirect.textContent = (cfg.spotifyRedirectUri || cfg.redirectUri || 'http://127.0.0.1:43821/api/spotify/callback');
-    if (!cfg.spotifyClientId) qqManualCookieOpen = true;
+    if (ytInput && !ytInput.value) ytInput.value = cfg.youtubeClientId || '';
+    if (ytSecret && !ytSecret.value) ytSecret.value = '';
+    if (ytRedirect) ytRedirect.textContent = cfg.youtubeRedirectUri || 'http://127.0.0.1:43821/api/youtube/callback';
+    if (loginProvider === 'netease' && !cfg.spotifyClientId) qqManualCookieOpen = true;
     return cfg;
   } catch (e) { console.warn('Provider config:', e); return null; }
 }
@@ -25133,6 +25372,99 @@ async function saveSpotifyConfig() {
     return true;
   } catch (e) { if (statusEl) { statusEl.textContent = e.message || String(e); statusEl.className = 'fail'; } return false; }
 }
+async function copyYouTubeDeviceCode() {
+  if (!youtubePendingCode) return;
+  try { await navigator.clipboard.writeText(youtubePendingCode); }
+  catch (_) { var area=document.createElement('textarea');area.value=youtubePendingCode;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{document.execCommand('copy');}catch(e){}area.remove(); }
+  showToast(appLanguage === 'en' ? 'YouTube code copied' : 'Đã sao chép mã YouTube');
+}
+function currentYouTubeRedirectUri() {
+  var el = document.getElementById('youtube-redirect-uri');
+  return String(el && el.textContent || 'http://127.0.0.1:43821/api/youtube/callback').trim();
+}
+async function copyYouTubeRedirectUri() {
+  var value = currentYouTubeRedirectUri();
+  try { await navigator.clipboard.writeText(value); }
+  catch (_) { var area=document.createElement('textarea');area.value=value;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{document.execCommand('copy');}catch(e){}area.remove(); }
+  showToast(appLanguage === 'en' ? 'YouTube redirect URI copied' : 'Đã sao chép Redirect URI YouTube');
+}
+function openGoogleCloudConsole() { openExternalUrl('https://console.cloud.google.com/apis/credentials'); }
+async function saveYouTubeConfig() {
+  var input = document.getElementById('youtube-client-id-input');
+  var secret = document.getElementById('youtube-client-secret-input');
+  var statusEl = document.getElementById('qr-status');
+  var clientId = String(input && input.value || '').trim();
+  if (!clientId) { if(statusEl){statusEl.textContent=appLanguage==='en'?'A Google OAuth Client ID is required.':'Cần Google OAuth Client ID.';statusEl.className='fail';} return false; }
+  try {
+    var cfg = await apiJson('/api/providers/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({youtubeClientId:clientId,youtubeClientSecret:String(secret&&secret.value||'').trim(),language:appLanguage})});
+    qqLoginStatus = Object.assign({}, qqLoginStatus, {configured:true,redirectUri:cfg.youtubeRedirectUri || currentYouTubeRedirectUri()});
+    qqManualCookieOpen = false;
+    if(statusEl){statusEl.textContent=appLanguage==='en'?'YouTube OAuth settings saved.':'Đã lưu cấu hình OAuth YouTube.';statusEl.className='scan';}
+    updateLoginProviderUi();
+    return true;
+  } catch(e){if(statusEl){statusEl.textContent=e.message||String(e);statusEl.className='fail';}return false;}
+}
+async function getLocalLibraryState(force) {
+  try {
+    var api = window.desktopWindow;
+    localLibraryState = api && api.isDesktop && typeof api.getLocalMusicLibrary === 'function'
+      ? await api.getLocalMusicLibrary()
+      : await apiJson('/api/local/library?t=' + Date.now());
+    localPlaylists = (localLibraryState.playlists || []).map(function(pl){ return Object.assign({},pl,{provider:'local',source:'local'}); });
+    return localLibraryState;
+  } catch(e){console.warn('[LocalLibraryUi]',e);localLibraryState={sources:[],playlists:[],tracks:[],error:e.message||String(e)};localPlaylists=[];return localLibraryState;}
+}
+async function addLocalMusicSource() {
+  var api = window.desktopWindow;
+  if (!api || !api.isDesktop || typeof api.addLocalMusicSource !== 'function') { showToast(appLanguage==='en'?'Local folders are available in the desktop app only.':'Chọn thư mục local chỉ dùng trong ứng dụng desktop.'); return; }
+  var result = await api.addLocalMusicSource();
+  if (!result || result.canceled) return;
+  if (!result.ok) { showToast(result.error || 'Không thể thêm nguồn nhạc local'); return; }
+  await refreshUserPlaylists(true);
+  showToast(appLanguage==='en'?'Local music source added.':'Đã thêm nguồn nhạc local.');
+}
+async function refreshLocalMusicSources() {
+  var api=window.desktopWindow;
+  try {
+    if(api&&api.isDesktop&&typeof api.refreshLocalMusicLibrary==='function') await api.refreshLocalMusicLibrary();
+    await refreshUserPlaylists(true);
+    showToast(appLanguage==='en'?'Local music library refreshed.':'Đã quét lại thư viện nhạc local.');
+  } catch(e){showToast(e.message||'Local refresh failed');}
+}
+async function removeLocalMusicSource(sourceId) {
+  var api=window.desktopWindow;
+  if(!api||typeof api.removeLocalMusicSource!=='function')return;
+  var result=await api.removeLocalMusicSource(sourceId);
+  if(result&&result.ok){await refreshUserPlaylists(true);showToast(appLanguage==='en'?'Local source removed.':'Đã xóa nguồn local.');}
+}
+var localLibraryUiRefreshTimer = null;
+function bindLocalLibraryAutoRefresh() {
+  var api = window.desktopWindow;
+  if (!api || !api.isDesktop || typeof api.onLocalMusicLibraryChanged !== 'function') return;
+  api.onLocalMusicLibraryChanged(function(state){
+    localLibraryState = state || {sources:[],playlists:[],tracks:[]};
+    localPlaylists = (localLibraryState.playlists || []).map(function(pl){return Object.assign({},pl,{provider:'local',source:'local'});});
+    if (localLibraryUiRefreshTimer) clearTimeout(localLibraryUiRefreshTimer);
+    localLibraryUiRefreshTimer = setTimeout(async function(){
+      localLibraryUiRefreshTimer = null;
+      await refreshUserPlaylists(true);
+      var detail = typeof playlistPanelDetailState !== 'undefined' ? playlistPanelDetailState : null;
+      if (!detail || !/^local:/.test(String(detail.key || ''))) return;
+      var sourceId = String(detail.key).slice(6);
+      try {
+        var response = await apiJson('/api/local/playlist?id=' + encodeURIComponent(sourceId) + '&t=' + Date.now());
+        if (playlistPanelDetailState.key !== 'local:' + sourceId) return;
+        playlistPanelDetailState.playlist = response.playlist || playlistPanelDetailState.playlist;
+        playlistPanelDetailState.tracks = (response.tracks || []).map(cloneSong);
+        playlistPanelDetailState.loading = false;
+        playlistPanelDetailState.renderLimit = Math.min(playlistPanelDetailState.tracks.length, Math.max(PLAYLIST_DETAIL_INITIAL_RENDER, playlistPanelDetailState.renderLimit || 0));
+        renderPlaylistPanelDetailState();
+      } catch (error) { console.warn('[LocalLibraryAutoRefresh]', error); }
+    }, 180);
+  });
+}
+bindLocalLibraryAutoRefresh();
+
 async function refreshQr() {
   stopQrPoll();
   await refreshProviderConfig();
@@ -25239,16 +25571,76 @@ async function openNeteaseWebLogin() {
     updateLoginProviderUi();
   }
 }
-async function openQQWebLogin() {
-  await refreshQQLoginStatus();
-  activeAccountProvider = hasPlatformLogin('netease') ? activeAccountProvider : 'qq';
-  renderUserBtn();
+async function runYouTubeLogin(mode) {
   var statusEl = document.getElementById('qr-status');
-  var ready = !!(qqLoginStatus && qqLoginStatus.playbackKeyReady);
-  var text = ready ? tr('youtubeReady') : (appLanguage === 'en' ? 'The engine is still preparing. Check again in a moment.' : 'Bộ máy phát vẫn đang được chuẩn bị. Hãy kiểm tra lại sau ít phút.');
-  if (statusEl) { statusEl.textContent = text; statusEl.className = ready ? 'scan' : 'preview'; }
-  showToast(text);
+  mode = 'official';
+  var cfg = await refreshProviderConfig();
+  if (!cfg || !cfg.youtubeClientId) {
+    var configuredInput = String((document.getElementById('youtube-client-id-input') || {}).value || '').trim();
+    if (configuredInput) {
+      if (!(await saveYouTubeConfig())) return;
+      cfg = await refreshProviderConfig();
+    } else {
+      qqManualCookieOpen = true;
+      updateLoginProviderUi();
+      if (statusEl) { statusEl.textContent = appLanguage === 'en' ? 'Add a Google OAuth Client ID (Desktop app) in Advanced settings first.' : 'Hãy nhập Google OAuth Client ID loại Desktop app trong phần Nâng cao trước.'; statusEl.className = 'fail'; }
+      return;
+    }
+  }
+  youtubePendingCode = '';
+  youtubePendingVerificationUrl = '';
+  updateLoginProviderUi();
+  if (statusEl) { statusEl.textContent = appLanguage === 'en' ? 'Opening Google sign-in in your default browser…' : 'Đang mở đăng nhập Google bằng trình duyệt mặc định…'; statusEl.className = 'preview'; }
+  try {
+    var api = window.desktopWindow;
+    var result;
+    if (api && api.isDesktop && typeof api.openQQMusicLogin === 'function') result = await api.openQQMusicLogin();
+    else {
+      var start = await apiJson('/api/youtube/login/start?mode=' + encodeURIComponent(mode));
+      if (!start || !start.authUrl || !start.state) throw new Error('YouTube authorization URL unavailable');
+      await openExternalUrl(start.authUrl);
+      result = Object.assign({ok:true,pending:true}, start);
+    }
+    if (!result || !result.ok) throw new Error(result && (result.error || result.message) || 'YouTube sign-in failed');
+    youtubePendingCode = String(result.userCode || '');
+    youtubePendingVerificationUrl = String(result.verificationUrl || result.authUrl || '');
+    updateLoginProviderUi();
+    if (statusEl && youtubePendingCode) {
+      statusEl.textContent = appLanguage === 'en'
+        ? ('Enter code ' + youtubePendingCode + ' on the opened YouTube page.')
+        : ('Nhập mã ' + youtubePendingCode + ' trên trang YouTube vừa mở.');
+      statusEl.className = 'preview';
+    }
+    if (result.pending && result.state) {
+      for (var attempt=0; attempt<600; attempt++) {
+        await new Promise(function(resolve){ setTimeout(resolve, 1000); });
+        var check = await apiJson('/api/youtube/login/result?state=' + encodeURIComponent(result.state) + '&t=' + Date.now());
+        if (check && check.userCode && !youtubePendingCode) { youtubePendingCode=String(check.userCode); updateLoginProviderUi(); }
+        if (check && check.complete && check.ok && check.status && check.status.loggedIn) { result.status = check.status; break; }
+        if (check && check.complete && check.ok === false) throw new Error(check.error || 'YouTube sign-in failed');
+      }
+    }
+    var info = result.status || await apiJson('/api/youtube/login/status?t=' + Date.now());
+    if (!info || !info.loggedIn) throw new Error(appLanguage === 'en' ? 'YouTube authorization was not completed.' : 'Chưa hoàn tất xác thực YouTube.');
+    youtubePendingCode = '';
+    youtubePendingVerificationUrl = '';
+    qqLoginStatus = normalizeQQLoginStatus(info);
+    activeAccountProvider = 'qq';
+    renderUserBtn();
+    await refreshUserPlaylists(true);
+    updateLoginProviderUi();
+    if (statusEl) { statusEl.textContent = (appLanguage === 'en' ? 'YouTube connected · ' : 'YouTube đã kết nối · ') + (info.nickname || 'YouTube'); statusEl.className = 'scan'; }
+    setTimeout(function(){ closeLoginModal(); showToast((appLanguage === 'en' ? 'YouTube connected: ' : 'Đã kết nối YouTube: ') + (info.nickname || 'YouTube')); }, 350);
+  } catch (e) {
+    youtubePendingCode = '';
+    youtubePendingVerificationUrl = '';
+    updateLoginProviderUi();
+    if (statusEl) { statusEl.textContent = e && e.message ? e.message : 'YouTube login failed'; statusEl.className = 'fail'; }
+  }
 }
+async function openQQWebLogin() { return runYouTubeLogin('official'); }
+async function openYouTubeOfficialLogin() { return runYouTubeLogin('official'); }
+
 async function submitQQCookieLogin() {
   if (qqCookieBusy) return;
   var input = document.getElementById('qq-cookie-input');
@@ -25404,7 +25796,18 @@ function openProviderLogin(provider) {
 }
 async function logoutActiveAccount() {
   if (activeAccountProvider === 'qq') {
-    showToast(appLanguage === 'en' ? 'YouTube is a public playback source and does not require sign-in.' : 'YouTube là nguồn phát công khai và không cần đăng nhập.');
+    try {
+      await apiJson('/api/youtube/logout');
+      if (window.desktopWindow && typeof window.desktopWindow.clearQQMusicLogin === 'function') await window.desktopWindow.clearQQMusicLogin();
+    } catch (_) {}
+    qqLoginStatus = normalizeQQLoginStatus({loggedIn:false,configured:true,playbackKeyReady:qqLoginStatus && qqLoginStatus.playbackKeyReady,engine:qqLoginStatus && qqLoginStatus.engine});
+    qqPlaylists = [];
+    userPlaylists = (loginStatus.loggedIn ? userPlaylists.filter(function(pl){return pl.provider==='netease';}) : []).concat(localPlaylists || []);
+    activeAccountProvider = firstLoggedProvider();
+    renderUserBtn();
+    renderUserPlaylistsList({reset:true});
+    closeUserModal();
+    showToast(appLanguage === 'en' ? 'YouTube disconnected' : 'Đã ngắt kết nối YouTube');
     return;
   }
   doLogout();
@@ -28828,6 +29231,83 @@ animate();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDiscordIntegration);
   else initDiscordIntegration();
 })();
+
+function homePanelNeedsClearGlassLock(panel) {
+  if (!panel || !panel.style) return false;
+  var coverCell = panel.classList.contains('home-mosaic-cell') && panel.classList.contains('has-cover');
+  var expectedImage = coverCell ? 'var(--home-liquid-cover-image,none)' : 'none';
+  return panel.style.getPropertyValue('background') !== 'none' || panel.style.getPropertyPriority('background') !== 'important' ||
+    panel.style.getPropertyValue('background-color') !== 'transparent' || panel.style.getPropertyPriority('background-color') !== 'important' ||
+    panel.style.getPropertyValue('background-image').replace(/\s+/g,'') !== expectedImage || panel.style.getPropertyPriority('background-image') !== 'important' ||
+    panel.style.getPropertyValue('backdrop-filter') !== 'saturate(1.22) contrast(1.035)' || panel.style.getPropertyPriority('backdrop-filter') !== 'important' ||
+    panel.style.getPropertyValue('-webkit-backdrop-filter') !== 'saturate(1.22) contrast(1.035)' || panel.style.getPropertyPriority('-webkit-backdrop-filter') !== 'important';
+}
+function enforceHomeClearGlass() {
+  var home = document.getElementById('empty-home');
+  if (!home) return;
+  var panels = home.querySelectorAll('.home-hero,.home-card,.home-tile,.home-mosaic-cell,.discord-home-card');
+  panels.forEach(function(panel){
+    var coverCell = panel.classList.contains('home-mosaic-cell') && panel.classList.contains('has-cover');
+    if (coverCell) {
+      var renderedCover = panel.style.getPropertyValue('background-image');
+      if (renderedCover && renderedCover !== 'none' && renderedCover.indexOf('--home-liquid-cover-image') < 0) panel.style.setProperty('--home-liquid-cover-image',renderedCover);
+    } else panel.style.removeProperty('--home-liquid-cover-image');
+    if (panel.style.getPropertyValue('background') !== 'none' || panel.style.getPropertyPriority('background') !== 'important') panel.style.setProperty('background','none','important');
+    if (panel.style.getPropertyValue('background-color') !== 'transparent' || panel.style.getPropertyPriority('background-color') !== 'important') panel.style.setProperty('background-color','transparent','important');
+    var expectedImage = coverCell ? 'var(--home-liquid-cover-image,none)' : 'none';
+    if (panel.style.getPropertyValue('background-image').replace(/\s+/g,'') !== expectedImage || panel.style.getPropertyPriority('background-image') !== 'important') panel.style.setProperty('background-image',expectedImage,'important');
+    if (panel.style.getPropertyValue('backdrop-filter') !== 'saturate(1.22) contrast(1.035)' || panel.style.getPropertyPriority('backdrop-filter') !== 'important') panel.style.setProperty('backdrop-filter','saturate(1.22) contrast(1.035)','important');
+    if (panel.style.getPropertyValue('-webkit-backdrop-filter') !== 'saturate(1.22) contrast(1.035)' || panel.style.getPropertyPriority('-webkit-backdrop-filter') !== 'important') panel.style.setProperty('-webkit-backdrop-filter','saturate(1.22) contrast(1.035)','important');
+  });
+}
+function initHomeLiquidGlass() {
+  var home = document.getElementById('empty-home');
+  if (!home || home.dataset.liquidBound === '1') return;
+  home.dataset.liquidBound = '1';
+  var panels = '.home-hero,.home-card,.home-tile,.home-mosaic-cell';
+  var lockQueued = false;
+  function queueLock(){
+    if (lockQueued) return;
+    lockQueued = true;
+    requestAnimationFrame(function(){ lockQueued=false; enforceHomeClearGlass(); });
+  }
+  enforceHomeClearGlass();
+  home.addEventListener('pointermove', function(event){
+    var rect = home.getBoundingClientRect();
+    var px = ((event.clientX-rect.left)/Math.max(1,rect.width))*100;
+    var py = ((event.clientY-rect.top)/Math.max(1,rect.height))*100;
+    home.style.setProperty('--liquid-x', px.toFixed(2)+'%');
+    home.style.setProperty('--liquid-y', py.toFixed(2)+'%');
+    home.style.setProperty('--liquid-tilt-x', ((50-py)*0.012).toFixed(3)+'deg');
+    home.style.setProperty('--liquid-tilt-y', ((px-50)*0.014).toFixed(3)+'deg');
+    var panel = event.target && event.target.closest ? event.target.closest(panels) : null;
+    if (panel) {
+      var panelRect = panel.getBoundingClientRect();
+      panel.style.setProperty('--liquid-local-x', ((((event.clientX-panelRect.left)/Math.max(1,panelRect.width))*100).toFixed(2))+'%');
+      panel.style.setProperty('--liquid-local-y', ((((event.clientY-panelRect.top)/Math.max(1,panelRect.height))*100).toFixed(2))+'%');
+    }
+  }, {passive:true});
+  home.addEventListener('pointerleave', function(){
+    home.style.setProperty('--liquid-x','50%');home.style.setProperty('--liquid-y','30%');
+    home.style.setProperty('--liquid-tilt-x','0deg');home.style.setProperty('--liquid-tilt-y','0deg');
+    home.querySelectorAll(panels).forEach(function(panel){panel.style.removeProperty('--liquid-local-x');panel.style.removeProperty('--liquid-local-y');});
+  }, {passive:true});
+  if (window.MutationObserver) {
+    var observer = new MutationObserver(function(records){
+      var shouldLock = records.some(function(record){
+        if (record.type === 'childList' || record.attributeName === 'class') return true;
+        return record.attributeName === 'style' && record.target && record.target.matches && record.target.matches('.home-hero,.home-card,.home-tile,.home-mosaic-cell,.discord-home-card') && homePanelNeedsClearGlassLock(record.target);
+      });
+      if (shouldLock) queueLock();
+    });
+    observer.observe(home,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+    observer.observe(document.body,{attributes:true,attributeFilter:['class']});
+  }
+  window.addEventListener('load',queueLock,{once:true});
+  setTimeout(queueLock,250);
+  setTimeout(queueLock,1200);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHomeLiquidGlass, {once:true}); else initHomeLiquidGlass();
 </script>
 
 </body>

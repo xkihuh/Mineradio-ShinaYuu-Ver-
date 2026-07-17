@@ -1,5 +1,114 @@
 # Changelog
 
+## 1.1.5 — 2026-07-17
+
+### Stable promotion
+
+- Promoted the complete `1.1.4.6` update source to official stable release `1.1.5`.
+- Preserved the transparent Liquid Glass Home, including protection from the legacy late-loading gray overlay.
+- Preserved system-browser YouTube OAuth using Authorization Code, PKCE, and a loopback callback.
+- Preserved supported YouTube Data API playlist synchronization, Liked videos, Uploads, local libraries, playback prefetch, Spotify recovery, lyrics, Discord Rich Presence, and Castlabs Electron behavior.
+- Updated package metadata, package-lock metadata, display version, Windows build version, installer artifact naming, User-Agent, tests, build helpers, and release documentation.
+- Added `RELEASE_1.1.5.md` and moved the supported stable release pointer to 1.1.5.
+
+### YouTube maintainer configuration
+
+- The public build uses one Google Desktop OAuth Client ID and its matching Client Secret supplied by the application maintainer.
+- End users continue to sign in with their own Google accounts and do not configure application credentials.
+
+## 1.1.4.6 — Secure YouTube Desktop OAuth
+
+- Removed Google account sign-in from the embedded Electron window after Google rejected the embedded user-agent.
+- The primary **Connect YouTube** action now opens the operating system default browser.
+- Uses OAuth 2.0 Authorization Code with PKCE and the supported desktop loopback callback.
+- Ignores legacy TV/device tokens and embedded-cookie sessions for account playlist synchronization.
+- Synchronizes playlists owned by the authorized account through YouTube Data API v3.
+- Adds Liked videos and Uploads when those related playlists are exposed by the authenticated channel.
+- Allows the app maintainer to bundle one Desktop OAuth Client ID in `package.json`, while keeping the in-app Advanced field for development builds.
+- Preserves the existing persistent transparent Home Liquid Glass behavior.
+
+### Validation
+
+- Added regression checks ensuring YouTube authorization is opened through `shell.openExternal` rather than a BrowserWindow.
+- Re-ran the complete playback, lyrics, Spotify, YouTube, local-library, UI, Discord, Castlabs, and packaging regression suite.
+
+> The official YouTube Data API lists playlists owned by the authorized account. It does not provide a supported endpoint for every playlist merely saved from another channel.
+
+## 1.1.4.4 — Reliable YouTube Sync and Persistent Clear Glass
+
+### YouTube account playlist synchronization
+
+- Reworked quick-login playlist discovery to merge signed-in YouTube playlist aggregation, YouTube Library, YouTube Music Library, raw Innertube browse responses, and the authenticated Data API path when its token scope permits it.
+- Added current LockupView, renderer-context, continuation, saved-playlist, liked-video, watch-later, uploads, and multi-page handling with playlist ID de-duplication.
+- Added a direct authenticated playlist-track fallback before the existing parsed YouTube and YouTube Music loaders.
+- Stopped treating HTTP/provider errors as successful empty lists. The renderer now preserves the actual synchronization failure and backend source diagnostics.
+- Isolated YouTube failures from Spotify and local-library results so one provider cannot clear the other playlist sections.
+
+### Persistent transparent Home glass
+
+- Removed the delayed gray panel fill from the Home-only surfaces instead of relying on a single early CSS override.
+- Added a final transparent material lock for Home hero, recommendation cards, playlist tiles, mosaic cells, and Discord Home surfaces, including runtime glass capability classes and pseudo-elements.
+- Added a Home-scoped mutation guard that reapplies transparent inline priorities after late rendering, class changes, style changes, or account-card refreshes.
+- Preserved pointer refraction, borders, highlights, depth, saturation, and readable text without restoring an opaque gray layer.
+
+### Validation
+
+- Added regression fixtures for raw playlist parsing, sync diagnostics, non-OK response handling, delayed runtime glass overrides, and persistent transparent material enforcement.
+- Re-ran the complete playback, lyrics, Spotify, YouTube, local-library, UI, Discord, Castlabs, and packaging regression suite.
+
+> This is a patch build based on stable version `1.1.4`. It intentionally does not include a `RELEASE_1.1.4.4.md` file.
+
+## 1.1.4.3 — Liquid Glass and YouTube Quick Login
+
+### Near-transparent Home liquid glass
+
+- Refined the existing Home layout into a much more transparent liquid-glass surface while preserving the current wallpaper, Three.js scene, GSAP transitions, card positions, and interaction flow.
+- Added pointer-responsive refraction highlights, localized light movement, subtle panel tilt, saturation, blur, and reduced-motion fallbacks.
+- Kept text and controls readable without returning to opaque card backgrounds.
+
+### Easier YouTube account connection
+
+- Added a primary one-button YouTube sign-in flow that displays a verification link and device code directly in the app, so normal users do not have to enter a Google OAuth Client ID.
+- Added persistent authenticated YouTube account sessions and synchronized account playlists/tracks under **My Playlists**.
+- Kept the existing Google OAuth PKCE Client ID flow as an optional advanced fallback for custom deployments.
+- Preserved anonymous YouTube search and playback when no account is connected.
+
+### Validation
+
+- Added and updated regression coverage for the new liquid-glass material, quick YouTube login, advanced OAuth fallback, playlist synchronization, and packaging metadata.
+- Re-ran the complete project regression suite across playback, lyrics, Spotify, YouTube, local libraries, UI, Discord, Castlabs, and Windows packaging.
+
+> This is a patch build based on stable version `1.1.4`. It intentionally does not include a `RELEASE_1.1.4.3.md` file.
+
+## 1.1.4.1 — Patch Build
+
+### Home interface
+
+- Added a pointer-responsive liquid-glass material to the existing home hero, recommendation cards, and playlist tiles without replacing the established layout or visual effects.
+- Preserved wallpaper visibility, card readability, hover depth, and reduced-motion compatibility.
+
+### YouTube account playlists
+
+- Added Google OAuth PKCE login for a YouTube account using the read-only YouTube scope.
+- Added synchronized YouTube account playlists and playlist tracks to **My Playlists** while retaining the existing anonymous YouTube search and playback engine.
+- Added local token persistence, refresh-token handling, logout, and provider configuration UI.
+
+### Local music library
+
+- Added persistent watched-folder libraries and ZIP/RAR/7Z archive libraries.
+- Added automatic folder/archive rescanning, embedded metadata and artwork reading, local Range playback, and source removal.
+- Added `.yrc`, `.lrc`, and `.txt` sidecar lyric support plus the existing metadata-based online lyric fallback for local tracks.
+- Restores local sources and playlists after application restart.
+
+### Playback transitions
+
+- Added playback descriptor caching and next-track prefetch for Spotify and YouTube.
+- Keeps the current audio source playing until the next source descriptor is ready, reducing the previous multi-second silent handoff.
+- Added automatic prefetch after manual selection, skip, queue playback, and track start.
+- Deferred expensive Spotify-to-YouTube lyric discovery until Spotify and LRCLIB have no usable lyric text, preventing lyric lookup from delaying normal transitions.
+
+> This is a patch build based on stable version `1.1.4`. It intentionally does not include a `RELEASE_1.1.4.1.md` file.
+
 ## 1.1.4 — 2026-07-15
 
 ### Stable promotion

@@ -8,7 +8,7 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const dist = path.join(root, 'dist');
 const unpacked = path.join(dist, 'win-unpacked');
-const installer = path.join(dist, 'ShinaYuu-Music-1.1.4-Setup.exe');
+const installer = path.join(dist, 'ShinaYuu-Music-1.1.5-Setup.exe');
 const unsigned = process.argv.includes('--unsigned');
 
 function fail(message) {
@@ -16,8 +16,7 @@ function fail(message) {
 }
 
 function run(command, args, options = {}) {
-  // Nếu là hệ điều hành Windows và câu lệnh chứa khoảng trắng (như C:\Program Files\...)
-  // chúng ta cần bọc câu lệnh đó trong dấu ngoặc kép để tránh lỗi "C:\Program is not recognized"
+  // Tự động bọc dấu ngoặc kép nếu đường dẫn chứa khoảng trắng trên Windows để tránh lỗi "C:\Program"
   const formattedCommand = process.platform === 'win32' && command.includes(' ') 
     ? `"${command}"` 
     : command;
@@ -28,7 +27,7 @@ function run(command, args, options = {}) {
     cwd: root,
     env: { ...process.env, ...options.env },
     stdio: 'inherit',
-    shell: true, // Giữ nguyên true để tránh lỗi EINVAL trên Node v24
+    shell: true, // Bật true để sửa lỗi EINVAL trên Node.js v24+
   });
   
   if (result.error) fail(result.error.message);
@@ -60,7 +59,6 @@ if (process.platform !== 'win32') {
 
 runNode('tools/ensure-castlabs-runtime.js');
 runNode('tools/verify-castlabs-runtime.js');
-
 
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });

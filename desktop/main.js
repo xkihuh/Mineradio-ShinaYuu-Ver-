@@ -4,9 +4,12 @@ const path = require('path');
 const fs = require('fs');
 const { execFile, spawn } = require('child_process');
 const { DiscordPresenceManager } = require('./discord-presence');
+const { getLocalLibrary } = require('../local-library');
+let localLibrary = null;
 
 let mainWindow = null;
 let localServer = null;
+let musicProvidersBridge = null;
 let mainServerPort = 0;
 let castlabsComponentState = { ready: false, status: null, error: '' };
 let audioSessionBridgeProcess = null;
@@ -40,6 +43,9 @@ const NETEASE_LOGIN_PARTITION = 'persist:mineradio-netease-login';
 const NETEASE_LOGIN_URL = 'https://music.163.com/#/login';
 const QQ_LOGIN_PARTITION = 'persist:mineradio-qqmusic-login';
 const QQ_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile';
+const YOUTUBE_LOGIN_PARTITION = 'persist:shinayuu-youtube-login';
+const YOUTUBE_LOGIN_URL = 'https://accounts.google.com/AccountChooser?service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Ffeed%2Fplaylists';
+const YOUTUBE_LOGIN_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 const CHROMIUM_PERFORMANCE_SWITCHES = [
   ['autoplay-policy', 'no-user-gesture-required'],
@@ -92,6 +98,13 @@ const NETEASE_LOGIN_COOKIE_PRIORITY = [
   'WEVNSM',
   'WNMCID',
   'JSESSIONID-WYYY',
+];
+const YOUTUBE_LOGIN_COOKIE_PRIORITY = [
+  'SAPISID', '__Secure-1PAPISID', '__Secure-3PAPISID',
+  'SID', '__Secure-1PSID', '__Secure-3PSID',
+  'HSID', 'SSID', 'APISID',
+  'LOGIN_INFO', 'PREF', 'VISITOR_INFO1_LIVE', 'YSC',
+  'CONSENT', 'SOCS', 'SIDCC', '__Secure-1PSIDCC', '__Secure-3PSIDCC',
 ];
 
 function findOpenPort(startPort) {
@@ -402,6 +415,18 @@ function isNeteaseCookieDomain(domain) {
     normalized === 'netease.com' || normalized.endsWith('.netease.com');
 }
 
+function isYouTubeCookieDomain(domain) {
+  const normalized = String(domain || '').replace(/^\./, '').toLowerCase();
+  return normalized === 'youtube.com' || normalized.endsWith('.youtube.com');
+}
+
+function youtubeCookieHasLogin(cookieText) {
+  const obj = parseCookieHeader(cookieText);
+  const apiSecret = obj.SAPISID || obj.__Secure_1PAPISID || obj.__Secure_3PAPISID || obj['__Secure-1PAPISID'] || obj['__Secure-3PAPISID'];
+  const sessionId = obj.SID || obj['__Secure-1PSID'] || obj['__Secure-3PSID'];
+  return !!(apiSecret && sessionId);
+}
+
 function buildCookieHeaderFor(cookies, isAllowedDomain, priority) {
   const picked = new Map();
   (cookies || []).forEach((cookie) => {
@@ -438,6 +463,11 @@ async function readNeteaseLoginCookieHeader(cookieSession) {
   return buildCookieHeaderFor(cookies, isNeteaseCookieDomain, NETEASE_LOGIN_COOKIE_PRIORITY);
 }
 
+async function readYouTubeLoginCookieHeader(cookieSession) {
+  const cookies = await cookieSession.cookies.get({});
+  return buildCookieHeaderFor(cookies, isYouTubeCookieDomain, YOUTUBE_LOGIN_COOKIE_PRIORITY);
+}
+
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -453,6 +483,18 @@ async function localMusicApi(pathname, options) {
     throw error;
   }
   return data;
+}
+
+function ensureLocalLibrary() {
+  if (!localLibrary) {
+    localLibrary = getLocalLibrary();
+    localLibrary.on('changed', (state) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('shinayuu-local-music-changed', state || {});
+      }
+    });
+  }
+  return localLibrary;
 }
 
 async function openSpotifyLogin(owner) {
@@ -479,6 +521,66 @@ async function openSpotifyLogin(owner) {
   } catch (error) {
     return { ok: false, error: error.message || 'SPOTIFY_LOGIN_FAILED' };
   }
+}
+
+async function openYouTubeLogin(owner) {
+  try {
+    const start = await localMusicApi('/api/youtube/login/start?mode=official&t=' + Date.now());
+    if (!start || !start.authUrl || !start.state) {
+      return { ok: false, error: 'YOUTUBE_OAUTH_URL_MISSING' };
+    }
+    await shell.openExternal(start.authUrl);
+    return {
+      ok: true,
+      provider: 'youtube',
+      pending: true,
+      loginMode: 'official',
+      state: start.state,
+      redirectUri: start.redirectUri,
+      authUrl: start.authUrl,
+    };
+  } catch (error) {
+    const message = error && error.message || 'YOUTUBE_LOGIN_FAILED';
+    if (message === 'YOUTUBE_CLIENT_ID_REQUIRED' && owner && !owner.isDestroyed()) {
+      dialog.showMessageBox(owner, {
+        type: 'info',
+        title: 'Thiếu Google OAuth Client ID',
+        message: 'Google không cho phép đăng nhập tài khoản trong cửa sổ nhúng của Electron.',
+        detail: 'Hãy cấu hình OAuth Client ID loại Desktop app trong phần YouTube nâng cao. Sau đó ShinaYuu Music sẽ mở trình duyệt mặc định và tự nhận kết quả qua localhost.',
+        buttons: ['Đã hiểu'],
+        defaultId: 0,
+        noLink: true,
+      }).catch(() => {});
+    }
+    return {
+      ok: false,
+      error: message,
+      needsClientId: message === 'YOUTUBE_CLIENT_ID_REQUIRED',
+      loginMode: 'official',
+    };
+  }
+}
+
+async function chooseLocalMusicSources(owner) {
+  const choice = await dialog.showMessageBox(owner, {
+    type: 'question',
+    title: 'Add local music',
+    message: 'Choose a local music source',
+    detail: 'You can add a folder that is watched automatically, or a ZIP/RAR/7Z archive.',
+    buttons: ['Music folder', 'ZIP / RAR / 7Z archive', 'Cancel'],
+    defaultId: 0,
+    cancelId: 2,
+    noLink: true,
+  });
+  if (choice.response === 2) return { ok: false, canceled: true };
+  const folderMode = choice.response === 0;
+  const result = await dialog.showOpenDialog(owner, {
+    title: folderMode ? 'Choose a music folder' : 'Choose music archives',
+    properties: folderMode ? ['openDirectory', 'multiSelections'] : ['openFile', 'multiSelections'],
+    filters: folderMode ? [] : [{ name: 'Music archives', extensions: ['zip', 'rar', '7z'] }],
+  });
+  if (result.canceled || !result.filePaths || !result.filePaths.length) return { ok: false, canceled: true };
+  return ensureLocalLibrary().addPaths(result.filePaths);
 }
 
 async function openNeteaseMusicLoginWindow(owner) {
@@ -689,6 +791,17 @@ async function clearQQMusicLoginSession() {
   await cookieSession.clearStorageData({
     storages: ['cookies', 'localstorage', 'indexdb', 'cachestorage'],
   });
+  return { ok: true };
+}
+
+async function clearYouTubeLoginSession() {
+  const cookieSession = session.fromPartition(YOUTUBE_LOGIN_PARTITION);
+  await cookieSession.clearStorageData({
+    storages: ['cookies', 'localstorage', 'indexdb', 'cachestorage', 'serviceworkers'],
+  });
+  if (musicProvidersBridge && typeof musicProvidersBridge.invalidateYouTubeAccountSession === 'function') {
+    musicProvidersBridge.invalidateYouTubeAccountSession();
+  }
   return { ok: true };
 }
 
@@ -1253,11 +1366,32 @@ ipcMain.handle('netease-music-clear-login', async () => {
 });
 
 ipcMain.handle('qq-music-open-login', async (event) => {
-  return { ok: true, provider: 'youtube', publicAccess: true, message: 'YouTube Music does not require account login for search and playback.' };
+  return openYouTubeLogin(getSenderWindow(event));
 });
 
 ipcMain.handle('qq-music-clear-login', async () => {
-  return clearQQMusicLoginSession();
+  try { await localMusicApi('/api/youtube/logout'); } catch (_) {}
+  return clearYouTubeLoginSession();
+});
+
+ipcMain.handle('shinayuu-local-music-add', async (event) => {
+  try { return await chooseLocalMusicSources(getSenderWindow(event)); }
+  catch (error) { return { ok: false, error: error.message || 'LOCAL_SOURCE_ADD_FAILED' }; }
+});
+
+ipcMain.handle('shinayuu-local-music-state', async () => {
+  try { return await ensureLocalLibrary().init(); }
+  catch (error) { return { ok: false, error: error.message || 'LOCAL_LIBRARY_FAILED', playlists: [], tracks: [] }; }
+});
+
+ipcMain.handle('shinayuu-local-music-refresh', async () => {
+  try { await ensureLocalLibrary().init(); return await ensureLocalLibrary().refreshAll(); }
+  catch (error) { return { ok: false, error: error.message || 'LOCAL_LIBRARY_REFRESH_FAILED' }; }
+});
+
+ipcMain.handle('shinayuu-local-music-remove', async (_event, sourceId) => {
+  try { return await ensureLocalLibrary().removeSource(String(sourceId || '')); }
+  catch (error) { return { ok: false, error: error.message || 'LOCAL_SOURCE_REMOVE_FAILED' }; }
 });
 
 ipcMain.handle('mineradio-open-update-installer', async (_event, filePath) => {
@@ -1587,6 +1721,7 @@ async function createWindow() {
   process.env.QQ_COOKIE_FILE = path.join(app.getPath('userData'), '.qq-cookie');
   process.env.MUSIC_SOURCE_CONFIG_FILE = path.join(app.getPath('userData'), 'music-sources.json');
   process.env.SPOTIFY_TOKEN_FILE = path.join(app.getPath('userData'), 'spotify-token.json');
+  process.env.YOUTUBE_TOKEN_FILE = path.join(app.getPath('userData'), 'youtube-token.json');
   process.env.MINERADIO_UPDATE_DIR = getUpdateDownloadDir();
   try {
     const legacyQQCookie = path.join(__dirname, '..', '.qq-cookie');
@@ -1600,6 +1735,14 @@ async function createWindow() {
     console.warn('QQ cookie migration skipped:', e.message);
   }
 
+  localLibrary = ensureLocalLibrary();
+  await localLibrary.init().catch((error) => console.warn('[LocalLibrary] startup:', error.message));
+  musicProvidersBridge = require(path.join(__dirname, '..', 'music-providers.js'));
+  // Google blocks account authorization inside embedded Electron user-agents.
+  // Playlist account sync uses the supported system-browser OAuth + loopback flow.
+  if (musicProvidersBridge && typeof musicProvidersBridge.setYouTubeCookieProvider === 'function') {
+    musicProvidersBridge.setYouTubeCookieProvider(null);
+  }
   localServer = require(path.join(__dirname, '..', 'server.js'));
   await waitForServer(localServer);
   configureRealtimeAudioCaptureSession(session.defaultSession, port);
@@ -1728,6 +1871,7 @@ if (!gotSingleInstanceLock) {
     closeOverlayWindows();
     stopAudioSessionBridge();
     if (discordPresence) discordPresence.shutdown().catch(() => {});
+    if (localLibrary) localLibrary.close().catch(() => {});
     if (localServer && localServer.close) localServer.close();
   });
 }

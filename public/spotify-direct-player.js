@@ -1557,7 +1557,6 @@
       // Do not pause the Spotify SDK before issuing the exact-track play
       // command. A pause command racing a Web API play command can leave the
       // previous Spotify item active. The exact URI command replaces it.
-      if (typeof originalPauseForSwitch === 'function') originalPauseForSwitch();
       spotifyDirectState.switchingTrack = true;
       spotifyDirectState.requestedUri = '';
       spotifyDirectState.playRequestId = '';
@@ -1610,7 +1609,9 @@
       phase = 'descriptor';
       var requestedSpotifyId = selectedSpotifyTrackId(song);
       if (!requestedSpotifyId) throw new Error('SPOTIFY_TRACK_ID_REQUIRED');
-      var descriptor = await window.apiJson('/api/song/url?id=' + encodeURIComponent(requestedSpotifyId));
+      var descriptor = typeof window.resolvePlaybackDescriptor === 'function'
+        ? await window.resolvePlaybackDescriptor(song, '', { prefetch: false })
+        : await window.apiJson('/api/song/url?id=' + encodeURIComponent(requestedSpotifyId));
       if (token !== window.trackSwitchToken) return;
       if (!descriptor || descriptor.transport !== 'spotify' || descriptor.playable === false || !descriptor.spotifyUri) {
         try { window.handlePlaybackUnavailable(song, descriptor || {}); } catch (_) {}
@@ -1625,11 +1626,13 @@
         return;
       }
       if (descriptor.metadata) Object.assign(song, descriptor.metadata);
+      if (typeof originalPauseForSwitch === 'function') originalPauseForSwitch();
       phase = 'spotify-start';
       var started = await startSpotifyTrack(song, descriptor, opts, token);
       if (!started || token !== window.trackSwitchToken) return;
 
       spotifyDirectState.lastLyricsTrackId = String(song.currentTrackId || spotifyDirectState.currentTrackId || selectedSpotifyTrackId(song) || '');
+      if (typeof window.scheduleNextPlaybackPrefetch === 'function') window.scheduleNextPlaybackPrefetch(idx);
       try { window.beginListenSession(song, playbackContext); } catch (_) {}
       if (song.type === 'podcast') {
         try {
@@ -1664,10 +1667,13 @@
     }
   }
 
+  window.beforeHtmlAudioSourceSwitch = async function () {
+    if (isSpotifyActive()) await pauseSpotifyDirect(true);
+  };
+
   window.playQueueAt = async function (idx, opts) {
     var song = window.playQueue && idx >= 0 ? window.playQueue[idx] : null;
     if (isSpotifySong(song)) return playSpotifyQueueAt(idx, opts);
-    if (isSpotifyActive()) await pauseSpotifyDirect(true);
     spotifyDirectState.active = false;
     stopSpotifyPolling();
     stopSpotifyRealtimeCapture();

@@ -57,6 +57,8 @@ const { once } = require('events');
 const { fileURLToPath } = require('url');
 const { analyzePodcastDjStream, analyzePodcastDjIntro } = require('./dj-analyzer');
 const musicProviders = require('./music-providers');
+const { getLocalLibrary } = require('./local-library');
+const localLibrary = getLocalLibrary();
 
 const PORT = process.env.PORT || 43821;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -3404,11 +3406,47 @@ function sendHtml(res, html, status = 200) {
   res.end(html);
 }
 
+async function sendLocalMediaFile(req, res, filePath, contentType = 'application/octet-stream') {
+  let stat;
+  try { stat = await fs.promises.stat(filePath); }
+  catch (_) { sendJSON(res, { ok: false, error: 'LOCAL_FILE_NOT_FOUND' }, 404); return; }
+  const total = stat.size;
+  const range = String(req.headers.range || '');
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('Content-Type', contentType);
+  if (range) {
+    const match = range.match(/bytes=(\d*)-(\d*)/);
+    if (!match) { res.writeHead(416, { 'Content-Range': `bytes */${total}` }); res.end(); return; }
+    const start = match[1] ? Math.max(0, Number(match[1])) : 0;
+    const end = match[2] ? Math.min(total - 1, Number(match[2])) : total - 1;
+    if (start > end || start >= total) { res.writeHead(416, { 'Content-Range': `bytes */${total}` }); res.end(); return; }
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${total}`,
+      'Content-Length': end - start + 1,
+    });
+    fs.createReadStream(filePath, { start, end }).pipe(res);
+    return;
+  }
+  res.writeHead(200, { 'Content-Length': total });
+  fs.createReadStream(filePath).pipe(res);
+}
+
+function localAudioContentType(filePath) {
+  const ext = path.extname(String(filePath || '')).toLowerCase();
+  return ({
+    '.mp3': 'audio/mpeg', '.flac': 'audio/flac', '.wav': 'audio/wav', '.ogg': 'audio/ogg',
+    '.opus': 'audio/ogg; codecs=opus', '.m4a': 'audio/mp4', '.aac': 'audio/aac',
+    '.wma': 'audio/x-ms-wma', '.webm': 'audio/webm',
+  })[ext] || 'application/octet-stream';
+}
+
 function modernProviderError(res, error, fallbackStatus = 500) {
   const status = Number(error && error.status) || fallbackStatus;
   sendJSON(res, {
     ok: false,
     error: error && error.message || String(error || 'UNKNOWN_ERROR'),
+    ...(error && error.diagnostics ? { diagnostics: error.diagnostics } : {}),
   }, status);
 }
 
@@ -3422,6 +3460,100 @@ async function handleModernMusicRoute(req, res, url, pn) {
         sendJSON(res, { ok: true, ...musicProviders.updateProviderConfig(body), spotifyRedirectUri: musicProviders.spotifyRedirectUri(baseUrl) });
       } else {
         sendJSON(res, { ok: true, ...musicProviders.publicProviderConfig(undefined, baseUrl) });
+      }
+    } catch (error) { modernProviderError(res, error); }
+    return true;
+  }
+
+  if (pn === '/api/qq/login/status') {
+    try {
+      const status = await musicProviders.youtubeLoginStatus(baseUrl);
+      const engine = await musicProviders.prepareYouTubeEngine().catch(() => musicProviders.youtubeEngineStatus());
+      sendJSON(res, { ...status, playbackKeyReady: !!engine.ready, engine });
+    } catch (error) { modernProviderError(res, error); }
+    return true;
+  }
+
+  if (pn === '/api/youtube/login/start') {
+    try { sendJSON(res, await musicProviders.beginYouTubeLogin(baseUrl, { mode: url.searchParams.get('mode') || 'device' })); }
+    catch (error) { modernProviderError(res, error, 400); }
+    return true;
+  }
+
+  if (pn === '/api/youtube/callback') {
+    try {
+      const query = Object.fromEntries(url.searchParams.entries());
+      await musicProviders.completeYouTubeLogin(query);
+      sendHtml(res, musicProviders.youtubeCallbackHtml(true, ''));
+    } catch (error) {
+      sendHtml(res, musicProviders.youtubeCallbackHtml(false, error.message), Number(error.status) || 400);
+    }
+    return true;
+  }
+
+  if (pn === '/api/youtube/login/result') {
+    try { sendJSON(res, await musicProviders.youtubeLoginResult(url.searchParams.get('state') || '', baseUrl)); }
+    catch (error) { modernProviderError(res, error, 400); }
+    return true;
+  }
+
+  if (pn === '/api/youtube/login/status') {
+    try { sendJSON(res, await musicProviders.youtubeLoginStatus(baseUrl)); }
+    catch (error) { modernProviderError(res, error); }
+    return true;
+  }
+
+  if (pn === '/api/youtube/logout' || pn === '/api/qq/logout') {
+    musicProviders.clearYouTubeToken();
+    sendJSON(res, { ok: true, provider: 'youtube', loggedIn: false });
+    return true;
+  }
+
+  if (pn === '/api/local/library') {
+    try { sendJSON(res, await localLibrary.init()); }
+    catch (error) { modernProviderError(res, error); }
+    return true;
+  }
+
+  if (pn === '/api/local/playlist') {
+    try {
+      await localLibrary.init();
+      const data = localLibrary.getPlaylist(url.searchParams.get('id') || '');
+      if (!data.playlist) { sendJSON(res, { ok: false, error: 'LOCAL_PLAYLIST_NOT_FOUND', playlist: null, tracks: [] }, 404); }
+      else sendJSON(res, { ok: true, provider: 'local', ...data });
+    } catch (error) { modernProviderError(res, error); }
+    return true;
+  }
+
+  if (pn === '/api/local/lyrics') {
+    try {
+      await localLibrary.init();
+      const id = url.searchParams.get('id') || '';
+      const track = localLibrary.getTrack(id);
+      if (!track) { sendJSON(res, { lyric: '', yrc: '', plainLyric: '', source: 'local', error: 'LOCAL_TRACK_NOT_FOUND' }, 404); return true; }
+      const sidecar = await localLibrary.getLyrics(id);
+      if (sidecar && (sidecar.lyric || sidecar.yrc || sidecar.plainLyric)) { sendJSON(res, sidecar); return true; }
+      const fallback = await musicProviders.lyricsFor(id, 'local', {
+        track: track.name || track.title || '', artist: track.artist || '', album: track.album || '', duration: track.duration || 0,
+      });
+      sendJSON(res, fallback || sidecar || { lyric: '', yrc: '', plainLyric: '', source: 'local' });
+    } catch (error) {
+      sendJSON(res, { lyric: '', yrc: '', plainLyric: '', source: 'local', error: error.message || 'LOCAL_LYRICS_FAILED' });
+    }
+    return true;
+  }
+
+  if (pn === '/api/local/file' || pn === '/api/local/cover') {
+    try {
+      await localLibrary.init();
+      const track = localLibrary.getTrack(url.searchParams.get('id') || '');
+      if (!track) { sendJSON(res, { ok: false, error: 'LOCAL_TRACK_NOT_FOUND' }, 404); return true; }
+      if (pn.endsWith('/cover')) {
+        if (!track.coverPath || !fs.existsSync(track.coverPath)) { res.writeHead(404); res.end(); return true; }
+        const ext = path.extname(track.coverPath).toLowerCase();
+        await sendLocalMediaFile(req, res, track.coverPath, ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg');
+      } else {
+        await sendLocalMediaFile(req, res, track.filePath, localAudioContentType(track.filePath));
       }
     } catch (error) { modernProviderError(res, error); }
     return true;
@@ -3796,7 +3928,13 @@ async function handleModernMusicRoute(req, res, url, pn) {
   }
 
   if (pn === '/api/qq/user/playlists') {
-    sendJSON(res, { loggedIn: false, provider: 'youtube', playlists: [] });
+    try {
+      const status = await musicProviders.youtubeLoginStatus(baseUrl);
+      if (!status.loggedIn) { sendJSON(res, { loggedIn: false, provider: 'youtube', configured: status.configured, playlists: [] }); return true; }
+      const playlists = await musicProviders.youtubeAccountPlaylists(parseInt(url.searchParams.get('limit') || '200', 10) || 200);
+      const diagnostics = typeof musicProviders.youtubePlaylistSyncDiagnostics === 'function' ? musicProviders.youtubePlaylistSyncDiagnostics() : null;
+      sendJSON(res, { loggedIn: true, provider: 'youtube', userId: status.userId, nickname: status.nickname, avatar: status.avatar, playlists, diagnostics });
+    } catch (error) { modernProviderError(res, error); }
     return true;
   }
 
@@ -3807,8 +3945,14 @@ async function handleModernMusicRoute(req, res, url, pn) {
   }
 
   if (pn === '/api/qq/playlist/tracks') {
-    try { sendJSON(res, await musicProviders.youtubePlaylistTracks(url.searchParams.get('id') || '')); }
-    catch (error) { modernProviderError(res, error); }
+    try {
+      const id = url.searchParams.get('id') || '';
+      const status = await musicProviders.youtubeLoginStatus(baseUrl).catch(() => ({ loggedIn: false }));
+      const data = status.loggedIn
+        ? await musicProviders.youtubeAccountPlaylistTracks(id)
+        : await musicProviders.youtubePlaylistTracks(id);
+      sendJSON(res, data);
+    } catch (error) { modernProviderError(res, error); }
     return true;
   }
 

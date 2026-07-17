@@ -1,4 +1,4 @@
-# ShinaYuu Music 1.1.4
+# ShinaYuu Music 1.1.5
 
 ShinaYuu Music is a Windows desktop visual music player with Spotify and YouTube playback, synchronized lyrics, Desktop Lyrics, real-time visual effects, Discord Rich Presence, and a unified in-app master volume control.
 
@@ -6,7 +6,9 @@ This project is a modified work based on the original **Mineradio** repository b
 
 ## Release focus
 
-ShinaYuu Music 1.1.4 is the stable promotion of patch build 1.1.3.10. It preserves the existing renderer, UI, UX, Three.js scenes, GSAP transitions, visualizer, Desktop Lyrics, and effects while stabilizing Spotify seek/progress recovery and expanding lyric fallback coverage.
+ShinaYuu Music `1.1.5` is the official stable promotion of the completed `1.1.4.6` update line. It preserves the existing renderer, UI, UX, Three.js scenes, GSAP transitions, visualizer, Desktop Lyrics, and effects while shipping the transparent Liquid Glass Home surface, system-browser YouTube account authorization and supported playlist synchronization, the persistent local music library, and preloaded track transitions.
+
+The stable release is documented in `RELEASE_1.1.5.md`.
 
 ## Runtime architecture
 
@@ -26,6 +28,7 @@ Castlabs Electron installs and updates the Widevine CDM through its component up
 
 - Spotify Premium playback through the Spotify Web Playback SDK inside Castlabs Electron.
 - YouTube playback through `yt-dlp` with `youtubei.js` fallback support.
+- Secure YouTube account connection through the system browser using OAuth 2.0 PKCE and a desktop loopback callback; owned playlists, Liked videos, and Uploads are synchronized through YouTube Data API v3.
 - Spotify-native synchronized lyrics when available.
 - Spotify market-relinked tracks keep their live SDK metadata, progress, cover, and lyrics synchronized.
 - Spotify lyrics fall back to a high-confidence matching YouTube reference, captions, YouTube Music text, LRCLIB, and local alignment when Spotify's private lyrics service is unavailable.
@@ -35,6 +38,9 @@ Castlabs Electron installs and updates the Widevine CDM through its component up
 - Discord profile card and local Discord Rich Presence IPC.
 - One in-app master volume path for Spotify, YouTube, and local audio.
 - NSIS installer with the existing ShinaYuu Music branding.
+- Liquid-glass home cards with pointer-responsive refraction and preserved wallpaper visibility.
+- Persistent local libraries from watched folders or ZIP/RAR/7Z archives, including embedded metadata, artwork, sidecar lyrics, online lyric fallback, and automatic rescanning.
+- Playback descriptor prefetch and delayed source handoff to avoid a silent multi-second gap when selecting, skipping, or automatically advancing tracks.
 
 ## Requirements
 
@@ -88,7 +94,7 @@ npm run build:win:unsigned
 Installer output:
 
 ```text
-dist\ShinaYuu-Music-1.1.4-Setup.exe
+dist\ShinaYuu-Music-1.1.5-Setup.exe
 ```
 
 
@@ -105,6 +111,23 @@ http://127.0.0.1:43821/api/spotify/callback
 ```
 
 The desktop client uses OAuth PKCE and does not embed a Spotify client secret.
+
+## YouTube account and playlist synchronization
+
+Google account authorization is opened in the operating system default browser, not inside Electron. ShinaYuu Music uses OAuth 2.0 Authorization Code with PKCE and receives the result through a local loopback callback.
+
+The application maintainer should create one Google OAuth Client ID with application type **Desktop app**, enable YouTube Data API v3, and place the Desktop OAuth Client ID and Client Secret in `shinayuu.youtube.oauthClientId` and `shinayuu.youtube.oauthClientSecret` inside `package.json` before building. End users then only press **Connect YouTube** and approve access in their normal browser. The same values can also be entered from the in-app **Advanced** panel for development builds.
+
+The supported YouTube Data API returns playlists owned by the authorized account. ShinaYuu Music also adds Liked videos and Uploads when YouTube exposes them. Playlists merely saved from another channel's library are not exposed by the official API and therefore cannot be guaranteed as an automatic sync source.
+
+## Local music library
+
+Use **Playlist của tôi → Thêm nhạc local** to add either:
+
+- one or more watched music folders; or
+- one or more ZIP, RAR, or 7Z archives.
+
+Folder and archive sources are stored in the application user-data directory and restored after restart. Watched folders are rescanned automatically when supported files change. Local tracks use embedded title, artist, album, duration, and artwork metadata. A same-name `.yrc`, `.lrc`, or `.txt` file is preferred for lyrics; otherwise the normal metadata-based lyric fallback remains available.
 
 ## Master volume
 
@@ -125,7 +148,7 @@ Spotify now runs in the same Castlabs Electron renderer as the application UI. T
 
 Mineradio was originally designed and developed by XxHuberrr, and is now being maintained and localized for global users by x.kihuh. Special thanks to **emily**, who co-created early concepts for the visual foundation and inspired the optimization direction for the `emily` visual preset.
 
-We also want to thank **小天才e宝**, **应春日**, **锋将军**, **軌跡**, **林中**, **骊**, **风痕**, and **花椰菜🥦** for their invaluable help with early hands-on testing, feedback, and release preparations.
+We also want to thank akimiya7742 and MIKUHOLIC for their support during the development of the application.
 
 ## Copyright and License
 

@@ -1,14 +1,14 @@
 # Windows Production Signing and Installer Build
 
-This document describes the official Windows release pipeline for ShinaYuu Music 1.1.4.
+This document describes the official Windows release pipeline for the ShinaYuu Music 1.1.5 stable release build.
 
 ## Build outputs
 
 The production command creates:
 
 ```text
-dist\ShinaYuu-Music-1.1.4-Setup.exe
-dist\ShinaYuu-Music-1.1.4-Setup.exe.sha256.txt
+dist\ShinaYuu-Music-1.1.5-Setup.exe
+dist\ShinaYuu-Music-1.1.5-Setup.exe.sha256.txt
 ```
 
 The installer contains the already packaged and EVS/VMP-signed Castlabs Electron application. End users do not need Python, Node.js, npm, EVS, or a separate Castlabs installation.
@@ -163,18 +163,18 @@ Do not Authenticode-sign or otherwise modify the application executable after EV
 ## 8. Verify the release installer
 
 ```powershell
-Get-Item .\dist\ShinaYuu-Music-1.1.4-Setup.exe |
+Get-Item .\dist\ShinaYuu-Music-1.1.5-Setup.exe |
   Select-Object Name, Length
 
 Get-FileHash `
-  .\dist\ShinaYuu-Music-1.1.4-Setup.exe `
+  .\dist\ShinaYuu-Music-1.1.5-Setup.exe `
   -Algorithm SHA256
 ```
 
 Compare the result with:
 
 ```text
-dist\ShinaYuu-Music-1.1.4-Setup.exe.sha256.txt
+dist\ShinaYuu-Music-1.1.5-Setup.exe.sha256.txt
 ```
 
 ## 9. Release smoke test

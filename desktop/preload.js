@@ -14,6 +14,16 @@ contextBridge.exposeInMainWorld('desktopWindow', {
   clearNeteaseMusicLogin: () => ipcRenderer.invoke('netease-music-clear-login'),
   openQQMusicLogin: () => ipcRenderer.invoke('qq-music-open-login'),
   clearQQMusicLogin: () => ipcRenderer.invoke('qq-music-clear-login'),
+  addLocalMusicSource: () => ipcRenderer.invoke('shinayuu-local-music-add'),
+  getLocalMusicLibrary: () => ipcRenderer.invoke('shinayuu-local-music-state'),
+  refreshLocalMusicLibrary: () => ipcRenderer.invoke('shinayuu-local-music-refresh'),
+  removeLocalMusicSource: (sourceId) => ipcRenderer.invoke('shinayuu-local-music-remove', sourceId),
+  onLocalMusicLibraryChanged: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, payload) => callback(payload || {});
+    ipcRenderer.on('shinayuu-local-music-changed', listener);
+    return () => ipcRenderer.removeListener('shinayuu-local-music-changed', listener);
+  },
   openUpdateInstaller: (filePath) => ipcRenderer.invoke('mineradio-open-update-installer', filePath),
   restartApp: () => ipcRenderer.invoke('mineradio-restart-app'),
   configureGlobalHotkeys: (bindings) => ipcRenderer.invoke('mineradio-hotkeys-configure-global', bindings || []),
