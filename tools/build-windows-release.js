@@ -8,7 +8,9 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const dist = path.join(root, 'dist');
 const unpacked = path.join(dist, 'win-unpacked');
-const installer = path.join(dist, 'ShinaYuu-Music-1.1.5-Setup.exe');
+const pkg = require(path.join(root, 'package.json'));
+const normalizedVersion = pkg.version.replace(/-patch\./g, '.').replace(/-/g, '.');
+const installer = path.join(dist, `ShinaYuu-Music-${normalizedVersion}-Setup.exe`);
 const unsigned = process.argv.includes('--unsigned');
 
 function fail(message) {

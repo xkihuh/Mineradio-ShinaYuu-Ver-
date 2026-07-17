@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('desktopWindow', {
   getLocalMusicLibrary: () => ipcRenderer.invoke('shinayuu-local-music-state'),
   refreshLocalMusicLibrary: () => ipcRenderer.invoke('shinayuu-local-music-refresh'),
   removeLocalMusicSource: (sourceId) => ipcRenderer.invoke('shinayuu-local-music-remove', sourceId),
+  chooseBackgroundMediaFolder: () => ipcRenderer.invoke('shinayuu-background-media-choose-folder'),
+  scanBackgroundMediaFolder: (folderPath) => ipcRenderer.invoke('shinayuu-background-media-scan-folder', folderPath),
   onLocalMusicLibraryChanged: (callback) => {
     if (typeof callback !== 'function') return () => {};
     const listener = (_event, payload) => callback(payload || {});

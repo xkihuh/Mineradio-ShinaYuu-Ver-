@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.1.5.2 — 2026-07-17
+
+### Three-mode stage text selector
+
+- Replaced the single Lyrics on/off action under the progress bar with a Liquid Glass three-option menu.
+- Added **Track title** mode, which renders only the current song name on the existing 3D lyric stage and never displays lyric lines.
+- Preserved the existing synchronized **Lyrics** mode without changing its timing, karaoke fill, glow, camera binding, or particles.
+- Added **Show nothing** mode, which clears the title, lyrics, outgoing text meshes, and lyric star-river glow.
+- The selected mode is stored locally and restored after application restart.
+- The `L` keyboard shortcut now cycles through Lyrics → Track title → Show nothing.
+- Immersive mode temporarily uses synchronized lyrics and restores the exact previous stage-text mode on exit.
+
+### Validation
+
+- Added `stage-text-mode-regression.test.js` covering the three menu options, persisted state, title rendering path, complete hidden state, keyboard cycle, Liquid Glass menu, and immersive-mode restoration.
+- Re-ran the complete regression suite for UI, packaging, playback, providers, lyrics, YouTube, Spotify, Discord, Castlabs, local libraries, and background media.
+
+## 1.1.5.1 — 2026-07-17
+
+### Folder-backed background media library
+
+- Replaced the single background file picker with a native folder picker in the desktop application.
+- Added recursive scanning for supported images and videos, with a 600-item safety limit and automatic reload after restart.
+- Added a transparent Liquid Glass media gallery with live pointer highlights, image thumbnails, video hover previews, search, and Image/Video filters.
+- Clicking a media card immediately applies it as the image or looping video background.
+- Added a private `shinayuu-media://` protocol so large local videos stream directly from their original folder instead of being copied into IndexedDB or embedded as base64.
+- Added a browser fallback using a directory file input when the desktop IPC bridge is unavailable.
+- Preserved the existing Home Liquid Glass, visualizer, Three.js/GSAP effects, Spotify, YouTube, lyrics, Discord, and local music library behavior.
+
+### Validation
+
+- Added `background-media-library-regression.test.js`.
+- Re-ran the complete regression suite for UI, packaging, playback, providers, lyrics, YouTube, Spotify, Discord, Castlabs, and local libraries.
+
 ## 1.1.5 — 2026-07-17
 
 ### Stable promotion

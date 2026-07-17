@@ -1,33 +1,23 @@
-# Modification Report — ShinaYuu Music 1.1.5
+# Modification Report — ShinaYuu Music 1.1.5.2
 
-## Promotion baseline
+ShinaYuu Music 1.1.5.2 is built directly from the 1.1.5.1 source. The established renderer structure, UI/UX, Three.js scenes, GSAP transitions, synchronized lyrics, visualizer, Spotify, YouTube, Discord, folder-backed media library, and Castlabs Electron architecture remain intact.
 
-ShinaYuu Music 1.1.5 is the stable promotion of the complete `1.1.4.6` source. The preserved 1.1.3.3 UI/UX structure remains the application baseline; the abandoned clean-source rewrites are not used.
+## Stage text selector
 
-## Preserved architecture
+- Converted the single Lyrics button into a Liquid Glass menu with Track title, Lyrics, and Show nothing modes.
+- Track title mode reuses the existing 3D lyric stage but renders only the active song name.
+- Lyrics mode preserves the complete current synchronized lyric path.
+- Show nothing mode clears all stage text and immediately disables the related star-river glow.
+- The chosen mode persists in local storage and is restored after restart.
+- The local `L` shortcut cycles through all three choices.
+- Immersive mode restores the exact mode that was active before entering it.
 
-- Castlabs Electron for Content Security `42.5.2+wvcus` remains the desktop runtime.
-- Spotify Web Playback SDK remains in the existing visible renderer.
-- The separate hidden WebView2 Spotify host remains removed.
-- The loopback server remains limited to local APIs and OAuth callbacks.
-- Existing Three.js, GSAP, lyrics, visualizer, Desktop Lyrics, Discord integration, and installer artwork remain intact.
+## Packaging
 
-## Promoted 1.1.4.x work
+- npm package version: `1.1.5-patch.2`
+- Display and Windows build version: `1.1.5.2`
+- Installer artifact: `ShinaYuu-Music-1.1.5.2-Setup.exe`
 
-- Persistent transparent Liquid Glass Home materials and protection from the legacy late-loading gray overlay.
-- System-browser Google authorization with OAuth 2.0 Authorization Code, PKCE, and a desktop loopback callback.
-- Supported YouTube Data API playlist synchronization, including owned playlists, Liked videos, and Uploads when available.
-- Persistent local folder/archive libraries with metadata, artwork, lyrics, and rescanning.
-- Playback descriptor prefetch and delayed source handoff.
-- Existing Spotify seek, progress, metadata, lyrics, and fallback recovery behavior.
+## Validation
 
-## Stable release updates
-
-- Package, lockfile, display, Windows build, User-Agent, tests, and installer metadata are standardized as `1.1.5`.
-- The installer artifact is `ShinaYuu-Music-1.1.5-Setup.exe`.
-- `RELEASE_1.1.5.md` documents the official stable release.
-- Historical `1.1.4.x` reports and changelog entries remain preserved.
-
-## License
-
-The project remains `GPL-3.0-only`, with original-project attribution and third-party notices preserved.
+The source includes a dedicated stage-text regression test plus the existing UI, packaging, playback, lyrics, Spotify, YouTube, background-media, local-library, Discord, and Castlabs checks.

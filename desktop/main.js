@@ -1,7 +1,8 @@
-const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, desktopCapturer, components } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, desktopCapturer, components, protocol, net: electronNet } = require('electron');
 const net = require('net');
 const path = require('path');
 const fs = require('fs');
+const { pathToFileURL } = require('url');
 const { execFile, spawn } = require('child_process');
 const { DiscordPresenceManager } = require('./discord-presence');
 const { getLocalLibrary } = require('../local-library');
@@ -46,6 +47,173 @@ const QQ_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile';
 const YOUTUBE_LOGIN_PARTITION = 'persist:shinayuu-youtube-login';
 const YOUTUBE_LOGIN_URL = 'https://accounts.google.com/AccountChooser?service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Ffeed%2Fplaylists';
 const YOUTUBE_LOGIN_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+const BACKGROUND_MEDIA_SCHEME = 'shinayuu-media';
+const BACKGROUND_MEDIA_MAX_FILES = 600;
+const BACKGROUND_MEDIA_MAX_DEPTH = 6;
+const BACKGROUND_MEDIA_EXTENSIONS = new Map([
+  ['.jpg', { type: 'image', mime: 'image/jpeg' }],
+  ['.jpeg', { type: 'image', mime: 'image/jpeg' }],
+  ['.png', { type: 'image', mime: 'image/png' }],
+  ['.webp', { type: 'image', mime: 'image/webp' }],
+  ['.gif', { type: 'image', mime: 'image/gif' }],
+  ['.avif', { type: 'image', mime: 'image/avif' }],
+  ['.bmp', { type: 'image', mime: 'image/bmp' }],
+  ['.mp4', { type: 'video', mime: 'video/mp4' }],
+  ['.webm', { type: 'video', mime: 'video/webm' }],
+  ['.mov', { type: 'video', mime: 'video/quicktime' }],
+  ['.m4v', { type: 'video', mime: 'video/x-m4v' }],
+]);
+let backgroundMediaRoots = new Set();
+let backgroundMediaProtocolReady = false;
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: BACKGROUND_MEDIA_SCHEME,
+  privileges: {
+    standard: true,
+    secure: true,
+    supportFetchAPI: true,
+    corsEnabled: true,
+  },
+}]);
+
+function normalizeBackgroundMediaRoot(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const resolved = path.resolve(raw);
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+}
+
+function backgroundMediaRootsFile() {
+  return path.join(app.getPath('userData'), 'background-media-folders.json');
+}
+
+function loadBackgroundMediaRoots() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(backgroundMediaRootsFile(), 'utf8'));
+    const roots = Array.isArray(raw && raw.roots) ? raw.roots : [];
+    backgroundMediaRoots = new Set(roots.map(normalizeBackgroundMediaRoot).filter(Boolean));
+  } catch (_) {
+    backgroundMediaRoots = new Set();
+  }
+}
+
+function saveBackgroundMediaRoots() {
+  try {
+    fs.mkdirSync(path.dirname(backgroundMediaRootsFile()), { recursive: true });
+    fs.writeFileSync(backgroundMediaRootsFile(), JSON.stringify({ roots: Array.from(backgroundMediaRoots) }, null, 2), 'utf8');
+  } catch (error) {
+    console.warn('[BackgroundMedia] Could not save folder list:', error.message);
+  }
+}
+
+function rememberBackgroundMediaRoot(folderPath) {
+  const normalized = normalizeBackgroundMediaRoot(folderPath);
+  if (!normalized) return;
+  backgroundMediaRoots.add(normalized);
+  saveBackgroundMediaRoots();
+}
+
+function backgroundMediaPathAllowed(filePath) {
+  const normalized = normalizeBackgroundMediaRoot(filePath);
+  for (const root of backgroundMediaRoots) {
+    if (normalized === root || normalized.startsWith(root + path.sep)) return true;
+  }
+  return false;
+}
+
+function encodeBackgroundMediaUrl(filePath) {
+  return `${BACKGROUND_MEDIA_SCHEME}://local/${Buffer.from(String(filePath), 'utf8').toString('base64url')}`;
+}
+
+function decodeBackgroundMediaUrl(urlValue) {
+  const parsed = new URL(String(urlValue || ''));
+  if (parsed.protocol !== `${BACKGROUND_MEDIA_SCHEME}:` || parsed.hostname !== 'local') return '';
+  return Buffer.from(parsed.pathname.replace(/^\/+/, ''), 'base64url').toString('utf8');
+}
+
+function registerBackgroundMediaProtocol() {
+  if (backgroundMediaProtocolReady) return;
+  backgroundMediaProtocolReady = true;
+  protocol.handle(BACKGROUND_MEDIA_SCHEME, async (request) => {
+    try {
+      const filePath = decodeBackgroundMediaUrl(request.url);
+      const media = BACKGROUND_MEDIA_EXTENSIONS.get(path.extname(filePath).toLowerCase());
+      if (!filePath || !media || !backgroundMediaPathAllowed(filePath)) {
+        return new Response('Not found', { status: 404 });
+      }
+      const stat = await fs.promises.stat(filePath);
+      if (!stat.isFile()) return new Response('Not found', { status: 404 });
+      return electronNet.fetch(pathToFileURL(filePath).toString(), {
+        method: request.method,
+        headers: request.headers,
+      });
+    } catch (error) {
+      console.warn('[BackgroundMedia] Protocol request failed:', error.message);
+      return new Response('Not found', { status: 404 });
+    }
+  });
+}
+
+async function scanBackgroundMediaFolder(folderPath) {
+  const resolvedRoot = path.resolve(String(folderPath || '').trim());
+  const rootStat = await fs.promises.stat(resolvedRoot);
+  if (!rootStat.isDirectory()) throw new Error('BACKGROUND_MEDIA_FOLDER_INVALID');
+  rememberBackgroundMediaRoot(resolvedRoot);
+
+  const items = [];
+  let truncated = false;
+  async function walk(currentPath, depth) {
+    if (items.length >= BACKGROUND_MEDIA_MAX_FILES) { truncated = true; return; }
+    let entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+    entries = entries.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    for (const entry of entries) {
+      if (items.length >= BACKGROUND_MEDIA_MAX_FILES) { truncated = true; break; }
+      if (!entry || entry.name.startsWith('.')) continue;
+      const absolutePath = path.join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        if (depth < BACKGROUND_MEDIA_MAX_DEPTH) await walk(absolutePath, depth + 1);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      const media = BACKGROUND_MEDIA_EXTENSIONS.get(path.extname(entry.name).toLowerCase());
+      if (!media) continue;
+      let stat;
+      try { stat = await fs.promises.stat(absolutePath); } catch (_) { continue; }
+      items.push({
+        id: Buffer.from(absolutePath, 'utf8').toString('base64url'),
+        name: entry.name,
+        relativePath: path.relative(resolvedRoot, absolutePath),
+        path: absolutePath,
+        type: media.type,
+        mime: media.mime,
+        size: stat.size,
+        modifiedAt: stat.mtimeMs,
+        url: encodeBackgroundMediaUrl(absolutePath),
+      });
+    }
+  }
+  await walk(resolvedRoot, 0);
+  items.sort((a, b) => a.type.localeCompare(b.type) || a.relativePath.localeCompare(b.relativePath, undefined, { numeric: true, sensitivity: 'base' }));
+  return {
+    ok: true,
+    folderPath: resolvedRoot,
+    folderName: path.basename(resolvedRoot) || resolvedRoot,
+    items,
+    truncated,
+    maxFiles: BACKGROUND_MEDIA_MAX_FILES,
+  };
+}
+
+async function chooseBackgroundMediaFolder(owner) {
+  const result = await dialog.showOpenDialog(owner, {
+    title: 'Chọn thư mục ảnh và video nền',
+    properties: ['openDirectory'],
+    buttonLabel: 'Dùng thư mục này',
+  });
+  if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true };
+  return scanBackgroundMediaFolder(result.filePaths[0]);
+}
 
 const CHROMIUM_PERFORMANCE_SWITCHES = [
   ['autoplay-policy', 'no-user-gesture-required'],
@@ -1374,6 +1542,17 @@ ipcMain.handle('qq-music-clear-login', async () => {
   return clearYouTubeLoginSession();
 });
 
+ipcMain.handle('shinayuu-background-media-choose-folder', async (event) => {
+  const owner = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  try { return await chooseBackgroundMediaFolder(owner); }
+  catch (error) { return { ok: false, error: error && error.message || 'BACKGROUND_MEDIA_FOLDER_FAILED' }; }
+});
+
+ipcMain.handle('shinayuu-background-media-scan-folder', async (_event, folderPath) => {
+  try { return await scanBackgroundMediaFolder(folderPath); }
+  catch (error) { return { ok: false, error: error && error.message || 'BACKGROUND_MEDIA_FOLDER_FAILED' }; }
+});
+
 ipcMain.handle('shinayuu-local-music-add', async (event) => {
   try { return await chooseLocalMusicSources(getSenderWindow(event)); }
   catch (error) { return { ok: false, error: error.message || 'LOCAL_SOURCE_ADD_FAILED' }; }
@@ -1846,6 +2025,8 @@ if (!gotSingleInstanceLock) {
   });
 
   app.whenReady().then(async () => {
+    loadBackgroundMediaRoots();
+    registerBackgroundMediaProtocol();
     screen.on('display-metrics-changed', () => {
       positionDesktopLyricsWindow();
       positionWallpaperWindow();

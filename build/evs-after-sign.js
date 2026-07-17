@@ -18,7 +18,7 @@ function runPython(args, cwd) {
     const result = spawnSync(command, commandArgs, {
       cwd,
       stdio: "inherit",
-      shell: false,
+      shell: true,
     });
 
     if (!result.error && result.status === 0) {
