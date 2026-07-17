@@ -1,8 +1,8 @@
-const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, desktopCapturer, components, protocol, net: electronNet } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, screen, session, globalShortcut, dialog, desktopCapturer, components, protocol } = require('electron');
 const net = require('net');
 const path = require('path');
 const fs = require('fs');
-const { pathToFileURL } = require('url');
+const { Readable } = require('stream');
 const { execFile, spawn } = require('child_process');
 const { DiscordPresenceManager } = require('./discord-presence');
 const { getLocalLibrary } = require('../local-library');
@@ -74,6 +74,7 @@ protocol.registerSchemesAsPrivileged([{
     secure: true,
     supportFetchAPI: true,
     corsEnabled: true,
+    stream: true,
   },
 }]);
 
@@ -132,6 +133,42 @@ function decodeBackgroundMediaUrl(urlValue) {
   return Buffer.from(parsed.pathname.replace(/^\/+/, ''), 'base64url').toString('utf8');
 }
 
+function parseBackgroundMediaByteRange(rangeHeader, fileSize) {
+  const value = String(rangeHeader || '').trim();
+  if (!value) return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(value);
+  if (!match) return { invalid: true };
+
+  let start;
+  let end;
+  if (match[1] === '') {
+    const suffixLength = Number(match[2]);
+    if (!Number.isFinite(suffixLength) || suffixLength <= 0) return { invalid: true };
+    start = Math.max(0, fileSize - suffixLength);
+    end = fileSize - 1;
+  } else {
+    start = Number(match[1]);
+    end = match[2] === '' ? fileSize - 1 : Number(match[2]);
+  }
+
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start >= fileSize || end < start) {
+    return { invalid: true };
+  }
+  end = Math.min(end, fileSize - 1);
+  return { start, end, length: end - start + 1 };
+}
+
+function backgroundMediaResponseHeaders(media, fileSize) {
+  return {
+    'Content-Type': media.mime,
+    'Content-Length': String(fileSize),
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': 'private, max-age=3600',
+    'Access-Control-Allow-Origin': '*',
+    'X-Content-Type-Options': 'nosniff',
+  };
+}
+
 function registerBackgroundMediaProtocol() {
   if (backgroundMediaProtocolReady) return;
   backgroundMediaProtocolReady = true;
@@ -142,11 +179,35 @@ function registerBackgroundMediaProtocol() {
       if (!filePath || !media || !backgroundMediaPathAllowed(filePath)) {
         return new Response('Not found', { status: 404 });
       }
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
+      }
+
       const stat = await fs.promises.stat(filePath);
-      if (!stat.isFile()) return new Response('Not found', { status: 404 });
-      return electronNet.fetch(pathToFileURL(filePath).toString(), {
-        method: request.method,
-        headers: request.headers,
+      if (!stat.isFile() || stat.size <= 0) return new Response('Not found', { status: 404 });
+
+      const range = parseBackgroundMediaByteRange(request.headers.get('range'), stat.size);
+      if (range && range.invalid) {
+        return new Response(null, {
+          status: 416,
+          headers: {
+            'Content-Range': `bytes */${stat.size}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Type': media.mime,
+          },
+        });
+      }
+
+      const headers = backgroundMediaResponseHeaders(media, range ? range.length : stat.size);
+      if (range) headers['Content-Range'] = `bytes ${range.start}-${range.end}/${stat.size}`;
+      if (request.method === 'HEAD') {
+        return new Response(null, { status: range ? 206 : 200, headers });
+      }
+
+      const nodeStream = fs.createReadStream(filePath, range ? { start: range.start, end: range.end } : undefined);
+      return new Response(Readable.toWeb(nodeStream), {
+        status: range ? 206 : 200,
+        headers,
       });
     } catch (error) {
       console.warn('[BackgroundMedia] Protocol request failed:', error.message);

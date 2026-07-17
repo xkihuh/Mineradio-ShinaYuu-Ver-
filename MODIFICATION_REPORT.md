@@ -1,23 +1,19 @@
-# Modification Report — ShinaYuu Music 1.1.5.2
+# Modification Report — ShinaYuu Music 1.1.5.4
 
-ShinaYuu Music 1.1.5.2 is built directly from the 1.1.5.1 source. The established renderer structure, UI/UX, Three.js scenes, GSAP transitions, synchronized lyrics, visualizer, Spotify, YouTube, Discord, folder-backed media library, and Castlabs Electron architecture remain intact.
+ShinaYuu Music 1.1.5.4 is built directly from the 1.1.5.3 source. The existing UI/UX, Three.js scenes, GSAP transitions, synchronized lyrics, visualizer, Spotify, YouTube, Discord, folder-backed background library, streamed video backgrounds, three-mode stage text selector, and Castlabs Electron architecture remain intact.
 
-## Stage text selector
+## Added behavior
 
-- Converted the single Lyrics button into a Liquid Glass menu with Track title, Lyrics, and Show nothing modes.
-- Track title mode reuses the existing 3D lyric stage but renders only the active song name.
-- Lyrics mode preserves the complete current synchronized lyric path.
-- Show nothing mode clears all stage text and immediately disables the related star-river glow.
-- The chosen mode persists in local storage and is restored after restart.
-- The local `L` shortcut cycles through all three choices.
-- Immersive mode restores the exact mode that was active before entering it.
+- Added a Liquid Glass transparency slider to the Interface tab of the Visual Console.
+- Added live CSS-variable updates for panel, control, hover, accent, sheen, and Home glass fills.
+- Integrated the setting with the persistent Home clear-glass lock without replacing cover images or fading content.
+- Applied the setting to the Visual Console and its controls, Home surfaces, search and playlist panels, popovers, modals, player glass, stage-text menu, and background-media library.
+- Added persistence, reset support, localization, and user visual archive support.
 
-## Packaging
+## Version metadata
 
-- npm package version: `1.1.5-patch.2`
-- Display and Windows build version: `1.1.5.2`
-- Installer artifact: `ShinaYuu-Music-1.1.5.2-Setup.exe`
+- npm package version: `1.1.5-patch.4`
+- Display and Windows build version: `1.1.5.4`
+- Installer artifact: `ShinaYuu-Music-1.1.5.4-Setup.exe`
 
-## Validation
-
-The source includes a dedicated stage-text regression test plus the existing UI, packaging, playback, lyrics, Spotify, YouTube, background-media, local-library, Discord, and Castlabs checks.
+See `RELEASE_1.1.5.4.md` and `FINAL_TEST_REPORT_1.1.5.4.txt` for release details.

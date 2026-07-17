@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.5.4 — 2026-07-17
+
+### Adjustable Liquid Glass transparency
+
+- Added a **Liquid Glass transparency** slider to **Visual Console → Interface**.
+- The control updates Home surfaces, the Visual Console, search/playlist panels, popovers, modal surfaces, player glass, media-library cards, and common glass buttons without fading their text or icons.
+- Moving the slider right makes glass surfaces clearer; moving it left strengthens their dark glass fill while preserving blur, borders, reflections, and accent highlights.
+- The chosen level is saved with the existing visual settings and restored after application restart.
+- User visual archives now preserve the Liquid Glass transparency value.
+- Added dedicated regression coverage for the control, persistence, archive support, CSS variables, Home lock integration, and release metadata.
+
+## 1.1.5.3 — 2026-07-17
+
+### Fixed
+
+- Registered the local background-media protocol with Electron streaming support.
+- Added HTTP byte-range handling (`206 Partial Content`) for MP4, WebM, MOV, and M4V background playback.
+- Added correct `Content-Type`, `Content-Length`, `Content-Range`, and `Accept-Ranges` response headers.
+- Prevented the black background layer from appearing before the selected video has decoded its first frame.
+- Added visible codec/playback feedback when a selected local video cannot be decoded.
+- Preserved folder selection, image backgrounds, Liquid Glass UI, stage-text modes, providers, lyrics, and visual effects.
+
 ## 1.1.5.2 — 2026-07-17
 
 ### Three-mode stage text selector

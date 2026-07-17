@@ -1,4 +1,4 @@
-# ShinaYuu Music 1.1.5
+# ShinaYuu Music 1.1.5.4
 
 ShinaYuu Music is a Windows desktop visual music player with Spotify and YouTube playback, synchronized lyrics, Desktop Lyrics, real-time visual effects, Discord Rich Presence, and a unified in-app master volume control.
 
@@ -6,9 +6,9 @@ This project is a modified work based on the original **Mineradio** repository b
 
 ## Release focus
 
-ShinaYuu Music `1.1.5` is the official stable promotion of the completed `1.1.4.6` update line. It preserves the existing renderer, UI, UX, Three.js scenes, GSAP transitions, visualizer, Desktop Lyrics, and effects while shipping the transparent Liquid Glass Home surface, system-browser YouTube account authorization and supported playlist synchronization, the persistent local music library, and preloaded track transitions.
+ShinaYuu Music `1.1.5.4` is the fourth patch on top of the official `1.1.5` stable release. It preserves the existing renderer, UI, UX, Three.js scenes, GSAP transitions, visualizer, Desktop Lyrics, three-mode stage text selector, system-browser YouTube authorization, folder-backed background media library, streamed local video backgrounds, persistent local music library, and preloaded track transitions while adding a saved transparency control for the Liquid Glass interface.
 
-The stable release is documented in `RELEASE_1.1.5.md`.
+The stable base is documented in `RELEASE_1.1.5.md`; the folder-media patch remains documented in `RELEASE_1.1.5.1.md`, the stage-text patch in `RELEASE_1.1.5.2.md`, the video-background streaming fix in `RELEASE_1.1.5.3.md`, and the current adjustable-glass patch in `RELEASE_1.1.5.4.md`.
 
 ## Runtime architecture
 
@@ -35,10 +35,12 @@ Castlabs Electron installs and updates the Widevine CDM through its component up
 - Runtime-generated text, tooltips, placeholders, and accessibility labels are localized to Vietnamese or English.
 - YouTube subtitles/captions, YouTube Music lyrics, LRCLIB fallback, and optional local word alignment.
 - Existing 3D lyrics, Desktop Lyrics, glow, blur, slide, scale, particles, and beat-reactive visuals.
+- Three-mode stage text selector under the player: show only the current track title, show synchronized lyrics, or hide both; the selected mode is remembered across restarts.
 - Discord profile card and local Discord Rich Presence IPC.
 - One in-app master volume path for Spotify, YouTube, and local audio.
 - NSIS installer with the existing ShinaYuu Music branding.
-- Liquid-glass home cards with pointer-responsive refraction and preserved wallpaper visibility.
+- Liquid-glass Home cards with pointer-responsive refraction and preserved wallpaper visibility. The Visual Console includes a saved transparency slider that adjusts Home, panels, popovers, player glass, buttons, and media-library surfaces without fading content.
+- Folder-backed background media library: choose one folder, browse supported images and videos in a transparent Liquid Glass gallery, search/filter the results, and click any item to use it as the live background.
 - Persistent local libraries from watched folders or ZIP/RAR/7Z archives, including embedded metadata, artwork, sidecar lyrics, online lyric fallback, and automatic rescanning.
 - Playback descriptor prefetch and delayed source handoff to avoid a silent multi-second gap when selecting, skipping, or automatically advancing tracks.
 
@@ -94,7 +96,7 @@ npm run build:win:unsigned
 Installer output:
 
 ```text
-dist\ShinaYuu-Music-1.1.5-Setup.exe
+dist\ShinaYuu-Music-1.1.5.4-Setup.exe
 ```
 
 
@@ -120,6 +122,16 @@ The application maintainer should create one Google OAuth Client ID with applica
 
 The supported YouTube Data API returns playlists owned by the authorized account. ShinaYuu Music also adds Liked videos and Uploads when YouTube exposes them. Playlists merely saved from another channel's library are not exposed by the official API and therefore cannot be guaranteed as an automatic sync source.
 
+## Liquid Glass transparency
+
+Open **Visual Console → Interface** and use **Liquid Glass transparency**. Moving the slider to the right increases transparency; moving it to the left strengthens the glass fill. Blur, borders, reflections, accent light, text, icons, cover art, and video backgrounds remain active. The value is stored with the normal visual configuration and is also included in user visual archives.
+
+## Background media folder library
+
+In **Visual console → Interface → Background media**, choose a folder instead of a single file. ShinaYuu Music scans supported images and videos in that folder and its subfolders, then opens a transparent Liquid Glass gallery. Use search or the Image/Video filters and click a card to apply that file as the background.
+
+The desktop build remembers the selected folder and reloads it after restart. Files stay in their original folder; the app does not duplicate every image or video into its user-data directory. Supported image formats are JPG, JPEG, PNG, WebP, GIF, AVIF, and BMP. Supported video containers are MP4, WebM, MOV, and M4V, subject to Chromium codec support.
+
 ## Local music library
 
 Use **Playlist của tôi → Thêm nhạc local** to add either:
@@ -144,17 +156,6 @@ Spotify now runs in the same Castlabs Electron renderer as the application UI. T
 - `NOTICE.md` — attribution and third-party notices.
 - `CHANGELOG.md` — release history.
 
-## Acknowledgments
+## License
 
-Mineradio was originally designed and developed by XxHuberrr, and is now being maintained and localized for global users by x.kihuh. Special thanks to **emily**, who co-created early concepts for the visual foundation and inspired the optimization direction for the `emily` visual preset.
-
-We also want to thank akimiya7742 and MIKUHOLIC for their support during the development of the application.
-
-## Copyright and License
-
-Copyright (C) 2026 XxHuberrr.
-Copyright (C) 2026 X.kihuh (For modifications and maintenance).
-ShinaYuu Music is licensed under `GPL-3.0-only`. Redistribution of source or binaries must preserve the license, copyright notices, attribution, and the corresponding source obligations described by GPLv3.
-This project is licensed under the GPL-3.0 License. See the [LICENSE](./LICENSE) file for details.
-
-The ShinaYuu Logo, the name "ShinaYuu," the UI visual design, and original visual assets belong entirely to the original author. Third-party dependencies and services follow their respective open-source licenses and terms of service.
+ShinaYuu Music is licensed under `GPL-3.0-only`. Redistribution of source or binaries must preserve the license, copyright notices, attribution, and corresponding-source obligations described by GPLv3. Third-party runtime components retain their own licenses and notices.
