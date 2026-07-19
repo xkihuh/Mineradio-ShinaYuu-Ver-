@@ -1,6 +1,6 @@
 # Current Release
 
-The current supported release is **ShinaYuu Music 1.1.5.7**, based on the official 1.1.5 stable release.
+The current supported release is **ShinaYuu Music 1.1.5.8**, based on the official 1.1.5 stable release.
 
 - Baseline release: `RELEASE_1.1.1.md`
 - Previous stable releases: `RELEASE_1.1.2.md`, `RELEASE_1.1.3.md`, `RELEASE_1.1.4.md`
@@ -11,4 +11,4 @@ The current supported release is **ShinaYuu Music 1.1.5.7**, based on the offici
 - Adjustable Liquid Glass patch: `RELEASE_1.1.5.4.md`
 - Playback, Smart Lyrics, playlist-count, and startup-recovery patch: `RELEASE_1.1.5.5.md`
 - Bilingual UI and expanded visualizer patch: `RELEASE_1.1.5.6.md`
-- Current runtime diagnostics, URL safety, and GPU recovery patch: `RELEASE_1.1.5.7.md`
+- Adaptive hardware compatibility and native-window stability patch: `RELEASE_1.1.5.8.md`

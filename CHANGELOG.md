@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.5.8 — 2026-07-19
+
+### Stable adaptive hardware compatibility
+
+- Replaced the globally forced normal-GPU flags with an `auto` profile that leaves Chromium and Windows GPU selection untouched.
+- Added bounded D3D11 and OpenGL hardware profiles before the final Safe Graphics fallback.
+- Saved the first confirmed working hardware profile per Windows user so incompatible machines do not repeat the recovery sequence on every launch.
+- Changed the main Windows BrowserWindow to an opaque native surface, preventing invisible transparent-window failures while retaining hardware acceleration and the complete internal Liquid Glass UI.
+- Unified GPU-process, renderer, load, startup-watchdog, and unresponsive-window recovery through the same hardware-first profile sequence.
+- Kept forced dedicated-GPU selection, GPU-blocklist bypass, zero-copy, and aggressive D3D11 flags available only through explicit performance mode.
+
+### Validation
+
+- Added adaptive-GPU regression coverage for profile ordering, persistence, opaque native composition, explicit aggressive flags, and Safe Graphics as the final fallback.
+
 ## 1.1.5.7 — 2026-07-19
 
 ### Runtime diagnostics and URL safety
