@@ -11,9 +11,17 @@
 - Unified GPU-process, renderer, load, startup-watchdog, and unresponsive-window recovery through the same hardware-first profile sequence.
 - Kept forced dedicated-GPU selection, GPU-blocklist bypass, zero-copy, and aggressive D3D11 flags available only through explicit performance mode.
 
+### Scroll-performance hotfix (version unchanged)
+
+- Returned Search, Playlist, Visual Console, Mini Queue, and Track Detail to native Chromium compositor scrolling.
+- Removed blocking GSAP wheel tweens and `preventDefault()` from ordinary list scrolling.
+- Added passive active-scroll detection, off-screen item paint deferral, and reduced nested Liquid Glass blur inside scrolling surfaces.
+- Temporarily caps only the Three.js background scene at 30 FPS while a list is actively scrolling, then restores normal full-rate rendering automatically.
+
 ### Validation
 
 - Added adaptive-GPU regression coverage for profile ordering, persistence, opaque native composition, explicit aggressive flags, and Safe Graphics as the final fallback.
+- Added scroll-performance regression coverage while preserving every 1.1.5.8 version field.
 
 ## 1.1.5.7 — 2026-07-19
 

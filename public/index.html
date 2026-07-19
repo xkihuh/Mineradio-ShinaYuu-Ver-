@@ -2307,6 +2307,29 @@ body.bg-media-library-open #fx-panel{pointer-events:none}
 
 /* ShinaYuu 1.1.5.7 - runtime diagnostics, GPU recovery, URL safety, and provider log cleanup */
 /* ShinaYuu 1.1.5.8 - adaptive hardware GPU profiles and stable opaque Windows composition */
+/* ShinaYuu 1.1.5.8 scroll-performance hotfix: native compositor scrolling */
+.native-compositor-scroll{
+  scroll-behavior:auto!important;
+  overscroll-behavior:contain;
+  overflow-anchor:auto;
+  will-change:scroll-position;
+  scrollbar-gutter:stable;
+}
+#search-results.native-compositor-scroll,
+#playlist-panel.native-compositor-scroll,
+#fx-panel.native-compositor-scroll{
+  backdrop-filter:blur(16px) saturate(1.14) brightness(1.02)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(1.14) brightness(1.02)!important;
+}
+.search-result,.queue-item,.mini-queue-item,.pl-card,.pl-detail-row{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 68px;
+}
+body.scroll-performance-mode #search-results.native-compositor-scroll,
+body.scroll-performance-mode #playlist-panel.native-compositor-scroll,
+body.scroll-performance-mode #fx-panel.native-compositor-scroll{
+  box-shadow:0 16px 44px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
 :root{
   --liquid-glass-transparency:.10;
   --liquid-glass-panel-alpha:.864;
@@ -2357,6 +2380,42 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .home-mosaic-cell,
 html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
   background:none!important;
   background-color:var(--liquid-glass-home-fill)!important;
+}
+
+
+/* Final scroll compositor overrides: keep one glass layer, not dozens of moving blur layers. */
+#search-results.native-compositor-scroll,
+#playlist-panel.native-compositor-scroll,
+#fx-panel.native-compositor-scroll{
+  contain:paint;
+  backdrop-filter:blur(14px) saturate(1.12) brightness(1.02)!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.12) brightness(1.02)!important;
+}
+#track-detail-body.native-compositor-scroll,
+#mini-queue-list.native-compositor-scroll{
+  contain:paint;
+}
+#search-results .search-result,
+#search-results .search-source-section,
+#playlist-panel .pl-card,
+#playlist-panel .queue-item,
+#playlist-panel .pl-detail-row,
+#playlist-panel .pl-inline-detail,
+#fx-panel .fx-panel-tabs,
+#fx-panel .fx-mini-btn,
+#fx-panel .fx-toggle,
+#fx-panel .fx-seg button,
+#fx-panel .panel-tab,
+#fx-panel .preset-card,
+#fx-panel .lyric-color-row,
+#fx-panel .fx-slider,
+#fx-panel .fx-fold,
+#mini-queue-list .mini-queue-item{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#search-results .search-source-section{
+  background:rgba(8,10,14,.94)!important;
 }
 
 </style>
@@ -21536,17 +21595,42 @@ function animateListItems(container, selector, opts) {
     overwrite: true
   });
 }
+var nativeScrollPerformanceState = {
+  activeUntil: 0,
+  cleanupTimer: null,
+  lastScroller: null
+};
+function isNativeScrollPerformanceActive(now) {
+  return (now || performance.now()) < nativeScrollPerformanceState.activeUntil;
+}
+function markNativeScrollPerformance(scroller, holdMs) {
+  var now = performance.now();
+  nativeScrollPerformanceState.activeUntil = Math.max(nativeScrollPerformanceState.activeUntil, now + (holdMs || 150));
+  nativeScrollPerformanceState.lastScroller = scroller || nativeScrollPerformanceState.lastScroller;
+  if (document.body) document.body.classList.add('scroll-performance-mode');
+  if (nativeScrollPerformanceState.cleanupTimer) clearTimeout(nativeScrollPerformanceState.cleanupTimer);
+  var waitMs = Math.max(60, nativeScrollPerformanceState.activeUntil - now + 28);
+  nativeScrollPerformanceState.cleanupTimer = setTimeout(function clearNativeScrollPerformanceMode(){
+    nativeScrollPerformanceState.cleanupTimer = null;
+    var remaining = nativeScrollPerformanceState.activeUntil - performance.now();
+    if (remaining > 0) {
+      nativeScrollPerformanceState.cleanupTimer = setTimeout(clearNativeScrollPerformanceMode, remaining + 28);
+      return;
+    }
+    if (document.body) document.body.classList.remove('scroll-performance-mode');
+    nativeScrollPerformanceState.lastScroller = null;
+  }, waitMs);
+}
 function smoothScrollToItem(scroller, item, opts) {
   if (!scroller || !item) return;
   opts = opts || {};
-  var target = item.offsetTop - Math.max(0, (scroller.clientHeight - item.offsetHeight) * (opts.align == null ? 0.42 : opts.align));
-  target = Math.max(0, Math.min(target, Math.max(0, scroller.scrollHeight - scroller.clientHeight)));
-  if (window.gsap) {
-    if (typeof scroller.__syncSmoothWheelTarget === 'function') scroller.__syncSmoothWheelTarget(target);
-    window.gsap.killTweensOf(scroller);
-    window.gsap.to(scroller, { scrollTop: target, duration: opts.duration || 0.30, ease: opts.ease || 'power2.out', overwrite: true });
-  } else if (scroller.scrollTo) {
-    scroller.scrollTo({ top: target, behavior: 'smooth' });
+  var viewport = scroller.clientHeight;
+  var itemHeight = item.offsetHeight;
+  var target = item.offsetTop - Math.max(0, (viewport - itemHeight) * (opts.align == null ? 0.42 : opts.align));
+  target = Math.max(0, Math.min(target, Math.max(0, scroller.scrollHeight - viewport)));
+  if (typeof scroller.__syncSmoothWheelTarget === 'function') scroller.__syncSmoothWheelTarget(target);
+  if (scroller.scrollTo) {
+    scroller.scrollTo({ top: target, behavior: opts.instant ? 'auto' : 'smooth' });
   } else {
     scroller.scrollTop = target;
   }
@@ -21554,44 +21638,16 @@ function smoothScrollToItem(scroller, item, opts) {
 function bindSmoothWheelScroll(scroller) {
   if (!scroller || scroller.__smoothWheelBound) return;
   scroller.__smoothWheelBound = true;
-  var targetTop = scroller.scrollTop;
-  var tween = null;
-  scroller.__syncSmoothWheelTarget = function(top){
-    if (tween) {
-      tween.kill();
-      tween = null;
-    }
-    targetTop = isFinite(top) ? top : scroller.scrollTop;
-  };
-  scroller.addEventListener('wheel', function(e){
-    if (!window.gsap || e.ctrlKey) return;
-    var max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
-    if (max <= 0 || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-    var delta = e.deltaY;
-    if (e.deltaMode === 1) delta *= 18;
-    else if (e.deltaMode === 2) delta *= scroller.clientHeight;
-    var current = tween ? targetTop : scroller.scrollTop;
-    var next = Math.max(0, Math.min(max, current + delta));
-    if (next === current && ((delta < 0 && scroller.scrollTop <= 0) || (delta > 0 && scroller.scrollTop >= max - 1))) {
-      targetTop = scroller.scrollTop;
-      return;
-    }
-    e.preventDefault();
-    targetTop = next;
-    if (tween) tween.kill();
-    tween = window.gsap.to(scroller, {
-      scrollTop: targetTop,
-      duration: 0.24,
-      ease: 'power2.out',
-      overwrite: true,
-      onComplete: function(){
-        tween = null;
-        targetTop = scroller.scrollTop;
-      }
-    });
-  }, { passive: false });
+  scroller.classList.add('native-compositor-scroll');
+  scroller.__syncSmoothWheelTarget = function(top){ return isFinite(top) ? top : scroller.scrollTop; };
+  scroller.addEventListener('wheel', function(){
+    markNativeScrollPerformance(scroller, 180);
+  }, { passive: true });
   scroller.addEventListener('scroll', function(){
-    if (!tween) targetTop = scroller.scrollTop;
+    markNativeScrollPerformance(scroller, 150);
+  }, { passive: true });
+  scroller.addEventListener('pointerdown', function(){
+    markNativeScrollPerformance(scroller, 110);
   }, { passive: true });
 }
 function bindSmoothQueueScrolling() {
@@ -21611,6 +21667,7 @@ function animateVisiblePanelList(listEl, selector, scroller, activeSelector, opt
   if (!listEl) return;
   opts = opts || {};
   requestAnimationFrame(function(){
+    if (typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive()) return;
     animateListItems(listEl, selector, { x: -8, y: 6, stagger: 0.01, duration: 0.20, limit: 16 });
     var active = activeSelector ? listEl.querySelector(activeSelector) : null;
     if (active && scroller && opts.scrollActive !== false) smoothScrollToItem(scroller, active, { duration: 0.32 });
@@ -29890,6 +29947,7 @@ function isMainSceneCoveredBySplash() {
 }
 function getAdaptiveRenderFps() {
   if (isDeepBackgroundMode()) return 1;
+  if (typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive()) return 30;
   if (RENDER_VISIBLE_VSYNC) return 0;
   var tier = (typeof getRenderLoadTier === 'function') ? getRenderLoadTier() : 0;
   if (typeof isRenderInteractionActive === 'function' && isRenderInteractionActive()) {
@@ -30135,7 +30193,7 @@ function animate() {
   var vinylSpinSpeed = (0.40 + smoothBass * 0.09) * vinylSpeedMul;
   uniforms.uVinylSpin.value = (uniforms.uVinylSpin.value + dt * vinylSpinSpeed) % (Math.PI * 2);
 
-  updateParticlePointerFrame();
+  if (!(typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive(now))) updateParticlePointerFrame();
   uniforms.uBass.value   = bass;
   uniforms.uMid.value    = mid;
   uniforms.uTreble.value = treble;
@@ -30152,12 +30210,15 @@ function animate() {
   uniforms.uBurstAmt.value *= 0.90;
   tickPresetTransition();
 
-  updateRipples(dt);
-  updateFloatLayer(dt);
-  if (shelfManager) shelfManager.update(dt);
-  tickLyricsParticles();
+  var nativeScrollActive = typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive(now);
+  if (!nativeScrollActive) {
+    updateRipples(dt);
+    updateFloatLayer(dt);
+    if (shelfManager) shelfManager.update(dt);
+    tickLyricsParticles();
+    updateHomeAudioVisual(dt);
+  }
   updatePlayerVisualizer(dt);
-  updateHomeAudioVisual(dt);
 
   // 电影镜头
   updateCinema(dt);
@@ -30186,9 +30247,11 @@ function animate() {
   if (backCoverGroup) {
     backCoverGroup.rotation.copy(particles.rotation);
   }
-  updateSkullParticleLayer(dt);
-  updateStageLyrics3D(dt);
-  syncDesktopOverlayState();
+  if (!nativeScrollActive) {
+    updateSkullParticleLayer(dt);
+    updateStageLyrics3D(dt);
+    syncDesktopOverlayState();
+  }
 
   // 缩略图脉动
   if (currentIdx >= 0) {
