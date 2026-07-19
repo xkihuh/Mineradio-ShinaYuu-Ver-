@@ -1,5 +1,90 @@
 # Changelog
 
+## 1.1.5.7 — 2026-07-19
+
+### Runtime diagnostics and URL safety
+
+- Added strict validation for every system-browser link and Electron `window.open` request, preventing malformed or empty values from reaching `shell.openExternal()`.
+- Added a native `openExternal` IPC bridge so renderer links no longer rely on an unhandled `window.open()` promise path.
+- Added renderer `error` and `unhandledrejection` diagnostics with message and stack details in the startup log.
+- Made the local `shinayuu-media://` decoder tolerate malformed URLs instead of throwing.
+- Migrated the Electron `console-message` listener to the current event-object API and filtered expected Spotify SDK PlayReady advisory messages from startup-error logs.
+
+### GPU and window recovery
+
+- Normal startup now requests hardware rasterization, accelerated 2D/video decode, and the high-performance GPU without bypassing Chromium's safety blocklist.
+- When both GPU compositing and WebGL are disabled, the app performs one bounded recovery relaunch with the explicit performance-GPU profile.
+- A failed recovery still falls back through the existing Safe Graphics path, avoiding relaunch loops on restricted gaming-cafe machines.
+- The main-window reveal fallback timer is now cleared after the first successful reveal, preventing duplicate `startup-timeout` show/focus calls.
+- Runtime status now reports Safe Graphics state, forced-GPU state, and Chromium GPU feature status.
+
+### Provider diagnostics
+
+- Request timeout errors are now provider-specific: `SPOTIFY_REQUEST_TIMEOUT`, `YOUTUBE_REQUEST_TIMEOUT`, `LRCLIB_REQUEST_TIMEOUT`, or generic `REQUEST_TIMEOUT`.
+- Spotify private-lyrics RBAC 403 responses now open a six-hour circuit breaker, log once, and continue directly to browser-session, YouTube, and LRCLIB fallbacks instead of repeating the same denied request for each market.
+
+### Validation
+
+- Added runtime-diagnostics regression coverage for URL validation, renderer error stacks, Electron API migration, GPU recovery, reveal-timer cleanup, provider timeout names, and Spotify lyrics RBAC fallback.
+
+## 1.1.5.6 — 2026-07-19
+
+- Standardized the recently added Visualizer and Smart Lyrics interface across Vietnamese and English.
+- Replaced mixed Vietnamese/English labels such as `visualizer`, `lyrics`, and `beat` in the Vietnamese interface with consistent user-facing terms.
+- Moved the player visualizer fully above the Liquid Glass player frame.
+- Added Steps, Pulse, Needles, and Orbits visualizer styles.
+- Added persistent controls for element width, amplitude length, and element spacing.
+- Preserved the 1.1.5.5 startup recovery, Spotify/YouTube playback recovery, playlist counts, and Smart Lyrics behavior.
+
+## 1.1.5.5 — 2026-07-19
+
+### Startup and gaming-cafe compatibility correction
+
+- Kept the public version at 1.1.5.5 while correcting the invisible-main-window startup path.
+- The main window can now be revealed by `ready-to-show`, `did-finish-load`, or a bounded fallback timer instead of depending on one Electron event.
+- Added renderer load failure, renderer crash, GPU child-process failure, and unresponsive-window recovery with an automatic Safe Graphics relaunch during early startup.
+- Added `--safe-graphics`, which disables hardware acceleration before Electron becomes ready and uses an opaque compatibility window.
+- Chromium no longer forces D3D11 or bypasses the GPU blocklist by default; aggressive GPU switches are available only through `--force-performance-gpu`.
+- Added automatic opaque-window selection when GPU compositing is unavailable or software-only.
+- Added off-screen window detection and recentering when display topology changes or a second instance focuses the app.
+- Added a delayed visible startup/recovery window and persistent startup diagnostics at `%APPDATA%\ShinaYuu Music\logs\startup.log`.
+- Added `RUN_SAFE_GRAPHICS.cmd` for unpacked development builds.
+
+### YouTube playlist totals
+
+- Liked videos and Uploads now query the authenticated playlist-items summary and display the real `pageInfo.totalResults` count instead of a hard-coded zero.
+- The first available thumbnail from each system playlist is used when YouTube exposes one.
+- Count failures are isolated per playlist so the rest of the account library still loads.
+
+### Playback recovery
+
+- YouTube signed stream descriptors are invalidated and requested again when the HTML audio element errors or remains stalled/waiting.
+- YouTube recovery resumes near the previous playback position, retries at most twice, and retains the existing compatible-quality fallback.
+- `yt-dlp` network and fragment retries were increased with short retry delays.
+- Spotify exact-track confirmation now has four attempts, refreshes SDK audio activation/volume, and performs a non-playing device transfer on later attempts.
+- Retryable Spotify device, network, timeout, and temporary playback failures trigger one controlled descriptor/device recovery instead of silently failing.
+- Spotify metadata is refreshed with `market=from_token` when cached metadata is unavailable, unplayable, or missing a URI.
+
+### Player visualizer
+
+- Added a real-time canvas visualizer above the player progress bar.
+- Added Bars, Wave, Mirror, Dots, and Ribbon styles.
+- Added Solid, Rainbow, RGB flow, interface-accent, and cover-derived color modes.
+- Added width, height, X/Y position, angle, opacity, sensitivity, smoothing, glow, and beat-boost controls in a dedicated **Visualizer** tab of the Visual Console.
+- The visualizer consumes the existing FFT and beat-energy pipeline for YouTube/local playback and the Spotify realtime analyser when available.
+- All visualizer settings persist normally and are included in user visual archives.
+
+### Smart stage text
+
+- Added a fourth **Smart lyrics and title** mode.
+- Active lyric lines continue to use the existing synchronized 3D lyrics renderer.
+- Instrumental intros, outros, blank lines, and sufficiently long lyric gaps show the current track title instead.
+- The `L` shortcut now cycles Lyrics → Smart → Track title → Hidden.
+
+### Validation
+
+- Added regression coverage for special YouTube playlist totals, playback recovery, visualizer controls/rendering/persistence, and the fourth stage-text mode.
+
 ## 1.1.5.4 — 2026-07-17
 
 ### Adjustable Liquid Glass transparency

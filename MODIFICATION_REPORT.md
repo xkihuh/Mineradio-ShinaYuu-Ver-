@@ -1,19 +1,22 @@
-# Modification Report — ShinaYuu Music 1.1.5.4
+# Modification Report — ShinaYuu Music 1.1.5.7
 
-ShinaYuu Music 1.1.5.4 is built directly from the 1.1.5.3 source. The existing UI/UX, Three.js scenes, GSAP transitions, synchronized lyrics, visualizer, Spotify, YouTube, Discord, folder-backed background library, streamed video backgrounds, three-mode stage text selector, and Castlabs Electron architecture remain intact.
+ShinaYuu Music 1.1.5.7 is built directly from the complete 1.1.5.6 source. The Electron/Castlabs architecture, UI/UX, Three.js, GSAP, Liquid Glass, expanded visualizer, Smart Lyrics, Spotify, YouTube, local library, Discord, startup recovery, and playback recovery remain intact.
 
-## Added behavior
+## Changes
 
-- Added a Liquid Glass transparency slider to the Interface tab of the Visual Console.
-- Added live CSS-variable updates for panel, control, hover, accent, sheen, and Home glass fills.
-- Integrated the setting with the persistent Home clear-glass lock without replacing cover images or fading content.
-- Applied the setting to the Visual Console and its controls, Home surfaces, search and playlist panels, popovers, modals, player glass, stage-text menu, and background-media library.
-- Added persistence, reset support, localization, and user visual archive support.
+- Validated all external URLs before opening the system browser and added a native renderer-to-main IPC bridge.
+- Added full renderer `error` and `unhandledrejection` diagnostics, including stack traces, to `startup.log`.
+- Updated Electron `console-message` handling to the event-object API and filtered expected Spotify SDK PlayReady advisory output.
+- Enabled the normal hardware-GPU preference without bypassing Chromium's safety blocklist.
+- Added one bounded recovery relaunch when both GPU compositing and WebGL are unavailable.
+- Cleared the startup reveal timer after the first successful window display.
+- Split generic request timeouts into Spotify, YouTube, LRCLIB, and generic timeout codes.
+- Added a Spotify private-lyrics RBAC circuit breaker so 403 responses immediately continue through supported fallback sources without repeated denied requests.
 
 ## Version metadata
 
-- npm package version: `1.1.5-patch.4`
-- Display and Windows build version: `1.1.5.4`
-- Installer artifact: `ShinaYuu-Music-1.1.5.4-Setup.exe`
+- npm package version: `1.1.5-patch.7`
+- Display and Windows build version: `1.1.5.7`
+- Installer artifact: `ShinaYuu-Music-1.1.5.7-Setup.exe`
 
-See `RELEASE_1.1.5.4.md` and `FINAL_TEST_REPORT_1.1.5.4.txt` for release details.
+See `RELEASE_1.1.5.7.md` and `FINAL_TEST_REPORT_1.1.5.7.txt`.

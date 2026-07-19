@@ -889,14 +889,16 @@
     if (!spotifyTrackIdFromUri(uri)) throw new Error('SPOTIFY_TRACK_URI_REQUIRED');
 
     var lastError = null;
-    for (var attempt = 1; attempt <= 3; attempt++) {
+    for (var attempt = 1; attempt <= 4; attempt++) {
       spotifyDirectState.playRequestId = requestId;
       console.info('[SpotifyPlayback] request=' + requestId + ' attempt=' + attempt + ' target=' + uri + ' device=' + device.id);
 
       // Target the SDK device directly. Do not transfer first: Spotify warns
       // that ordering is not guaranteed when multiple Player endpoints are
       // combined, which can otherwise resume the previous Spotify track.
-      if (attempt === 3) {
+      activateSpotifyAudioFromGesture();
+      if (spotifyDirectState.sdkPlayer) await applySpotifySdkVolume(spotifyDirectState.sdkPlayer).catch(function(){});
+      if (attempt >= 3) {
         await postJson('/api/spotify/player/transfer', {
           deviceId: device.id,
           play: false,
@@ -915,11 +917,11 @@
           requestId: requestId,
           forceTrack: true
         });
-        return await waitForSdkPlayback(uri, attempt === 1 ? 4200 : 6200, expectedSong);
+        return await waitForSdkPlayback(uri, attempt === 1 ? 4200 : (attempt === 4 ? 7800 : 6400), expectedSong);
       } catch (error) {
         lastError = error;
         console.warn('[SpotifyPlayback] exact-track attempt failed', requestId, attempt, error && (error.message || error));
-        if (attempt < 3) await spotifyDelay(450 + attempt * 250);
+        if (attempt < 4) await spotifyDelay(450 + attempt * 300);
       }
     }
     throw lastError || new Error('SPOTIFY_SDK_PLAYBACK_NOT_CONFIRMED');
@@ -1650,6 +1652,24 @@
       try { window.hideLoading(); } catch (_) {}
     } catch (error) {
       console.error('[SpotifyDirect]', phase, error);
+      var retryableSpotifyFailure = /SDK|PLAYBACK|DEVICE|WRONG_TRACK|timeout|network|temporar|429|502|503|504/i.test(String(error && (error.message || error) || ''));
+      if (!opts.spotifyRecoveryAttempt && retryableSpotifyFailure && token === window.trackSwitchToken) {
+        try { if (typeof window.invalidatePlaybackDescriptor === 'function') window.invalidatePlaybackDescriptor(window.playQueue[idx], ''); } catch (_) {}
+        spotifyDirectState.active = false;
+        spotifyDirectState.switchingTrack = false;
+        spotifyDirectState.requestedUri = '';
+        try { window.hideLoading(); } catch (_) {}
+        if (typeof window.showSourceFallbackNotice === 'function') {
+          window.showSourceFallbackNotice(
+            localized('Đang khôi phục Spotify', 'Recovering Spotify playback'),
+            localized('Thiết bị phát chưa xác nhận bài hát. ShinaYuu Music đang làm mới thiết bị và thử lại một lần.', 'The playback device did not confirm the track. ShinaYuu Music is refreshing it and retrying once.')
+          );
+        }
+        setTimeout(function(){
+          playSpotifyQueueAt(idx, Object.assign({}, opts, { preserveHomeState: true, spotifyRecoveryAttempt: 1 })).catch(function(retryError){ console.warn('[SpotifyRecovery]', retryError); });
+        }, 720);
+        return;
+      }
       spotifyDirectState.active = false;
       spotifyDirectState.switchingTrack = false;
       spotifyDirectState.requestedUri = '';
