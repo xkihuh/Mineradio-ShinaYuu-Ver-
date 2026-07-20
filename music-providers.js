@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.5.8';
+const UA = 'ShinaYuu Music/1.1.6.3';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const YOUTUBE_TOKEN_FILE = process.env.YOUTUBE_TOKEN_FILE || path.join(path.dirname(TOKEN_FILE), 'youtube-token.json');
@@ -33,8 +33,6 @@ const spotifyAudioAnalysisCache = new Map();
 const spotifyLyricsCache = new Map();
 const spotifyLyricsFailureCache = new Map();
 const spotifyYoutubeLyricsCache = new Map();
-let spotifyNativeLyricsBlockedUntil = 0;
-let spotifyNativeLyricsBlockLoggedUntil = 0;
 let spotifySessionLyricsProvider = null;
 const youtubeMusicLyricsCache = new Map();
 const youtubeStreamTokens = new Map();
@@ -750,20 +748,6 @@ async function youtubeDataApiWithAccessToken(endpoint, accessToken, options = {}
   return data;
 }
 
-async function youtubePlaylistCountAndCover(apiRequest, playlistId) {
-  const id = normalizeYouTubePlaylistId(playlistId);
-  if (!id || typeof apiRequest !== 'function') return { trackCount: 0, cover: '' };
-  const params = new URLSearchParams({ part: 'snippet,contentDetails,status', playlistId: id, maxResults: '1' });
-  const data = await apiRequest(`/playlistItems?${params.toString()}`);
-  const first = Array.isArray(data.items) && data.items[0] || {};
-  const snippet = first.snippet || {};
-  const thumbs = snippet.thumbnails || {};
-  return {
-    trackCount: Math.max(0, Number(data && data.pageInfo && data.pageInfo.totalResults || 0)),
-    cover: (thumbs.maxres || thumbs.standard || thumbs.high || thumbs.medium || thumbs.default || {}).url || '',
-  };
-}
-
 function youtubePlaylistFromDataApiItem(item, fallbackCreator = 'YouTube') {
   const snippet = item && item.snippet || {};
   const thumbs = snippet.thumbnails || {};
@@ -776,6 +760,59 @@ function youtubePlaylistFromDataApiItem(item, fallbackCreator = 'YouTube') {
     trackCount: Number(item && item.contentDetails && item.contentDetails.itemCount || 0),
     creator: snippet.channelTitle || fallbackCreator,
     description: snippet.description || '',
+  };
+}
+
+
+function youtubeBestThumbnail(thumbnails) {
+  const thumbs = thumbnails || {};
+  return (thumbs.maxres || thumbs.standard || thumbs.high || thumbs.medium || thumbs.default || {}).url || '';
+}
+
+async function youtubeSpecialPlaylistSummary(playlistId, request) {
+  const id = normalizeYouTubePlaylistId(playlistId);
+  if (!id || typeof request !== 'function') return { trackCount: 0, cover: '', description: '' };
+
+  let trackCount = null;
+  let cover = '';
+  let description = '';
+
+  try {
+    const params = new URLSearchParams({ part: 'snippet,contentDetails', id, maxResults: '1' });
+    const metadata = await request(`/playlists?${params.toString()}`);
+    const item = Array.isArray(metadata && metadata.items) ? metadata.items[0] : null;
+    if (item) {
+      const details = item.contentDetails || {};
+      const rawCount = Number(details.itemCount);
+      if (Number.isFinite(rawCount) && rawCount >= 0) trackCount = Math.floor(rawCount);
+      const snippet = item.snippet || {};
+      cover = youtubeBestThumbnail(snippet.thumbnails);
+      description = snippet.description || '';
+    }
+  } catch (error) {
+    console.warn('[YouTubePlaylistSync] special playlist metadata unavailable:', id, error.message || error);
+  }
+
+  // YouTube may omit system playlists such as Liked videos from playlists.list.
+  // playlistItems.pageInfo.totalResults is the authoritative count exposed for
+  // the authorized account and does not require downloading every item.
+  if (trackCount == null || trackCount === 0 || !cover) {
+    try {
+      const params = new URLSearchParams({ part: 'snippet', playlistId: id, maxResults: '1' });
+      const page = await request(`/playlistItems?${params.toString()}`);
+      const total = Number(page && page.pageInfo && page.pageInfo.totalResults);
+      if (Number.isFinite(total) && total >= 0) trackCount = Math.floor(total);
+      const first = Array.isArray(page && page.items) ? page.items[0] : null;
+      if (!cover && first && first.snippet) cover = youtubeBestThumbnail(first.snippet.thumbnails);
+    } catch (error) {
+      console.warn('[YouTubePlaylistSync] special playlist count unavailable:', id, error.message || error);
+    }
+  }
+
+  return {
+    trackCount: Number.isFinite(trackCount) && trackCount >= 0 ? trackCount : 0,
+    cover,
+    description,
   };
 }
 
@@ -811,16 +848,13 @@ async function youtubeDeviceOwnedPlaylists(limit = 200) {
     for (const [key, name] of relatedEntries) {
       const id = normalizeYouTubePlaylistId(related[key]);
       if (!id) continue;
-      let summary = { trackCount: 0, cover: '' };
-      try {
-        summary = await youtubePlaylistCountAndCover(
-          (endpoint) => youtubeDataApiWithAccessToken(endpoint, token.access_token),
-          id
-        );
-      } catch (error) {
-        console.warn(`[YouTubePlaylistSync] ${key} count unavailable:`, error.message || error);
-      }
-      results.push({ id, provider: 'qq', realProvider: 'youtube', authMode: 'device', name, cover: summary.cover, trackCount: summary.trackCount, creator, description: '', systemPlaylist: true });
+      const summary = (key === 'likes' || key === 'uploads')
+        ? await youtubeSpecialPlaylistSummary(id, (endpoint) => youtubeDataApiWithAccessToken(endpoint, token.access_token))
+        : { trackCount: 0, cover: '', description: '' };
+      const special = { id, provider: 'qq', realProvider: 'youtube', authMode: 'device', name, creator, systemPlaylist: true, ...summary };
+      const existing = results.findIndex((playlist) => normalizeYouTubePlaylistId(playlist && playlist.id) === id);
+      if (existing >= 0) results[existing] = { ...results[existing], ...special };
+      else results.push(special);
     }
   } catch (error) {
     console.warn('[YouTubePlaylistSync] related playlists unavailable:', error.message || error);
@@ -1214,18 +1248,16 @@ async function youtubeAccountPlaylists(limit = 50) {
         ['uploads', providerConfig().language === 'en' ? 'Uploads' : 'Video đã tải lên'],
       ];
       for (const [key, name] of specials) {
-        const id = String(related[key] || '').trim();
+        const id = normalizeYouTubePlaylistId(related[key]);
         if (!id) continue;
-        let summary = { trackCount: 0, cover: '' };
-        try {
-          summary = await youtubePlaylistCountAndCover(youtubeDataApi, id);
-        } catch (error) {
-          console.warn(`[YouTubeOAuth] ${key} count unavailable:`, error.message || error);
-        }
-        results.push({
+        const summary = await youtubeSpecialPlaylistSummary(id, (endpoint) => youtubeDataApi(endpoint));
+        const special = {
           id, provider: 'qq', realProvider: 'youtube', authMode: 'official',
-          name, cover: summary.cover, trackCount: summary.trackCount, creator, description: '', systemPlaylist: true,
-        });
+          name, creator, systemPlaylist: true, ...summary,
+        };
+        const existing = results.findIndex((playlist) => normalizeYouTubePlaylistId(playlist && playlist.id) === id);
+        if (existing >= 0) results[existing] = { ...results[existing], ...special };
+        else results.push(special);
       }
     }
   } catch (error) {
@@ -1525,10 +1557,8 @@ function ytDlpArgs(videoId, quality = '') {
     '--quiet',
     '--dump-single-json',
     '--socket-timeout', '20',
-    '--retries', '4',
-    '--fragment-retries', '4',
-    '--retry-sleep', 'http:1',
-    '--retry-sleep', 'fragment:1',
+    '--retries', '2',
+    '--fragment-retries', '2',
     '--format', String(quality || '').toLowerCase() === 'standard' ? 'bestaudio[abr<=160]/bestaudio/best' : 'bestaudio/best',
   ];
   if (nodeRuntime) args.push('--js-runtimes', `node:${nodeRuntime}`);
@@ -1674,14 +1704,6 @@ function spotifyRetryAfterMs(response, fallback = SPOTIFY_PROFILE_RETRY_FALLBACK
   return fallback;
 }
 
-function requestTimeoutCode(urlValue) {
-  const raw = String(urlValue || '').toLowerCase();
-  if (raw.includes('lrclib.net')) return 'LRCLIB_REQUEST_TIMEOUT';
-  if (raw.includes('googleapis.com') || raw.includes('oauth2.googleapis.com')) return 'YOUTUBE_REQUEST_TIMEOUT';
-  if (raw.includes('spotify.com')) return 'SPOTIFY_REQUEST_TIMEOUT';
-  return 'REQUEST_TIMEOUT';
-}
-
 async function fetchWithTimeout(url, options = {}, timeoutMs = SPOTIFY_REQUEST_TIMEOUT) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Math.max(1000, Number(timeoutMs) || SPOTIFY_REQUEST_TIMEOUT));
@@ -1689,9 +1711,8 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = SPOTIFY_REQUEST_T
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (error) {
     if (error && error.name === 'AbortError') {
-      const timeoutError = new Error(requestTimeoutCode(url));
+      const timeoutError = new Error('SPOTIFY_REQUEST_TIMEOUT');
       timeoutError.status = 504;
-      timeoutError.provider = requestTimeoutCode(url).replace(/_REQUEST_TIMEOUT$/, '').toLowerCase();
       throw timeoutError;
     }
     throw error;
@@ -1966,7 +1987,6 @@ async function spotifyNativeLyrics(id, metadata = {}) {
   if (/^(0|false|off|disabled)$/i.test(String(process.env.SPOTIFY_NATIVE_LYRICS || '').trim())) return null;
   const candidateIds = spotifyLyricsCandidateIds(id, metadata);
   if (!candidateIds.length) return null;
-  const nativeLyricsTemporarilyBlocked = Date.now() < spotifyNativeLyricsBlockedUntil;
 
   for (const trackId of candidateIds) {
     const cached = spotifyLyricsCache.get(trackId);
@@ -1979,9 +1999,8 @@ async function spotifyNativeLyrics(id, metadata = {}) {
   if (configuredMarket && configuredMarket !== 'FROM_TOKEN') markets.push(configuredMarket);
   const failures = [];
 
-  let nodeAccessDenied = nativeLyricsTemporarilyBlocked;
-  if (token && token.access_token && !nodeAccessDenied) {
-    nodeLyricsCandidates: for (const trackId of candidateIds) {
+  if (token && token.access_token) {
+    for (const trackId of candidateIds) {
       const rememberedFailure = spotifyLyricsFailureCache.get(trackId);
       const deterministicFailure = rememberedFailure
         && Date.now() - Number(rememberedFailure.at || 0) < 5 * 60 * 1000
@@ -2011,16 +2030,6 @@ async function spotifyNativeLyrics(id, metadata = {}) {
             const detail = { status: response.status, market, body: body.slice(0, 300), transport: 'node' };
             failures.push({ trackId, ...detail });
             rememberSpotifyLyricsFailure(trackId, detail);
-            const rbacDenied = response.status === 403 && /rbac|access denied|forbidden/i.test(body);
-            if (rbacDenied) {
-              nodeAccessDenied = true;
-              spotifyNativeLyricsBlockedUntil = Date.now() + 6 * 60 * 60 * 1000;
-              if (Date.now() >= spotifyNativeLyricsBlockLoggedUntil) {
-                spotifyNativeLyricsBlockLoggedUntil = spotifyNativeLyricsBlockedUntil;
-                console.warn('[SpotifyLyrics] private lyrics endpoint denied access (403); using session/YouTube/LRCLIB fallbacks');
-              }
-              break nodeLyricsCandidates;
-            }
             console.warn('[SpotifyLyrics] request failed', `status=${response.status}`, `track=${trackId}`, `market=${market}`, body.slice(0, 160));
             continue;
           }
@@ -2045,10 +2054,8 @@ async function spotifyNativeLyrics(id, metadata = {}) {
         }
       }
     }
-  } else if (!token || !token.access_token) {
+  } else {
     failures.push({ status: 401, error: 'SPOTIFY_ACCESS_TOKEN_MISSING', transport: 'node' });
-  } else if (nodeAccessDenied) {
-    failures.push({ status: 403, error: 'SPOTIFY_NATIVE_LYRICS_ACCESS_DENIED', transport: 'node', cached: nativeLyricsTemporarilyBlocked });
   }
 
   // The hidden WebView2 player owns the live Spotify playback session. When
@@ -2992,18 +2999,8 @@ async function resolveSpotifyPlayback(trackId, quality) {
     };
   }
   let track = spotifyTrackCache.get(String(trackId));
-  if (!track || track.playable === false || !track.spotifyUri) {
-    let fresh = null;
-    try {
-      fresh = mapSpotifyTrack(await spotifyApi(`/tracks/${encodeURIComponent(trackId)}?market=from_token`));
-    } catch (error) {
-      console.warn('[SpotifyPlayback] from_token metadata refresh failed:', error.message || error);
-    }
-    if (!fresh || !fresh.spotifyUri) {
-      fresh = mapSpotifyTrack(await spotifyApi(`/tracks/${encodeURIComponent(trackId)}?market=${encodeURIComponent(providerConfig().spotifyMarket)}`));
-    }
-    track = fresh || track;
-    if (track) spotifyTrackCache.set(String(trackId), track);
+  if (!track) {
+    track = mapSpotifyTrack(await spotifyApi(`/tracks/${encodeURIComponent(trackId)}?market=${encodeURIComponent(providerConfig().spotifyMarket)}`));
   }
   if (!track || !track.spotifyUri) {
     return {
@@ -3933,8 +3930,7 @@ module.exports = {
     collectYouTubeRawPlaylists,
     collectYouTubeContinuationTokens,
     youtubePlaylistFromDataApiItem,
-    youtubePlaylistCountAndCover,
+    youtubeSpecialPlaylistSummary,
     youtubeCookieLooksSignedIn,
-    requestTimeoutCode,
   },
 };

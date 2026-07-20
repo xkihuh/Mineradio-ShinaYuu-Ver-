@@ -1,112 +1,51 @@
 # Changelog
 
-## 1.1.5.8 — 2026-07-19
+## 1.1.6.3 — 2026-07-20
 
-### Stable adaptive hardware compatibility
+### Conservative optimization
 
-- Replaced the globally forced normal-GPU flags with an `auto` profile that leaves Chromium and Windows GPU selection untouched.
-- Added bounded D3D11 and OpenGL hardware profiles before the final Safe Graphics fallback.
-- Saved the first confirmed working hardware profile per Windows user so incompatible machines do not repeat the recovery sequence on every launch.
-- Changed the main Windows BrowserWindow to an opaque native surface, preventing invisible transparent-window failures while retaining hardware acceleration and the complete internal Liquid Glass UI.
-- Unified GPU-process, renderer, load, startup-watchdog, and unresponsive-window recovery through the same hardware-first profile sequence.
-- Kept forced dedicated-GPU selection, GPU-blocklist bypass, zero-copy, and aggressive D3D11 flags available only through explicit performance mode.
+- Returned to the 1.1.6.1 window, playback, realtime-analysis, background-timer, and renderer behavior.
+- Applied only modest wallpaper-folder tuning: concurrency 12, 30 initial cards, 20-card idle batches, and a 220 px lazy-preview margin.
+- Preserved wallpaper file details and full image/video preview quality.
+- No changes to playback, Spotify/YouTube provider behavior, GPU configuration, Three.js, GSAP, Liquid Glass, animation, or UI/UX.
 
-### Scroll-performance hotfix (version unchanged)
+## 1.1.6.1 — 2026-07-20
 
-- Returned Search, Playlist, Visual Console, Mini Queue, and Track Detail to native Chromium compositor scrolling.
-- Removed blocking GSAP wheel tweens and `preventDefault()` from ordinary list scrolling.
-- Added passive active-scroll detection, off-screen item paint deferral, and reduced nested Liquid Glass blur inside scrolling surfaces.
-- Temporarily caps only the Three.js background scene at 30 FPS while a list is actively scrolling, then restores normal full-rate rendering automatically.
+### Performance and memory
 
-### Validation
+- Removed redundant Desktop Lyrics and wallpaper IPC checks from the per-frame Three.js render loop; overlay synchronization continues on its existing 320 ms timer.
+- Coalesced Home Liquid Glass pointer tracking and wallpaper-library pointer highlights to one update per display frame, avoiding repeated layout reads on high-polling-rate mice.
+- Added heap-pressure cache trimming for cover, depth, and beat-map caches without changing rendered quality or removing active assets.
+- Cached frequently accessed renderer elements and added layout/paint containment to media cards so card updates do not invalidate unrelated UI.
 
-- Added adaptive-GPU regression coverage for profile ordering, persistence, opaque native composition, explicit aggressive flags, and Safe Graphics as the final fallback.
-- Added scroll-performance regression coverage while preserving every 1.1.5.8 version field.
+### Wallpaper folder library
 
-## 1.1.5.7 — 2026-07-19
+- Stopped recursively scanning the saved wallpaper folder during application startup.
+- Added a persisted metadata cache for up to six recent wallpaper folders.
+- Parallelized file metadata reads with bounded concurrency while retaining the existing 600-file and depth safety limits.
+- Renders cards progressively in idle batches instead of creating the entire gallery in one blocking operation.
+- Loads image previews only near the visible viewport and opens video metadata only while the user hovers a video card.
+- Releases decoded previews and card DOM after the library closes while preserving the selected folder and media metadata.
+- Manual **Refresh** performs a full rescan, while normal library opening uses cached metadata immediately when available.
 
-### Runtime diagnostics and URL safety
+### Preserved
 
-- Added strict validation for every system-browser link and Electron `window.open` request, preventing malformed or empty values from reaching `shell.openExternal()`.
-- Added a native `openExternal` IPC bridge so renderer links no longer rely on an unhandled `window.open()` promise path.
-- Added renderer `error` and `unhandledrejection` diagnostics with message and stack details in the startup log.
-- Made the local `shinayuu-media://` decoder tolerate malformed URLs instead of throwing.
-- Migrated the Electron `console-message` listener to the current event-object API and filtered expected Spotify SDK PlayReady advisory messages from startup-error logs.
+- No reduction to image quality, video quality, Three.js resolution profile, animation behavior, Liquid Glass effects, lyrics, provider playback, or startup compatibility.
 
-### GPU and window recovery
+## 1.1.6 — 2026-07-20
 
-- Normal startup now requests hardware rasterization, accelerated 2D/video decode, and the high-performance GPU without bypassing Chromium's safety blocklist.
-- When both GPU compositing and WebGL are disabled, the app performs one bounded recovery relaunch with the explicit performance-GPU profile.
-- A failed recovery still falls back through the existing Safe Graphics path, avoiding relaunch loops on restricted gaming-cafe machines.
-- The main-window reveal fallback timer is now cleared after the first successful reveal, preventing duplicate `startup-timeout` show/focus calls.
-- Runtime status now reports Safe Graphics state, forced-GPU state, and Chromium GPU feature status.
+### Fixed
 
-### Provider diagnostics
+- Liked videos and Uploads now display their official total item counts in the YouTube playlist list.
+- System-playlist counts are read from official playlist metadata, with `playlistItems.pageInfo.totalResults` as the fallback for playlists that YouTube omits from `playlists.list`.
+- The application now creates and shows an opaque native Windows window immediately instead of waiting behind a hidden `ready-to-show` window.
+- Castlabs/Widevine preparation runs in parallel and no longer delays the first visible window for up to 60 seconds.
+- Removed forced D3D11, forced high-performance GPU selection, and GPU-blocklist bypass flags; Chromium now chooses the hardware backend supported by each machine while hardware acceleration remains enabled.
+- Added recovery for off-screen bounds, main-frame load failures, and renderer-process exits without globally disabling the GPU.
 
-- Request timeout errors are now provider-specific: `SPOTIFY_REQUEST_TIMEOUT`, `YOUTUBE_REQUEST_TIMEOUT`, `LRCLIB_REQUEST_TIMEOUT`, or generic `REQUEST_TIMEOUT`.
-- Spotify private-lyrics RBAC 403 responses now open a six-hour circuit breaker, log once, and continue directly to browser-session, YouTube, and LRCLIB fallbacks instead of repeating the same denied request for each market.
+### Preserved
 
-### Validation
-
-- Added runtime-diagnostics regression coverage for URL validation, renderer error stacks, Electron API migration, GPU recovery, reveal-timer cleanup, provider timeout names, and Spotify lyrics RBAC fallback.
-
-## 1.1.5.6 — 2026-07-19
-
-- Standardized the recently added Visualizer and Smart Lyrics interface across Vietnamese and English.
-- Replaced mixed Vietnamese/English labels such as `visualizer`, `lyrics`, and `beat` in the Vietnamese interface with consistent user-facing terms.
-- Moved the player visualizer fully above the Liquid Glass player frame.
-- Added Steps, Pulse, Needles, and Orbits visualizer styles.
-- Added persistent controls for element width, amplitude length, and element spacing.
-- Preserved the 1.1.5.5 startup recovery, Spotify/YouTube playback recovery, playlist counts, and Smart Lyrics behavior.
-
-## 1.1.5.5 — 2026-07-19
-
-### Startup and gaming-cafe compatibility correction
-
-- Kept the public version at 1.1.5.5 while correcting the invisible-main-window startup path.
-- The main window can now be revealed by `ready-to-show`, `did-finish-load`, or a bounded fallback timer instead of depending on one Electron event.
-- Added renderer load failure, renderer crash, GPU child-process failure, and unresponsive-window recovery with an automatic Safe Graphics relaunch during early startup.
-- Added `--safe-graphics`, which disables hardware acceleration before Electron becomes ready and uses an opaque compatibility window.
-- Chromium no longer forces D3D11 or bypasses the GPU blocklist by default; aggressive GPU switches are available only through `--force-performance-gpu`.
-- Added automatic opaque-window selection when GPU compositing is unavailable or software-only.
-- Added off-screen window detection and recentering when display topology changes or a second instance focuses the app.
-- Added a delayed visible startup/recovery window and persistent startup diagnostics at `%APPDATA%\ShinaYuu Music\logs\startup.log`.
-- Added `RUN_SAFE_GRAPHICS.cmd` for unpacked development builds.
-
-### YouTube playlist totals
-
-- Liked videos and Uploads now query the authenticated playlist-items summary and display the real `pageInfo.totalResults` count instead of a hard-coded zero.
-- The first available thumbnail from each system playlist is used when YouTube exposes one.
-- Count failures are isolated per playlist so the rest of the account library still loads.
-
-### Playback recovery
-
-- YouTube signed stream descriptors are invalidated and requested again when the HTML audio element errors or remains stalled/waiting.
-- YouTube recovery resumes near the previous playback position, retries at most twice, and retains the existing compatible-quality fallback.
-- `yt-dlp` network and fragment retries were increased with short retry delays.
-- Spotify exact-track confirmation now has four attempts, refreshes SDK audio activation/volume, and performs a non-playing device transfer on later attempts.
-- Retryable Spotify device, network, timeout, and temporary playback failures trigger one controlled descriptor/device recovery instead of silently failing.
-- Spotify metadata is refreshed with `market=from_token` when cached metadata is unavailable, unplayable, or missing a URI.
-
-### Player visualizer
-
-- Added a real-time canvas visualizer above the player progress bar.
-- Added Bars, Wave, Mirror, Dots, and Ribbon styles.
-- Added Solid, Rainbow, RGB flow, interface-accent, and cover-derived color modes.
-- Added width, height, X/Y position, angle, opacity, sensitivity, smoothing, glow, and beat-boost controls in a dedicated **Visualizer** tab of the Visual Console.
-- The visualizer consumes the existing FFT and beat-energy pipeline for YouTube/local playback and the Spotify realtime analyser when available.
-- All visualizer settings persist normally and are included in user visual archives.
-
-### Smart stage text
-
-- Added a fourth **Smart lyrics and title** mode.
-- Active lyric lines continue to use the existing synchronized 3D lyrics renderer.
-- Instrumental intros, outros, blank lines, and sufficiently long lyric gaps show the current track title instead.
-- The `L` shortcut now cycles Lyrics → Smart → Track title → Hidden.
-
-### Validation
-
-- Added regression coverage for special YouTube playlist totals, playback recovery, visualizer controls/rendering/persistence, and the fourth stage-text mode.
+- Existing 1.1.5.4 UI/UX, Three.js, GSAP, lyrics, Liquid Glass, playback providers, local libraries, Discord integration, and visual settings.
 
 ## 1.1.5.4 — 2026-07-17
 
