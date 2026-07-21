@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.6.7 — 2026-07-21
+
+- Reduced track-change latency by starting audio before optional beat-map disk reads and visual preparation.
+- Starts queue-item prefetch on pointer hover/down, reuses recently resolved YouTube stream descriptors, and starts next-track prefetch earlier.
+- Removed the redundant Spotify metadata request when the queue item already contains the exact Track ID and URI.
+- Accepts the first exact Spotify SDK playing state while preserving wrong-track protection.
+- Made Spotify seek optimistic after the SDK accepts the command and moved confirmation to background clock reconciliation.
+- Dispatches HTMLAudio Range seeks before resetting secondary visual cursors.
+- Preserved audio quality, provider behavior, window handling, UI/UX, effects, lyrics, wallpaper, and CPU optimizations.
+
+## 1.1.6.6 — 2026-07-21
+
+- Fixed four black square corners in windowed mode by using native frameless-window rounding instead of clipping a second 34 px renderer shell.
+- Kept the opaque startup-compatible main window and all playback/UI behavior unchanged.
+- Removed generated root-level TXT reports and historical standalone release files from the source package.
+- Fixed Spotify playlists rendering blank titles and `Unknown artist`.
+- Repaired missing Spotify Track IDs before playlist playback.
+- Added compatibility with sparse 2026 playlist item responses.
+
+
 ## 1.1.6.5 — 2026-07-20
 
 - Added a verified yt-dlp preparation step to Windows release builds so the installer can include the YouTube engine.

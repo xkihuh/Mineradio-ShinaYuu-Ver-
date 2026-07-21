@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.6.5';
+const UA = 'ShinaYuu Music/1.1.6.7';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const YOUTUBE_TOKEN_FILE = process.env.YOUTUBE_TOKEN_FILE || path.join(path.dirname(TOKEN_FILE), 'youtube-token.json');
@@ -36,6 +36,7 @@ const spotifyYoutubeLyricsCache = new Map();
 let spotifySessionLyricsProvider = null;
 const youtubeMusicLyricsCache = new Map();
 const youtubeStreamTokens = new Map();
+const youtubeAudioDescriptorCache = new Map();
 const youtubeYtDlpInfoCache = new Map();
 const youtubeCaptionService = youtubeCaptions.createProvider({ userAgent: UA });
 const youtubeForcedAlignmentService = youtubeForcedAligner.createProvider({
@@ -63,6 +64,7 @@ const YTDLP_VERSION = '2026.07.04';
 const YTDLP_WINDOWS_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp.exe`;
 const YTDLP_WINDOWS_SHA256 = '52fe3c26dcf71fbdc85b528589020bb0b8e383155cfa81b64dd447bbe35e24b8';
 const STREAM_TOKEN_TTL = 12 * 60 * 1000;
+const YOUTUBE_AUDIO_DESCRIPTOR_TTL = 8 * 60 * 1000;
 
 
 function readJson(file, fallback) {
@@ -1348,6 +1350,36 @@ function cleanYoutubeStreamTokens() {
   }
 }
 
+function youtubeAudioDescriptorKey(videoId, quality) {
+  return `${String(videoId || '').trim()}|${String(quality || '').trim().toLowerCase()}`;
+}
+
+function cacheYouTubeAudioDescriptor(videoId, quality, descriptor) {
+  const key = youtubeAudioDescriptorKey(videoId, quality);
+  if (!key || key.startsWith('|') || !descriptor || !descriptor.url) return;
+  youtubeAudioDescriptorCache.set(key, { at: Date.now(), descriptor: { ...descriptor } });
+}
+
+function cachedYouTubeAudioDescriptor(videoId, quality) {
+  const key = youtubeAudioDescriptorKey(videoId, quality);
+  const cached = youtubeAudioDescriptorCache.get(key);
+  if (!cached || Date.now() - Number(cached.at || 0) > YOUTUBE_AUDIO_DESCRIPTOR_TTL) {
+    if (cached) youtubeAudioDescriptorCache.delete(key);
+    return null;
+  }
+  return { ...cached.descriptor };
+}
+
+function playbackResultFromYouTubeDescriptor(descriptor, engine) {
+  const streamToken = saveYoutubeStreamDescriptor(descriptor);
+  return {
+    ...descriptor,
+    streamToken,
+    proxyUrl: `/api/audio?stream=${encodeURIComponent(streamToken)}`,
+    engine,
+  };
+}
+
 function saveYoutubeStreamDescriptor(descriptor) {
   cleanYoutubeStreamTokens();
   const token = randomUrlSafe(24);
@@ -1753,6 +1785,8 @@ function ytDlpArgs(videoId, quality = '') {
 }
 
 async function youtubeAudioViaYtDlp(videoId, quality = '') {
+  const cachedDescriptor = cachedYouTubeAudioDescriptor(videoId, quality);
+  if (cachedDescriptor) return playbackResultFromYouTubeDescriptor(cachedDescriptor, 'yt-dlp-cache');
   const engine = await prepareYouTubeEngine();
   const nodeRuntime = findNodeRuntime();
   const result = await runChild(engine.executable, ytDlpArgs(videoId, quality), {
@@ -1776,13 +1810,8 @@ async function youtubeAudioViaYtDlp(videoId, quality = '') {
     audioQuality: String(selected.format_note || selected.format || info.format_note || ''),
     videoId: String(videoId || ''),
   };
-  const streamToken = saveYoutubeStreamDescriptor(descriptor);
-  return {
-    ...descriptor,
-    streamToken,
-    proxyUrl: `/api/audio?stream=${encodeURIComponent(streamToken)}`,
-    engine: 'yt-dlp',
-  };
+  cacheYouTubeAudioDescriptor(videoId, quality, descriptor);
+  return playbackResultFromYouTubeDescriptor(descriptor, 'yt-dlp');
 }
 
 function publicProviderConfig(config = providerConfig(), baseUrl = '') {
@@ -2639,6 +2668,128 @@ function spotifyArtists(raw) {
   return (raw || []).map((artist) => ({ id: artist.id || '', name: artist.name || '' })).filter((artist) => artist.name);
 }
 
+function spotifyTrackIdFromValue(value) {
+  if (!value) return '';
+  if (typeof value === 'object') {
+    const direct = String(value.id || value.spotifyId || '').trim();
+    if (/^[A-Za-z0-9]{16,32}$/.test(direct)) return direct;
+    for (const candidate of [value.uri, value.spotifyUri, value.href, value.externalUrl, value.external_url, value.external_urls && value.external_urls.spotify]) {
+      const found = spotifyTrackIdFromValue(candidate);
+      if (found) return found;
+    }
+    return '';
+  }
+  const raw = String(value || '').trim();
+  const uri = raw.match(/^spotify:track:([A-Za-z0-9]{16,32})$/i);
+  if (uri) return uri[1];
+  const url = raw.match(/(?:open\.spotify\.com\/track\/|\/v1\/tracks\/)([A-Za-z0-9]{16,32})/i);
+  if (url) return url[1];
+  return /^[A-Za-z0-9]{16,32}$/.test(raw) ? raw : '';
+}
+
+function unwrapSpotifyPlaylistItem(entry) {
+  let current = entry;
+  for (let depth = 0; depth < 5 && current && typeof current === 'object'; depth += 1) {
+    const next = current.item || current.track;
+    if (!next || next === current) break;
+    current = next;
+  }
+  return current && typeof current === 'object' ? current : {};
+}
+
+function spotifyPlaylistPageItems(page) {
+  if (!page || typeof page !== 'object') return [];
+  if (Array.isArray(page.items)) return page.items;
+  if (page.items && Array.isArray(page.items.items)) return page.items.items;
+  if (page.tracks && Array.isArray(page.tracks.items)) return page.tracks.items;
+  return [];
+}
+
+function spotifyPlaylistPageNext(page) {
+  if (!page || typeof page !== 'object') return '';
+  return String(page.next || page.items && page.items.next || page.tracks && page.tracks.next || '');
+}
+
+function spotifyPlaylistPageTotal(page) {
+  if (!page || typeof page !== 'object') return 0;
+  return Number(page.total || page.items && page.items.total || page.tracks && page.tracks.total || 0);
+}
+
+function spotifyTrackHasPlaylistMetadata(track) {
+  if (!track || typeof track !== 'object') return false;
+  const id = spotifyTrackIdFromValue(track);
+  const name = String(track.name || '').trim();
+  const artists = Array.isArray(track.artists) ? track.artists.filter((artist) => artist && String(artist.name || '').trim()) : [];
+  return !!(id && name && artists.length);
+}
+
+function mergeSpotifyTrackPayload(base, full) {
+  base = base && typeof base === 'object' ? base : {};
+  full = full && typeof full === 'object' ? full : {};
+  return {
+    ...base,
+    ...full,
+    id: spotifyTrackIdFromValue(full) || spotifyTrackIdFromValue(base),
+    uri: full.uri || base.uri || '',
+    artists: Array.isArray(full.artists) && full.artists.length ? full.artists : (Array.isArray(base.artists) ? base.artists : []),
+    album: {
+      ...(base.album && typeof base.album === 'object' ? base.album : {}),
+      ...(full.album && typeof full.album === 'object' ? full.album : {}),
+    },
+    external_urls: {
+      ...(base.external_urls && typeof base.external_urls === 'object' ? base.external_urls : {}),
+      ...(full.external_urls && typeof full.external_urls === 'object' ? full.external_urls : {}),
+    },
+    external_ids: {
+      ...(base.external_ids && typeof base.external_ids === 'object' ? base.external_ids : {}),
+      ...(full.external_ids && typeof full.external_ids === 'object' ? full.external_ids : {}),
+    },
+  };
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const list = Array.isArray(items) ? items : [];
+  const output = new Array(list.length);
+  let cursor = 0;
+  const workerCount = Math.max(1, Math.min(Number(concurrency) || 1, list.length || 1));
+  async function worker() {
+    while (cursor < list.length) {
+      const index = cursor++;
+      output[index] = await mapper(list[index], index);
+    }
+  }
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  return output;
+}
+
+async function normalizeSpotifyPlaylistTrack(entry, market) {
+  const raw = unwrapSpotifyPlaylistItem(entry);
+  const id = spotifyTrackIdFromValue(raw) || spotifyTrackIdFromValue(entry);
+  if (!id || String(raw.type || '').toLowerCase() === 'episode') return null;
+
+  const cached = spotifyTrackCache.get(id);
+  if (cached && cached.name && cached.artist) return { ...cached };
+
+  let track = mergeSpotifyTrackPayload(raw, {
+    id,
+    uri: raw.uri || `spotify:track:${id}`,
+  });
+  if (!spotifyTrackHasPlaylistMetadata(track)) {
+    try {
+      const full = await spotifyApi(`/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, { required: true });
+      track = mergeSpotifyTrackPayload(track, full);
+    } catch (error) {
+      console.warn('[SpotifyPlaylist] track hydration failed:', id, error && (error.message || error));
+    }
+  }
+
+  const song = mapSpotifyTrack(track);
+  if (!song.id || !song.name || !song.artist) return null;
+  song.spotifyId = song.spotifyId || song.id;
+  song.spotifyUri = song.spotifyUri || `spotify:track:${song.spotifyId}`;
+  return song;
+}
+
 function mapSpotifyTrack(track) {
   track = track && (track.item || track.track) ? (track.item || track.track) : track || {};
   const artists = spotifyArtists(track.artists);
@@ -2648,9 +2799,9 @@ function mapSpotifyTrack(track) {
     realProvider: 'spotify',
     source: 'netease',
     type: 'song',
-    id: track.id || '',
-    spotifyId: track.id || '',
-    spotifyUri: track.uri || '',
+    id: spotifyTrackIdFromValue(track) || '',
+    spotifyId: spotifyTrackIdFromValue(track) || '',
+    spotifyUri: track.uri || (spotifyTrackIdFromValue(track) ? `spotify:track:${spotifyTrackIdFromValue(track)}` : ''),
     name: track.name || '',
     artist: artists.map((artist) => artist.name).join(' / '),
     artists,
@@ -2730,31 +2881,51 @@ async function spotifyUserPlaylists(limit = 50) {
 
 async function spotifyPlaylistTracks(id, limit = 100) {
   const encodedId = encodeURIComponent(id);
-  const market = encodeURIComponent(providerConfig().spotifyMarket);
+  const market = providerConfig().spotifyMarket;
+  const encodedMarket = encodeURIComponent(market);
   const [playlist, firstPage] = await Promise.all([
-    spotifyApi(`/playlists/${encodedId}?market=${market}`),
-    spotifyApi(`/playlists/${encodedId}/items?market=${market}&limit=50`),
+    spotifyApi(`/playlists/${encodedId}?market=${encodedMarket}`),
+    spotifyApi(`/playlists/${encodedId}/items?market=${encodedMarket}&additional_types=track&limit=50`),
   ]);
-  const tracks = [];
+
+  const entries = [];
   let page = firstPage;
-  while (page && tracks.length < limit) {
-    (page.items || []).forEach((entry) => {
-      const item = entry && (entry.item || entry.track);
-      if (tracks.length < limit && item && item.id && item.type !== 'episode') tracks.push(mapSpotifyTrack(item));
-    });
-    if (!page.next || tracks.length >= limit) break;
-    const next = new URL(page.next);
+  while (page && entries.length < limit) {
+    for (const entry of spotifyPlaylistPageItems(page)) {
+      if (entries.length >= limit) break;
+      const item = unwrapSpotifyPlaylistItem(entry);
+      if (String(item && item.type || '').toLowerCase() === 'episode') continue;
+      entries.push(entry);
+    }
+    const nextUrl = spotifyPlaylistPageNext(page);
+    if (!nextUrl || entries.length >= limit) break;
+    const next = new URL(nextUrl);
     page = await spotifyApi(next.pathname.replace(/^\/v1/, '') + next.search);
   }
+
+  // Spotify Development Mode can return sparse playlist item objects after
+  // the 2026 playlist-field migration. Hydrate only incomplete entries through
+  // the official single-track endpoint, with low concurrency to avoid 429s.
+  const normalized = await mapWithConcurrency(entries, 4, (entry) => normalizeSpotifyPlaylistTrack(entry, market));
+  const tracks = normalized.filter(Boolean);
+  const declaredTotal = spotifyPlaylistPageTotal(firstPage)
+    || Number(playlist && playlist.items && playlist.items.total || playlist && playlist.tracks && playlist.tracks.total || 0);
+
   return {
     playlist: {
-      id: playlist.id || id,
-      name: playlist.name || '',
-      cover: playlist.images && playlist.images[0] && playlist.images[0].url || '',
-      trackCount: Number(firstPage && firstPage.total || tracks.length),
-      creator: playlist.owner && (playlist.owner.display_name || playlist.owner.id) || '',
+      id: playlist && playlist.id || id,
+      name: playlist && playlist.name || '',
+      cover: playlist && playlist.images && playlist.images[0] && playlist.images[0].url || '',
+      trackCount: declaredTotal || tracks.length,
+      creator: playlist && playlist.owner && (playlist.owner.display_name || playlist.owner.id) || '',
     },
     tracks,
+    diagnostics: {
+      receivedItems: entries.length,
+      playableTracks: tracks.length,
+      skippedItems: Math.max(0, entries.length - tracks.length),
+      hydratedSparseItems: entries.filter((entry) => !spotifyTrackHasPlaylistMetadata(unwrapSpotifyPlaylistItem(entry))).length,
+    },
   };
 }
 
@@ -2973,22 +3144,17 @@ async function youtubeAudioUrl(videoId, quality = '') {
     });
     const directUrl = format && format.url || '';
     if (!directUrl) throw new Error('youtubei.js returned no audio URL');
-    const streamToken = saveYoutubeStreamDescriptor({
+    const descriptor = {
       url: directUrl,
       headers: {},
       mimeType: format && format.mime_type || '',
       bitrate: format && format.bitrate || 0,
       audioQuality: format && format.audio_quality || '',
       videoId: String(videoId || ''),
-    });
+    };
+    cacheYouTubeAudioDescriptor(videoId, quality, descriptor);
     return {
-      url: directUrl,
-      proxyUrl: `/api/audio?stream=${encodeURIComponent(streamToken)}`,
-      streamToken,
-      engine: 'youtubei.js-fallback',
-      mimeType: format && format.mime_type || '',
-      bitrate: format && format.bitrate || 0,
-      audioQuality: format && format.audio_quality || '',
+      ...playbackResultFromYouTubeDescriptor(descriptor, 'youtubei.js-fallback'),
       level: requested || 'exhigh',
       quality: requested === 'standard' ? 'Standard' : 'YouTube Music',
     };

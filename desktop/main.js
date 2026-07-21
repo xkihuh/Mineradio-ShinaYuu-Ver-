@@ -31,14 +31,8 @@ let htmlFullscreenActive = false;
 let windowFullscreenActive = false;
 let mainWindowStateTimer = null;
 let mainWindowRevealTimer = null;
-let mainWindowLoadWatchdog = null;
 let mainWindowLoadRetryCount = 0;
-let mainWindowRendererReady = false;
-let mainWindowEverShown = false;
-let safeGraphicsRelaunching = false;
-let startupStatusWindow = null;
-let startupStatusTimer = null;
-let startupSequenceRunning = false;
+let mainAppUrl = '';
 const registeredGlobalHotkeys = new Map();
 
 const WINDOWED_ASPECT = 16 / 9;
@@ -56,60 +50,13 @@ const QQ_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile';
 const YOUTUBE_LOGIN_PARTITION = 'persist:shinayuu-youtube-login';
 const YOUTUBE_LOGIN_URL = 'https://accounts.google.com/AccountChooser?service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Ffeed%2Fplaylists';
 const YOUTUBE_LOGIN_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const SAFE_GRAPHICS_FLAG = '--safe-graphics';
-const FORCE_PERFORMANCE_GPU_FLAG = '--force-performance-gpu';
-const GPU_RECOVERY_FLAG = '--gpu-recovery-attempt';
-const GPU_PROFILE_FLAG_PREFIX = '--gpu-profile=';
-const GPU_HARDWARE_PROFILES = ['auto', 'd3d11', 'opengl'];
-const SAFE_GRAPHICS_MODE = process.argv.includes(SAFE_GRAPHICS_FLAG)
-  || process.argv.includes('--disable-gpu')
-  || process.env.SHINAYUU_SAFE_GRAPHICS === '1';
-const GPU_RECOVERY_ATTEMPT = process.argv.includes(GPU_RECOVERY_FLAG);
-const FORCE_PERFORMANCE_GPU = !SAFE_GRAPHICS_MODE && (
-  process.argv.includes(FORCE_PERFORMANCE_GPU_FLAG)
-  || process.env.SHINAYUU_FORCE_PERFORMANCE_GPU === '1'
-);
-
-app.setName(APP_NAME);
-if (process.platform === 'win32') app.setAppUserModelId(APP_USER_MODEL_ID);
-
-function normalizeGpuProfile(value) {
-  const profile = String(value || '').trim().toLowerCase();
-  if (profile === 'gl') return 'opengl';
-  return GPU_HARDWARE_PROFILES.includes(profile) ? profile : 'auto';
-}
-
-function gpuProfileStateFile() {
-  return path.join(app.getPath('userData'), 'gpu-profile.json');
-}
-
-function readPersistedGpuProfile() {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(gpuProfileStateFile(), 'utf8'));
-    return normalizeGpuProfile(parsed && parsed.profile);
-  } catch (_) {
-    return 'auto';
-  }
-}
-
-function requestedGpuProfile() {
-  const cliArg = process.argv.find((arg) => String(arg || '').startsWith(GPU_PROFILE_FLAG_PREFIX));
-  if (cliArg) return normalizeGpuProfile(String(cliArg).slice(GPU_PROFILE_FLAG_PREFIX.length));
-  if (process.env.SHINAYUU_GPU_PROFILE) return normalizeGpuProfile(process.env.SHINAYUU_GPU_PROFILE);
-  return readPersistedGpuProfile();
-}
-
-const GPU_PROFILE = SAFE_GRAPHICS_MODE
-  ? 'software'
-  : (FORCE_PERFORMANCE_GPU ? 'performance' : requestedGpuProfile());
-const STARTUP_REVEAL_DELAY_MS = 4500;
-const STARTUP_RENDERER_TIMEOUT_MS = 18000;
-const STARTUP_STATUS_DELAY_MS = 3500;
-const STARTUP_RECOVERY_WINDOW_MS = 60000;
 
 const BACKGROUND_MEDIA_SCHEME = 'shinayuu-media';
 const BACKGROUND_MEDIA_MAX_FILES = 600;
 const BACKGROUND_MEDIA_MAX_DEPTH = 6;
+const BACKGROUND_MEDIA_SCAN_CONCURRENCY = 12;
+const BACKGROUND_MEDIA_CACHE_VERSION = 2;
+const BACKGROUND_MEDIA_CACHE_MAX_ROOTS = 6;
 const BACKGROUND_MEDIA_EXTENSIONS = new Map([
   ['.jpg', { type: 'image', mime: 'image/jpeg' }],
   ['.jpeg', { type: 'image', mime: 'image/jpeg' }],
@@ -125,6 +72,8 @@ const BACKGROUND_MEDIA_EXTENSIONS = new Map([
 ]);
 let backgroundMediaRoots = new Set();
 let backgroundMediaProtocolReady = false;
+let backgroundMediaCacheLoaded = false;
+let backgroundMediaScanCache = Object.create(null);
 
 protocol.registerSchemesAsPrivileged([{
   scheme: BACKGROUND_MEDIA_SCHEME,
@@ -187,42 +136,9 @@ function encodeBackgroundMediaUrl(filePath) {
 }
 
 function decodeBackgroundMediaUrl(urlValue) {
-  try {
-    const raw = String(urlValue || '').trim();
-    if (!raw) return '';
-    const parsed = new URL(raw);
-    if (parsed.protocol !== `${BACKGROUND_MEDIA_SCHEME}:` || parsed.hostname !== 'local') return '';
-    return Buffer.from(parsed.pathname.replace(/^\/+/, ''), 'base64url').toString('utf8');
-  } catch (_) {
-    return '';
-  }
-}
-
-function normalizeExternalUrl(urlValue) {
-  try {
-    const raw = String(urlValue || '').trim();
-    if (!raw) return '';
-    const parsed = new URL(raw);
-    if (!['http:', 'https:', 'mailto:'].includes(parsed.protocol)) return '';
-    return parsed.href;
-  } catch (_) {
-    return '';
-  }
-}
-
-async function openExternalSafe(urlValue, source = 'unknown') {
-  const normalized = normalizeExternalUrl(urlValue);
-  if (!normalized) {
-    startupLog('Blocked invalid external URL', { source, value: String(urlValue || '').slice(0, 240) });
-    return { ok: false, error: 'INVALID_EXTERNAL_URL' };
-  }
-  try {
-    await shell.openExternal(normalized);
-    return { ok: true, url: normalized };
-  } catch (error) {
-    startupLog('External URL open failed', { source, url: normalized, error: String(error && (error.stack || error.message || error)) });
-    return { ok: false, error: String(error && (error.message || error) || 'OPEN_EXTERNAL_FAILED') };
-  }
+  const parsed = new URL(String(urlValue || ''));
+  if (parsed.protocol !== `${BACKGROUND_MEDIA_SCHEME}:` || parsed.hostname !== 'local') return '';
+  return Buffer.from(parsed.pathname.replace(/^\/+/, ''), 'base64url').toString('utf8');
 }
 
 function parseBackgroundMediaByteRange(rangeHeader, fileSize) {
@@ -308,20 +224,115 @@ function registerBackgroundMediaProtocol() {
   });
 }
 
-async function scanBackgroundMediaFolder(folderPath) {
+
+function backgroundMediaCacheFile() {
+  return path.join(app.getPath('userData'), 'background-media-scan-cache-v2.json');
+}
+
+function loadBackgroundMediaScanCache() {
+  if (backgroundMediaCacheLoaded) return;
+  backgroundMediaCacheLoaded = true;
+  try {
+    const raw = JSON.parse(fs.readFileSync(backgroundMediaCacheFile(), 'utf8'));
+    if (!raw || raw.version !== BACKGROUND_MEDIA_CACHE_VERSION || !raw.entries || typeof raw.entries !== 'object') return;
+    backgroundMediaScanCache = raw.entries;
+  } catch (_) {
+    backgroundMediaScanCache = Object.create(null);
+  }
+}
+
+function saveBackgroundMediaScanCache() {
+  try {
+    loadBackgroundMediaScanCache();
+    const entries = Object.entries(backgroundMediaScanCache)
+      .sort((a, b) => Number((b[1] && b[1].scannedAt) || 0) - Number((a[1] && a[1].scannedAt) || 0))
+      .slice(0, BACKGROUND_MEDIA_CACHE_MAX_ROOTS);
+    backgroundMediaScanCache = Object.fromEntries(entries);
+    fs.mkdirSync(path.dirname(backgroundMediaCacheFile()), { recursive: true });
+    fs.writeFileSync(backgroundMediaCacheFile(), JSON.stringify({
+      version: BACKGROUND_MEDIA_CACHE_VERSION,
+      entries: backgroundMediaScanCache,
+    }), 'utf8');
+  } catch (error) {
+    console.warn('[BackgroundMedia] Could not save scan cache:', error.message);
+  }
+}
+
+function hydrateBackgroundMediaItems(items) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    ...item,
+    url: encodeBackgroundMediaUrl(item.path),
+  }));
+}
+
+async function getCachedBackgroundMediaFolder(folderPath) {
+  const resolvedRoot = path.resolve(String(folderPath || '').trim());
+  if (!resolvedRoot) return { ok: false, error: 'BACKGROUND_MEDIA_FOLDER_INVALID' };
+  let rootStat;
+  try { rootStat = await fs.promises.stat(resolvedRoot); } catch (_) { return { ok: false, error: 'BACKGROUND_MEDIA_FOLDER_UNAVAILABLE' }; }
+  if (!rootStat.isDirectory()) return { ok: false, error: 'BACKGROUND_MEDIA_FOLDER_INVALID' };
+  rememberBackgroundMediaRoot(resolvedRoot);
+  loadBackgroundMediaScanCache();
+  const cacheKey = normalizeBackgroundMediaRoot(resolvedRoot);
+  const cached = backgroundMediaScanCache[cacheKey];
+  if (!cached || !Array.isArray(cached.items)) {
+    return {
+      ok: true,
+      cached: false,
+      folderPath: resolvedRoot,
+      folderName: path.basename(resolvedRoot) || resolvedRoot,
+      items: [],
+      truncated: false,
+      maxFiles: BACKGROUND_MEDIA_MAX_FILES,
+      scannedAt: 0,
+    };
+  }
+  return {
+    ok: true,
+    cached: true,
+    folderPath: resolvedRoot,
+    folderName: cached.folderName || path.basename(resolvedRoot) || resolvedRoot,
+    items: hydrateBackgroundMediaItems(cached.items),
+    truncated: !!cached.truncated,
+    maxFiles: BACKGROUND_MEDIA_MAX_FILES,
+    scannedAt: Number(cached.scannedAt) || 0,
+  };
+}
+
+async function mapBackgroundMediaWithConcurrency(items, worker) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const runners = new Array(Math.min(BACKGROUND_MEDIA_SCAN_CONCURRENCY, Math.max(1, items.length))).fill(0).map(async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= items.length) break;
+      results[index] = await worker(items[index], index);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
+async function scanBackgroundMediaFolder(folderPath, options = {}) {
   const resolvedRoot = path.resolve(String(folderPath || '').trim());
   const rootStat = await fs.promises.stat(resolvedRoot);
   if (!rootStat.isDirectory()) throw new Error('BACKGROUND_MEDIA_FOLDER_INVALID');
   rememberBackgroundMediaRoot(resolvedRoot);
 
-  const items = [];
+  if (options && options.preferCache === true && options.force !== true) {
+    const cached = await getCachedBackgroundMediaFolder(resolvedRoot);
+    if (cached && cached.cached) return cached;
+  }
+
+  const candidates = [];
   let truncated = false;
   async function walk(currentPath, depth) {
-    if (items.length >= BACKGROUND_MEDIA_MAX_FILES) { truncated = true; return; }
-    let entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
-    entries = entries.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    if (candidates.length >= BACKGROUND_MEDIA_MAX_FILES) { truncated = true; return; }
+    let entries;
+    try { entries = await fs.promises.readdir(currentPath, { withFileTypes: true }); }
+    catch (_) { return; }
     for (const entry of entries) {
-      if (items.length >= BACKGROUND_MEDIA_MAX_FILES) { truncated = true; break; }
+      if (candidates.length >= BACKGROUND_MEDIA_MAX_FILES) { truncated = true; break; }
       if (!entry || entry.name.startsWith('.')) continue;
       const absolutePath = path.join(currentPath, entry.name);
       if (entry.isDirectory()) {
@@ -331,31 +342,49 @@ async function scanBackgroundMediaFolder(folderPath) {
       if (!entry.isFile()) continue;
       const media = BACKGROUND_MEDIA_EXTENSIONS.get(path.extname(entry.name).toLowerCase());
       if (!media) continue;
-      let stat;
-      try { stat = await fs.promises.stat(absolutePath); } catch (_) { continue; }
-      items.push({
-        id: Buffer.from(absolutePath, 'utf8').toString('base64url'),
-        name: entry.name,
-        relativePath: path.relative(resolvedRoot, absolutePath),
-        path: absolutePath,
-        type: media.type,
-        mime: media.mime,
-        size: stat.size,
-        modifiedAt: stat.mtimeMs,
-        url: encodeBackgroundMediaUrl(absolutePath),
-      });
+      candidates.push({ absolutePath, name: entry.name, media });
     }
   }
   await walk(resolvedRoot, 0);
+
+  const scanned = await mapBackgroundMediaWithConcurrency(candidates, async (candidate) => {
+    let stat;
+    try { stat = await fs.promises.stat(candidate.absolutePath); } catch (_) { return null; }
+    if (!stat.isFile() || stat.size <= 0) return null;
+    return {
+      id: Buffer.from(candidate.absolutePath, 'utf8').toString('base64url'),
+      name: candidate.name,
+      relativePath: path.relative(resolvedRoot, candidate.absolutePath),
+      path: candidate.absolutePath,
+      type: candidate.media.type,
+      mime: candidate.media.mime,
+      size: stat.size,
+      modifiedAt: stat.mtimeMs,
+      url: encodeBackgroundMediaUrl(candidate.absolutePath),
+    };
+  });
+  const items = scanned.filter(Boolean);
   items.sort((a, b) => a.type.localeCompare(b.type) || a.relativePath.localeCompare(b.relativePath, undefined, { numeric: true, sensitivity: 'base' }));
-  return {
+
+  const result = {
     ok: true,
+    cached: false,
     folderPath: resolvedRoot,
     folderName: path.basename(resolvedRoot) || resolvedRoot,
     items,
     truncated,
     maxFiles: BACKGROUND_MEDIA_MAX_FILES,
+    scannedAt: Date.now(),
   };
+  loadBackgroundMediaScanCache();
+  backgroundMediaScanCache[normalizeBackgroundMediaRoot(resolvedRoot)] = {
+    folderName: result.folderName,
+    truncated: result.truncated,
+    scannedAt: result.scannedAt,
+    items: items.map(({ url, ...item }) => item),
+  };
+  saveBackgroundMediaScanCache();
+  return result;
 }
 
 async function chooseBackgroundMediaFolder(owner) {
@@ -365,79 +394,23 @@ async function chooseBackgroundMediaFolder(owner) {
     buttonLabel: 'Dùng thư mục này',
   });
   if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true };
-  return scanBackgroundMediaFolder(result.filePaths[0]);
+  return scanBackgroundMediaFolder(result.filePaths[0], { force: true });
 }
 
-function getStartupLogPath() {
-  try {
-    return path.join(app.getPath('userData'), 'logs', 'startup.log');
-  } catch (_) {
-    return path.join(process.env.TEMP || process.cwd(), 'shinayuu-music-startup.log');
-  }
-}
-
-function startupLog(message, details = null) {
-  const line = `[${new Date().toISOString()}] ${String(message || '')}${details == null ? '' : ` ${typeof details === 'string' ? details : JSON.stringify(details)}`}\n`;
-  try {
-    const filePath = getStartupLogPath();
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.appendFileSync(filePath, line, 'utf8');
-  } catch (_) {}
-  try { console.log('[Startup]', message, details == null ? '' : details); } catch (_) {}
-}
-
-const CHROMIUM_BASE_SWITCHES = [
+// Keep hardware acceleration enabled, but let Chromium select the GPU and
+// rendering backend supported by each machine. Forcing D3D11, a discrete GPU,
+// or bypassing Chromium's blocklist can leave Electron running without a
+// visible window on managed PCs and older drivers.
+const CHROMIUM_COMPATIBILITY_SWITCHES = [
   ['autoplay-policy', 'no-user-gesture-required'],
   ['disable-background-timer-throttling'],
   ['disable-renderer-backgrounding'],
   ['disable-backgrounding-occluded-windows'],
 ];
-const CHROMIUM_HARDWARE_GPU_SWITCHES = [
-  ['enable-gpu-rasterization'],
-  ['enable-accelerated-2d-canvas'],
-  ['enable-accelerated-video-decode'],
-];
-const CHROMIUM_GPU_PROFILE_SWITCHES = {
-  auto: [],
-  d3d11: [...CHROMIUM_HARDWARE_GPU_SWITCHES, ['use-angle', 'd3d11']],
-  opengl: [...CHROMIUM_HARDWARE_GPU_SWITCHES, ['use-angle', 'gl']],
-  performance: [
-    ...CHROMIUM_HARDWARE_GPU_SWITCHES,
-    ['force_high_performance_gpu'],
-    ['ignore-gpu-blocklist'],
-    ['enable-oop-rasterization'],
-    ['enable-zero-copy'],
-    ['use-angle', 'd3d11'],
-  ],
-};
-
-for (const [name, value] of CHROMIUM_BASE_SWITCHES) {
+for (const [name, value] of CHROMIUM_COMPATIBILITY_SWITCHES) {
   if (value == null) app.commandLine.appendSwitch(name);
   else app.commandLine.appendSwitch(name, value);
 }
-
-if (SAFE_GRAPHICS_MODE) {
-  // This must run before app.whenReady(). It keeps Chromium on its software path
-  // and avoids invisible transparent windows on restricted/legacy gaming PCs.
-  app.disableHardwareAcceleration();
-  app.commandLine.appendSwitch('disable-gpu');
-  startupLog('Safe Graphics mode enabled');
-} else {
-  // The normal profile leaves Chromium's hardware selection untouched. Compatibility
-  // profiles still use hardware acceleration, but select a different ANGLE backend.
-  // Software rendering is reserved for the final Safe Graphics fallback only.
-  const profileSwitches = CHROMIUM_GPU_PROFILE_SWITCHES[GPU_PROFILE] || [];
-  for (const [name, value] of profileSwitches) {
-    if (value == null) app.commandLine.appendSwitch(name);
-    else app.commandLine.appendSwitch(name, value);
-  }
-  startupLog('GPU profile selected', {
-    profile: GPU_PROFILE,
-    recoveryAttempt: GPU_RECOVERY_ATTEMPT,
-    forcedPerformanceGpu: FORCE_PERFORMANCE_GPU,
-  });
-}
-
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
 const QQ_LOGIN_COOKIE_PRIORITY = [
@@ -687,194 +660,8 @@ function getSenderWindow(event) {
   return BrowserWindow.fromWebContents(event.sender);
 }
 
-function boundsOverlapArea(a, b) {
-  if (!a || !b) return 0;
-  const left = Math.max(a.x, b.x);
-  const top = Math.max(a.y, b.y);
-  const right = Math.min(a.x + a.width, b.x + b.width);
-  const bottom = Math.min(a.y + a.height, b.y + b.height);
-  return Math.max(0, right - left) * Math.max(0, bottom - top);
-}
-
-function ensureMainWindowOnScreen(win) {
-  if (!win || win.isDestroyed()) return;
-  const bounds = win.getBounds();
-  const visibleArea = screen.getAllDisplays().reduce((sum, display) => {
-    return sum + boundsOverlapArea(bounds, display.workArea || display.bounds);
-  }, 0);
-  if (visibleArea >= 64 * 64) return;
-  const nextBounds = getWindowedBounds();
-  win.setBounds(nextBounds, false);
-  startupLog('Main window was outside every display and was recentered', { bounds, nextBounds });
-}
-
-function closeStartupStatusWindow() {
-  if (startupStatusTimer) {
-    clearTimeout(startupStatusTimer);
-    startupStatusTimer = null;
-  }
-  if (startupStatusWindow && !startupStatusWindow.isDestroyed()) {
-    startupStatusWindow.close();
-  }
-  startupStatusWindow = null;
-}
-
-function startupStatusHtml(message, isError = false) {
-  const safeMessage = String(message || '').replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[char]));
-  const accent = isError ? '#ff7088' : '#00f5d4';
-  return `<!doctype html><html><head><meta charset="utf-8"><style>
-    *{box-sizing:border-box}body{margin:0;background:#0b0e13;color:#f5f7fb;font-family:Segoe UI,Arial,sans-serif;display:grid;place-items:center;height:100vh}
-    .card{width:520px;max-width:calc(100vw - 32px);padding:26px;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:rgba(22,27,36,.96);box-shadow:0 24px 70px rgba(0,0,0,.5)}
-    h1{font-size:21px;margin:0 0 10px}.sub{color:#a9b2c3;line-height:1.55;font-size:14px}.dot{width:10px;height:10px;border-radius:50%;background:${accent};box-shadow:0 0 20px ${accent};display:inline-block;margin-right:10px}
-    .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}a{color:#07100f;background:${accent};padding:10px 14px;border-radius:12px;text-decoration:none;font-weight:700}code{display:block;margin-top:16px;color:#8f9bad;font-size:12px;word-break:break-all}
-  </style></head><body><div class="card"><h1><span class="dot"></span>ShinaYuu Music</h1><div class="sub">${safeMessage}</div>
-  <div class="actions"><a href="shinayuu-action://safe-graphics">Mở bằng chế độ tương thích</a></div><code>Log: ${getStartupLogPath()}</code></div></body></html>`;
-}
-
-function createStartupStatusWindow(message = 'Ứng dụng đang chuẩn bị Castlabs, máy chủ nhạc và giao diện. Nếu cửa sổ chính không xuất hiện, hãy dùng chế độ tương thích.') {
-  if (startupStatusWindow && !startupStatusWindow.isDestroyed()) return startupStatusWindow;
-  startupStatusWindow = new BrowserWindow({
-    width: 580,
-    height: 330,
-    minWidth: 480,
-    minHeight: 280,
-    show: false,
-    frame: true,
-    transparent: false,
-    backgroundColor: '#0b0e13',
-    autoHideMenuBar: true,
-    title: `${APP_NAME} - Khởi động`,
-    icon: APP_ICON_ICO,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
-  });
-  startupStatusWindow.webContents.on('will-navigate', (event, url) => {
-    if (String(url).startsWith('shinayuu-action://safe-graphics')) {
-      event.preventDefault();
-      relaunchInSafeGraphics('startup-status-button');
-    }
-  });
-  startupStatusWindow.on('closed', () => { startupStatusWindow = null; });
-  startupStatusWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(startupStatusHtml(message))}`).catch(() => {});
-  startupStatusWindow.once('ready-to-show', () => {
-    if (!mainWindowEverShown && startupStatusWindow && !startupStatusWindow.isDestroyed()) {
-      startupStatusWindow.show();
-      startupStatusWindow.focus();
-    }
-  });
-  return startupStatusWindow;
-}
-
-function scheduleStartupStatusWindow() {
-  if (startupStatusTimer) clearTimeout(startupStatusTimer);
-  startupStatusTimer = setTimeout(() => {
-    startupStatusTimer = null;
-    if (!mainWindowEverShown) createStartupStatusWindow();
-  }, SAFE_GRAPHICS_MODE ? 1200 : STARTUP_STATUS_DELAY_MS);
-  startupStatusTimer.unref?.();
-}
-
-function revealMainWindow(reason = 'unknown') {
-  if (!mainWindow || mainWindow.isDestroyed()) return false;
-  const firstReveal = !mainWindowEverShown;
-  if (mainWindowRevealTimer) { clearTimeout(mainWindowRevealTimer); mainWindowRevealTimer = null; }
-  if (startupStatusTimer) { clearTimeout(startupStatusTimer); startupStatusTimer = null; }
-  ensureMainWindowOnScreen(mainWindow);
-  if (mainWindow.isMinimized()) mainWindow.restore();
-  if (!mainWindow.isVisible()) mainWindow.show();
-  mainWindow.focus();
-  mainWindowEverShown = true;
-  closeStartupStatusWindow();
-  if (firstReveal) startupLog('Main window revealed', { reason, safeGraphics: SAFE_GRAPHICS_MODE });
-  sendWindowState(mainWindow);
-  return true;
-}
-
 function focusMainWindow() {
   return revealMainWindow('focus-request');
-}
-
-function filteredRelaunchArgs() {
-  return process.argv.slice(1).filter((arg) => {
-    const value = String(arg || '');
-    return value !== SAFE_GRAPHICS_FLAG
-      && value !== FORCE_PERFORMANCE_GPU_FLAG
-      && value !== GPU_RECOVERY_FLAG
-      && value !== '--disable-gpu'
-      && !value.startsWith(GPU_PROFILE_FLAG_PREFIX);
-  });
-}
-
-function nextHardwareGpuProfile(currentProfile = GPU_PROFILE) {
-  const currentIndex = GPU_HARDWARE_PROFILES.indexOf(normalizeGpuProfile(currentProfile));
-  return currentIndex >= 0 && currentIndex < GPU_HARDWARE_PROFILES.length - 1
-    ? GPU_HARDWARE_PROFILES[currentIndex + 1]
-    : '';
-}
-
-function writePersistedGpuProfile(profile, details = {}) {
-  const normalized = normalizeGpuProfile(profile);
-  try {
-    const filePath = gpuProfileStateFile();
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify({
-      profile: normalized,
-      appVersion: app.getVersion(),
-      electronVersion: process.versions.electron || '',
-      updatedAt: new Date().toISOString(),
-      ...details,
-    }, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    startupLog('Could not persist GPU profile', String(error && (error.stack || error.message || error)));
-    return false;
-  }
-}
-
-function relaunchWithGpuProfile(profile, reason) {
-  if (SAFE_GRAPHICS_MODE || safeGraphicsRelaunching) return false;
-  const nextProfile = normalizeGpuProfile(profile);
-  safeGraphicsRelaunching = true;
-  startupLog('Relaunching with hardware GPU profile', { from: GPU_PROFILE, to: nextProfile, reason });
-  const args = filteredRelaunchArgs();
-  args.push(`${GPU_PROFILE_FLAG_PREFIX}${nextProfile}`, GPU_RECOVERY_FLAG);
-  try {
-    app.relaunch({ args });
-    setTimeout(() => app.exit(0), 250);
-    return true;
-  } catch (error) {
-    safeGraphicsRelaunching = false;
-    startupLog('Hardware GPU profile relaunch failed', String(error && (error.stack || error.message || error)));
-    return false;
-  }
-}
-
-function relaunchForNextHardwareProfile(reason) {
-  if (SAFE_GRAPHICS_MODE || FORCE_PERFORMANCE_GPU || safeGraphicsRelaunching) return false;
-  const nextProfile = nextHardwareGpuProfile(GPU_PROFILE);
-  return nextProfile ? relaunchWithGpuProfile(nextProfile, reason) : false;
-}
-
-function relaunchInSafeGraphics(reason) {
-  if (SAFE_GRAPHICS_MODE || safeGraphicsRelaunching) return false;
-  safeGraphicsRelaunching = true;
-  startupLog('Hardware profiles exhausted; relaunching in Safe Graphics mode', { reason, profile: GPU_PROFILE });
-  const args = filteredRelaunchArgs();
-  args.push(SAFE_GRAPHICS_FLAG, '--safe-recovery');
-  try {
-    app.relaunch({ args });
-    setTimeout(() => app.exit(0), 250);
-    return true;
-  } catch (error) {
-    safeGraphicsRelaunching = false;
-    startupLog('Safe Graphics relaunch failed', String(error && (error.stack || error.message || error)));
-    return false;
-  }
-}
-
-function recoverStartupRendering(reason) {
-  return relaunchForNextHardwareProfile(reason) || relaunchInSafeGraphics(reason);
 }
 
 function getUpdateDownloadDir() {
@@ -1061,7 +848,7 @@ async function openSpotifyLogin(owner) {
     if (!start || !start.authUrl || !start.state) {
       return { ok: false, error: 'SPOTIFY_LOGIN_URL_MISSING' };
     }
-    await openExternalSafe(start.authUrl, 'spotify-auth');
+    await shell.openExternal(start.authUrl);
 
     // Return immediately after opening Spotify. The renderer polls only the
     // local transaction endpoint, so the UI remains responsive and no /me
@@ -1084,7 +871,7 @@ async function openYouTubeLogin(owner) {
     if (!start || !start.authUrl || !start.state) {
       return { ok: false, error: 'YOUTUBE_OAUTH_URL_MISSING' };
     }
-    await openExternalSafe(start.authUrl, 'youtube-auth');
+    await shell.openExternal(start.authUrl);
     return {
       ok: true,
       provider: 'youtube',
@@ -1192,7 +979,7 @@ async function openNeteaseMusicLoginWindow(owner) {
       if (/^https?:\/\/([^/]+\.)?(163|music\.163|netease)\.com/i.test(url)) {
         loginWindow.loadURL(url).catch((e) => console.warn('Netease login popup navigation failed:', e.message));
       } else if (/^https?:\/\//i.test(url)) {
-        void openExternalSafe(url, 'login-window-navigation');
+        shell.openExternal(url).catch(() => {});
       }
       return { action: 'deny' };
     });
@@ -1301,7 +1088,7 @@ async function openQQMusicLoginWindow(owner) {
       if (/^https?:\/\//i.test(url)) {
         loginWindow.loadURL(url).catch((e) => console.warn('QQ login popup navigation failed:', e.message));
       } else {
-        void openExternalSafe(url, 'login-window-navigation');
+        shell.openExternal(url).catch(() => {});
       }
       return { action: 'deny' };
     });
@@ -1935,8 +1722,13 @@ ipcMain.handle('shinayuu-background-media-choose-folder', async (event) => {
   catch (error) { return { ok: false, error: error && error.message || 'BACKGROUND_MEDIA_FOLDER_FAILED' }; }
 });
 
-ipcMain.handle('shinayuu-background-media-scan-folder', async (_event, folderPath) => {
-  try { return await scanBackgroundMediaFolder(folderPath); }
+ipcMain.handle('shinayuu-background-media-get-cached-folder', async (_event, folderPath) => {
+  try { return await getCachedBackgroundMediaFolder(folderPath); }
+  catch (error) { return { ok: false, error: error && error.message || 'BACKGROUND_MEDIA_FOLDER_FAILED' }; }
+});
+
+ipcMain.handle('shinayuu-background-media-scan-folder', async (_event, folderPath, options) => {
+  try { return await scanBackgroundMediaFolder(folderPath, options || {}); }
   catch (error) { return { ok: false, error: error && error.message || 'BACKGROUND_MEDIA_FOLDER_FAILED' }; }
 });
 
@@ -2173,7 +1965,7 @@ ipcMain.handle('shinayuu-discord-reconnect', async () => {
 });
 
 ipcMain.handle('shinayuu-discord-open-portal', async () => {
-  await openExternalSafe('https://discord.com/developers/applications', 'discord-portal');
+  await shell.openExternal('https://discord.com/developers/applications');
   return { ok: true };
 });
 
@@ -2255,20 +2047,6 @@ async function ensureCastlabsComponents() {
   }
 }
 
-ipcMain.handle('shinayuu-open-external', async (_event, urlValue) => openExternalSafe(urlValue, 'renderer-ipc'));
-
-ipcMain.on('shinayuu-renderer-diagnostic', (_event, payload) => {
-  const item = payload && typeof payload === 'object' ? payload : { message: String(payload || '') };
-  startupLog('Renderer diagnostic', {
-    type: String(item.type || 'unknown'),
-    message: String(item.message || '').slice(0, 1000),
-    stack: String(item.stack || '').slice(0, 5000),
-    source: String(item.source || '').slice(0, 500),
-    line: Number(item.line || 0),
-    column: Number(item.column || 0),
-  });
-});
-
 ipcMain.handle('shinayuu-runtime-get-status', async () => {
   if (!castlabsComponentState.ready) await ensureCastlabsComponents();
   return {
@@ -2278,97 +2056,147 @@ ipcMain.handle('shinayuu-runtime-get-status', async () => {
     widevineReady: !!castlabsComponentState.ready,
     componentStatus: castlabsComponentState.status,
     error: castlabsComponentState.error || '',
-    safeGraphics: SAFE_GRAPHICS_MODE,
-    forcedPerformanceGpu: FORCE_PERFORMANCE_GPU,
-    gpuProfile: GPU_PROFILE,
-    gpuFeatureStatus: typeof app.getGPUFeatureStatus === 'function' ? app.getGPUFeatureStatus() : {},
   };
 });
 
-async function createWindow() {
-  htmlFullscreenActive = false;
-  windowFullscreenActive = false;
-  mainWindowRendererReady = false;
-  mainWindowEverShown = false;
-  mainWindowLoadRetryCount = 0;
-  startupLog('Creating main window', { safeGraphics: SAFE_GRAPHICS_MODE, gpuProfile: GPU_PROFILE, forcedPerformanceGpu: FORCE_PERFORMANCE_GPU, gpuRecoveryAttempt: GPU_RECOVERY_ATTEMPT });
-  const port = Number(process.env.SHINAYUU_PORT || 43821);
-  await new Promise((resolve, reject) => {
-    const tester = net.createServer();
-    tester.once('error', (error) => reject(new Error('ShinaYuu Music cần cổng ' + port + ' cho Spotify OAuth: ' + error.message)));
-    tester.once('listening', () => tester.close(resolve));
-    tester.listen(port, '127.0.0.1');
-  });
-  mainServerPort = port;
+function mainWindowStatusUrl(title, detail, failed = false) {
+  const safeTitle = String(title || 'ShinaYuu Music');
+  const safeDetail = String(detail || 'Đang chuẩn bị ứng dụng...');
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${APP_NAME}</title><style>*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:#080a0f;color:#fff;font-family:Inter,"Segoe UI",sans-serif}body{display:grid;place-items:center;overflow:hidden}.card{width:min(520px,86vw);padding:34px 36px;border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 80px rgba(0,0,0,.42)}.brand{font-size:11px;letter-spacing:.28em;color:rgba(255,255,255,.42);margin-bottom:14px}.row{display:flex;gap:14px;align-items:center}.dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto;background:${failed ? '#ff758f' : '#7ce7d7'};box-shadow:0 0 24px ${failed ? 'rgba(255,117,143,.5)' : 'rgba(124,231,215,.5)'};${failed ? '' : 'animation:pulse 1.15s ease-in-out infinite'}}h1{font-size:22px;margin:0;font-weight:650}p{font-size:13px;line-height:1.65;color:rgba(255,255,255,.62);margin:14px 0 0;white-space:pre-wrap}@keyframes pulse{50%{opacity:.42;transform:scale(.72)}}</style></head><body><div class="card"><div class="brand">SHINAYUU MUSIC</div><div class="row"><span class="dot"></span><h1></h1></div><p></p></div><script>document.querySelector('h1').textContent=${JSON.stringify(safeTitle)};document.querySelector('p').textContent=${JSON.stringify(safeDetail)};</script></body></html>`;
+  return `data:text/html;charset=UTF-8,${encodeURIComponent(html)}`;
+}
 
-  process.env.HOST = '127.0.0.1';
-  process.env.PORT = String(port);
-  process.env.SHINAYUU_DATA_DIR = app.getPath('userData');
-  process.env.SPOTIFY_REDIRECT_URI = `http://127.0.0.1:${port}/api/spotify/callback`;
-  process.env.COOKIE_FILE = path.join(app.getPath('userData'), '.cookie');
-  process.env.QQ_COOKIE_FILE = path.join(app.getPath('userData'), '.qq-cookie');
-  process.env.MUSIC_SOURCE_CONFIG_FILE = path.join(app.getPath('userData'), 'music-sources.json');
-  process.env.SPOTIFY_TOKEN_FILE = path.join(app.getPath('userData'), 'spotify-token.json');
-  process.env.YOUTUBE_TOKEN_FILE = path.join(app.getPath('userData'), 'youtube-token.json');
-  process.env.MINERADIO_UPDATE_DIR = getUpdateDownloadDir();
-  try {
-    const legacyQQCookie = path.join(__dirname, '..', '.qq-cookie');
-    if (fs.existsSync(legacyQQCookie)) {
-      if (!fs.existsSync(process.env.QQ_COOKIE_FILE)) {
-        fs.copyFileSync(legacyQQCookie, process.env.QQ_COOKIE_FILE);
+function mainWindowBoundsAreVisible(bounds) {
+  if (!bounds || !screen) return true;
+  return screen.getAllDisplays().some((display) => {
+    const area = display.workArea || display.bounds;
+    const overlapWidth = Math.max(0, Math.min(bounds.x + bounds.width, area.x + area.width) - Math.max(bounds.x, area.x));
+    const overlapHeight = Math.max(0, Math.min(bounds.y + bounds.height, area.y + area.height) - Math.max(bounds.y, area.y));
+    return overlapWidth >= 80 && overlapHeight >= 80;
+  });
+}
+
+function revealMainWindow(reason = 'unknown') {
+  const win = mainWindow;
+  if (!win || win.isDestroyed()) return false;
+  if (mainWindowRevealTimer) {
+    clearTimeout(mainWindowRevealTimer);
+    mainWindowRevealTimer = null;
+  }
+  if (!mainWindowBoundsAreVisible(win.getBounds())) win.setBounds(getWindowedBounds(win), false);
+  if (win.isMinimized()) win.restore();
+  if (!win.isVisible()) win.show();
+  if (!win.isFocused()) win.focus();
+  sendWindowState(win);
+  console.log('[Startup] Main window visible:', reason);
+  return true;
+}
+
+function attachMainWindowLifecycle(win) {
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const target = new URL(String(url || ''));
+      if (target.protocol === 'http:' || target.protocol === 'https:' || target.protocol === 'mailto:') {
+        shell.openExternal(target.toString()).catch((error) => console.warn('[ExternalLink]', error.message || error));
       }
-      fs.unlinkSync(legacyQQCookie);
+    } catch (error) {
+      console.warn('[ExternalLink] Ignored invalid URL:', String(url || ''));
     }
-  } catch (e) {
-    console.warn('QQ cookie migration skipped:', e.message);
-  }
-
-  localLibrary = ensureLocalLibrary();
-  await localLibrary.init().catch((error) => console.warn('[LocalLibrary] startup:', error.message));
-  musicProvidersBridge = require(path.join(__dirname, '..', 'music-providers.js'));
-  // Google blocks account authorization inside embedded Electron user-agents.
-  // Playlist account sync uses the supported system-browser OAuth + loopback flow.
-  if (musicProvidersBridge && typeof musicProvidersBridge.setYouTubeCookieProvider === 'function') {
-    musicProvidersBridge.setYouTubeCookieProvider(null);
-  }
-  localServer = require(path.join(__dirname, '..', 'server.js'));
-  await waitForServer(localServer);
-  configureRealtimeAudioCaptureSession(session.defaultSession, port);
-  startAudioSessionBridge(0);
-  ensureDiscordPresenceManager();
-
-  const initialBounds = getWindowedBounds();
-  const gpuFeatureStatus = typeof app.getGPUFeatureStatus === 'function' ? app.getGPUFeatureStatus() : {};
-  const gpuCompositing = String(gpuFeatureStatus && gpuFeatureStatus.gpu_compositing || '');
-  const webglStatus = String(gpuFeatureStatus && gpuFeatureStatus.webgl || '');
-  const automaticOpaqueWindow = !!gpuCompositing && /disabled|unavailable|software|off/i.test(gpuCompositing);
-  const hardwareGpuUnavailable = !SAFE_GRAPHICS_MODE
-    && /disabled|unavailable|software|off/i.test(gpuCompositing)
-    && /disabled|unavailable|software|off/i.test(webglStatus);
-  startupLog('GPU feature status', {
-    gpuProfile: GPU_PROFILE,
-    gpuCompositing,
-    webglStatus,
-    hardwareGpuUnavailable,
-    forcedPerformanceGpu: FORCE_PERFORMANCE_GPU,
-    gpuRecoveryAttempt: GPU_RECOVERY_ATTEMPT,
-    gpuFeatureStatus,
+    return { action: 'deny' };
   });
-  if (hardwareGpuUnavailable && relaunchForNextHardwareProfile('gpu-and-webgl-disabled')) return;
-  // Native transparency is the frequent cause of invisible Electron windows on
-  // restricted Windows PCs. An opaque native window keeps GPU acceleration and FPS;
-  // Liquid Glass remains rendered inside the app by CSS/WebGL.
-  const useOpaqueMainWindow = process.platform === 'win32' || SAFE_GRAPHICS_MODE || automaticOpaqueWindow;
 
-  mainWindow = new BrowserWindow({
+  win.webContents.on('dom-ready', () => revealMainWindow('dom-ready'));
+  win.webContents.on('did-finish-load', () => {
+    revealMainWindow('did-finish-load');
+    sendWindowState(win);
+    sendDiscordPresenceState();
+  });
+  win.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (isMainFrame === false || errorCode === -3) return;
+    console.warn('[Startup] Main page failed to load:', errorCode, errorDescription, validatedURL || '');
+    revealMainWindow('did-fail-load');
+    if (mainAppUrl && String(validatedURL || '').startsWith('http://127.0.0.1') && mainWindowLoadRetryCount < 1) {
+      mainWindowLoadRetryCount += 1;
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(mainAppUrl).catch(() => {});
+      }, 700);
+    }
+  });
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.warn('[Startup] Renderer process exited:', details && details.reason || 'unknown');
+    revealMainWindow('render-process-gone');
+    if (mainAppUrl && mainWindowLoadRetryCount < 1) {
+      mainWindowLoadRetryCount += 1;
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(mainAppUrl).catch(() => {});
+      }, 500);
+    }
+  });
+  win.on('unresponsive', () => revealMainWindow('unresponsive'));
+  win.on('ready-to-show', () => revealMainWindow('ready-to-show'));
+
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && (input.key === 'Escape' || input.code === 'Escape') && win.isFullScreen()) {
+      event.preventDefault();
+      exitFullscreenToWindow(win);
+    }
+  });
+
+  win.on('maximize', () => sendWindowState(win));
+  win.on('unmaximize', () => sendWindowState(win));
+  win.on('minimize', () => sendWindowState(win));
+  win.on('restore', () => sendWindowState(win));
+  win.on('show', () => sendWindowState(win));
+  win.on('hide', () => sendWindowState(win));
+  win.on('focus', () => sendWindowState(win));
+  win.on('blur', () => sendWindowState(win));
+  win.on('move', () => scheduleWindowStateSend(win));
+  win.on('resize', () => scheduleWindowStateSend(win));
+  win.on('closed', () => {
+    if (mainWindowStateTimer) {
+      clearTimeout(mainWindowStateTimer);
+      mainWindowStateTimer = null;
+    }
+    if (mainWindowRevealTimer) {
+      clearTimeout(mainWindowRevealTimer);
+      mainWindowRevealTimer = null;
+    }
+    closeOverlayWindows();
+    if (mainWindow === win) mainWindow = null;
+  });
+  win.on('enter-full-screen', () => {
+    windowFullscreenActive = true;
+    sendWindowState(win);
+  });
+  win.on('leave-full-screen', () => {
+    windowFullscreenActive = false;
+    setTimeout(() => applyWindowedBounds(win), 50);
+  });
+  win.on('enter-html-full-screen', () => {
+    htmlFullscreenActive = true;
+    sendWindowState(win);
+  });
+  win.on('leave-html-full-screen', () => {
+    htmlFullscreenActive = false;
+    setTimeout(() => applyWindowedBounds(win), 50);
+  });
+}
+
+function createMainWindowShell() {
+  const initialBounds = getWindowedBounds();
+  const win = new BrowserWindow({
     ...initialBounds,
     minWidth: 960,
     minHeight: 540,
-    show: false,
+    show: true,
     frame: false,
     fullscreen: false,
-    transparent: !useOpaqueMainWindow,
-    backgroundColor: useOpaqueMainWindow ? '#080b10' : '#00000000',
+    // Keep the native surface opaque for reliable startup on normal Windows PCs.
+    // Windows 11 clips the whole frameless window through the native rounded-corner
+    // compositor, so the renderer must not cut a second rounded rectangle inside it.
+    transparent: false,
+    backgroundColor: '#08090B',
+    roundedCorners: true,
     hasShadow: true,
     autoHideMenuBar: true,
     title: APP_NAME,
@@ -2381,237 +2209,115 @@ async function createWindow() {
       backgroundThrottling: false,
     },
   });
+  mainWindow = win;
+  mainWindowLoadRetryCount = 0;
+  attachMainWindowLifecycle(win);
+  win.loadURL(mainWindowStatusUrl('Đang khởi động ShinaYuu Music', 'Ứng dụng đang chuẩn bị trình phát và thư viện của bạn.')).catch(() => {});
+  revealMainWindow('window-created');
+  mainWindowRevealTimer = setTimeout(() => revealMainWindow('startup-fallback'), 1800);
+  return win;
+}
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    void openExternalSafe(url, 'window-open-handler');
-    return { action: 'deny' };
-  });
+async function createWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    focusMainWindow();
+    return mainWindow;
+  }
 
-  mainWindow.webContents.once('did-finish-load', () => {
-    mainWindowRendererReady = true;
-    if (mainWindowLoadWatchdog) {
-      clearTimeout(mainWindowLoadWatchdog);
-      mainWindowLoadWatchdog = null;
-    }
-    revealMainWindow('did-finish-load');
-    sendDiscordPresenceState();
-    if (!SAFE_GRAPHICS_MODE) {
-      setTimeout(() => {
-        if (!mainWindow || mainWindow.isDestroyed() || !mainWindowRendererReady) return;
-        const status = typeof app.getGPUFeatureStatus === 'function' ? app.getGPUFeatureStatus() : {};
-        const gpu = String(status && status.gpu_compositing || '');
-        const webgl = String(status && status.webgl || '');
-        const usableHardware = !/disabled|unavailable|software|off/i.test(gpu)
-          || !/disabled|unavailable|software|off/i.test(webgl);
-        if (usableHardware) {
-          writePersistedGpuProfile(GPU_PROFILE, { gpuCompositing: gpu, webgl });
-          startupLog('Hardware GPU profile confirmed', { profile: GPU_PROFILE, gpuCompositing: gpu, webgl });
-        }
-      }, 5000).unref?.();
-    }
-  });
-
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
-    if (isMainFrame === false || errorCode === -3) return;
-    startupLog('Main renderer failed to load', { errorCode, errorDescription, validatedURL, retry: mainWindowLoadRetryCount });
-    revealMainWindow('did-fail-load');
-    if (mainWindowLoadRetryCount < 1 && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindowLoadRetryCount += 1;
-      setTimeout(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.reload();
-      }, 900);
-      return;
-    }
-    if (!recoverStartupRendering(`did-fail-load:${errorCode}`)) {
-      createStartupStatusWindow(`Không thể tải giao diện (${errorDescription || errorCode}). Hãy mở lại bằng chế độ tương thích.`);
-    }
-  });
-
-  mainWindow.webContents.on('render-process-gone', (_event, details) => {
-    startupLog('Renderer process gone', details || {});
-    const earlyFailure = !mainWindowRendererReady || (Date.now() - appStartTimestamp) < STARTUP_RECOVERY_WINDOW_MS;
-    if (earlyFailure && recoverStartupRendering(`renderer-gone:${details && details.reason || 'unknown'}`)) return;
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindowRendererReady = false;
-      mainWindow.reload();
-      revealMainWindow('renderer-reload');
-    } else {
-      createStartupStatusWindow('Tiến trình hiển thị đã dừng. Hãy mở lại bằng chế độ tương thích.');
-    }
-  });
-
-  mainWindow.webContents.on('console-message', (event) => {
-    const level = Number(event && event.level || 0);
-    const message = String(event && event.message || '');
-    const expectedSpotifySdkWarning = /robustness level|playready\.recommendation|setServerCertificate\(\)/i.test(message);
-    if (level >= 2 && !expectedSpotifySdkWarning) {
-      startupLog('Renderer console error', {
-        level,
-        message,
-        line: Number(event && event.lineNumber || 0),
-        sourceId: String(event && event.sourceId || ''),
-      });
-    }
-  });
-
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.type === 'keyDown' && (input.key === 'Escape' || input.code === 'Escape') && mainWindow.isFullScreen()) {
-      event.preventDefault();
-      exitFullscreenToWindow(mainWindow);
-    }
-  });
-
-  mainWindow.once('ready-to-show', () => revealMainWindow('ready-to-show'));
-
-  mainWindowRevealTimer = setTimeout(() => {
-    mainWindowRevealTimer = null;
-    revealMainWindow('startup-timeout');
-  }, STARTUP_REVEAL_DELAY_MS);
-  mainWindowRevealTimer.unref?.();
-
-  mainWindowLoadWatchdog = setTimeout(() => {
-    mainWindowLoadWatchdog = null;
-    if (mainWindowRendererReady || !mainWindow || mainWindow.isDestroyed()) return;
-    startupLog('Renderer startup watchdog expired');
-    if (!recoverStartupRendering('renderer-startup-timeout')) {
-      revealMainWindow('renderer-startup-timeout-safe');
-      createStartupStatusWindow('Giao diện mất quá nhiều thời gian để tải. Hãy thử chế độ tương thích.');
-    }
-  }, STARTUP_RENDERER_TIMEOUT_MS);
-  mainWindowLoadWatchdog.unref?.();
-
-  mainWindow.on('unresponsive', () => {
-    startupLog('Main window became unresponsive');
-    if (!mainWindowRendererReady || (Date.now() - appStartTimestamp) < STARTUP_RECOVERY_WINDOW_MS) {
-      recoverStartupRendering('main-window-unresponsive');
-    }
-  });
-  mainWindow.on('responsive', () => startupLog('Main window became responsive again'));
-
-  mainWindow.on('maximize', () => sendWindowState(mainWindow));
-  mainWindow.on('unmaximize', () => sendWindowState(mainWindow));
-  mainWindow.on('minimize', () => sendWindowState(mainWindow));
-  mainWindow.on('restore', () => sendWindowState(mainWindow));
-  mainWindow.on('show', () => sendWindowState(mainWindow));
-  mainWindow.on('hide', () => sendWindowState(mainWindow));
-  mainWindow.on('focus', () => sendWindowState(mainWindow));
-  mainWindow.on('blur', () => sendWindowState(mainWindow));
-  mainWindow.on('move', () => scheduleWindowStateSend(mainWindow));
-  mainWindow.on('resize', () => scheduleWindowStateSend(mainWindow));
-  mainWindow.on('closed', () => {
-    if (mainWindowStateTimer) {
-      clearTimeout(mainWindowStateTimer);
-      mainWindowStateTimer = null;
-    }
-    if (mainWindowRevealTimer) {
-      clearTimeout(mainWindowRevealTimer);
-      mainWindowRevealTimer = null;
-    }
-    if (mainWindowLoadWatchdog) {
-      clearTimeout(mainWindowLoadWatchdog);
-      mainWindowLoadWatchdog = null;
-    }
-    closeOverlayWindows();
-    mainWindow = null;
-  });
-  mainWindow.on('enter-full-screen', () => {
-    windowFullscreenActive = true;
-    sendWindowState(mainWindow);
-  });
-  mainWindow.on('leave-full-screen', () => {
-    windowFullscreenActive = false;
-    setTimeout(() => applyWindowedBounds(mainWindow), 50);
-  });
-  mainWindow.on('enter-html-full-screen', () => {
-    htmlFullscreenActive = true;
-    sendWindowState(mainWindow);
-  });
-  mainWindow.on('leave-html-full-screen', () => {
-    htmlFullscreenActive = false;
-    setTimeout(() => applyWindowedBounds(mainWindow), 50);
-  });
+  htmlFullscreenActive = false;
+  windowFullscreenActive = false;
+  const win = createMainWindowShell();
+  const port = Number(process.env.SHINAYUU_PORT || 43821);
+  mainAppUrl = `http://127.0.0.1:${port}/?runtime=castlabs-electron`;
 
   try {
-    await mainWindow.loadURL(`http://127.0.0.1:${port}/?runtime=castlabs-electron${SAFE_GRAPHICS_MODE ? '&safeGraphics=1' : ''}`);
+    await new Promise((resolve, reject) => {
+      const tester = net.createServer();
+      tester.once('error', (error) => reject(new Error('ShinaYuu Music cần cổng ' + port + ' cho Spotify OAuth: ' + error.message)));
+      tester.once('listening', () => tester.close(resolve));
+      tester.listen(port, '127.0.0.1');
+    });
+    mainServerPort = port;
+
+    process.env.HOST = '127.0.0.1';
+    process.env.PORT = String(port);
+    process.env.SHINAYUU_DATA_DIR = app.getPath('userData');
+    process.env.SPOTIFY_REDIRECT_URI = `http://127.0.0.1:${port}/api/spotify/callback`;
+    process.env.COOKIE_FILE = path.join(app.getPath('userData'), '.cookie');
+    process.env.QQ_COOKIE_FILE = path.join(app.getPath('userData'), '.qq-cookie');
+    process.env.MUSIC_SOURCE_CONFIG_FILE = path.join(app.getPath('userData'), 'music-sources.json');
+    process.env.SPOTIFY_TOKEN_FILE = path.join(app.getPath('userData'), 'spotify-token.json');
+    process.env.YOUTUBE_TOKEN_FILE = path.join(app.getPath('userData'), 'youtube-token.json');
+    process.env.MINERADIO_UPDATE_DIR = getUpdateDownloadDir();
+    try {
+      const legacyQQCookie = path.join(__dirname, '..', '.qq-cookie');
+      if (fs.existsSync(legacyQQCookie)) {
+        if (!fs.existsSync(process.env.QQ_COOKIE_FILE)) fs.copyFileSync(legacyQQCookie, process.env.QQ_COOKIE_FILE);
+        fs.unlinkSync(legacyQQCookie);
+      }
+    } catch (error) {
+      console.warn('QQ cookie migration skipped:', error.message);
+    }
+
+    localLibrary = ensureLocalLibrary();
+    await localLibrary.init().catch((error) => console.warn('[LocalLibrary] startup:', error.message));
+    musicProvidersBridge = require(path.join(__dirname, '..', 'music-providers.js'));
+    if (musicProvidersBridge && typeof musicProvidersBridge.setYouTubeCookieProvider === 'function') {
+      musicProvidersBridge.setYouTubeCookieProvider(null);
+    }
+    localServer = require(path.join(__dirname, '..', 'server.js'));
+    await waitForServer(localServer);
+    configureRealtimeAudioCaptureSession(session.defaultSession, port);
+    startAudioSessionBridge(0);
+    ensureDiscordPresenceManager();
+
+    if (!win.isDestroyed()) await win.loadURL(mainAppUrl);
+    return win;
   } catch (error) {
-    startupLog('mainWindow.loadURL rejected', String(error && (error.stack || error.message || error)));
-    revealMainWindow('loadURL-rejected');
-    if (!recoverStartupRendering('loadURL-rejected')) throw error;
+    console.error('[Startup] Application initialization failed:', error);
+    if (!win.isDestroyed()) {
+      await win.loadURL(mainWindowStatusUrl(
+        'Không thể hoàn tất khởi động',
+        `${error && error.message ? error.message : String(error)}\n\nHãy đóng các tiến trình ShinaYuu Music cũ rồi mở lại ứng dụng.`,
+        true
+      )).catch(() => {});
+      revealMainWindow('startup-error');
+    }
+    return win;
   }
 }
 
-const appStartTimestamp = Date.now();
+app.setName(APP_NAME);
+if (process.platform === 'win32') app.setAppUserModelId(APP_USER_MODEL_ID);
 
 if (!gotSingleInstanceLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (focusMainWindow()) return;
-    if (startupSequenceRunning) {
-      const status = createStartupStatusWindow('ShinaYuu Music vẫn đang khởi động. Bạn có thể chuyển sang chế độ tương thích nếu cửa sổ chính không xuất hiện.');
-      if (status && !status.isDestroyed()) {
-        status.show();
-        status.focus();
-      }
-      return;
+    if (!focusMainWindow()) {
+      app.whenReady().then(() => createWindow()).catch((e) => console.error('Second instance window restore failed:', e));
     }
-    app.whenReady().then(() => createWindow()).catch((e) => {
-      startupLog('Second instance window restore failed', String(e && (e.stack || e.message || e)));
-    });
   });
 
   app.whenReady().then(async () => {
-    startupSequenceRunning = true;
-    startupLog('Electron app ready', {
-      version: app.getVersion(),
-      packaged: app.isPackaged,
-      safeGraphics: SAFE_GRAPHICS_MODE,
-      gpuProfile: GPU_PROFILE,
-      argv: process.argv.slice(1),
-    });
-    scheduleStartupStatusWindow();
     loadBackgroundMediaRoots();
     registerBackgroundMediaProtocol();
     screen.on('display-metrics-changed', () => {
       positionDesktopLyricsWindow();
       positionWallpaperWindow();
-      ensureMainWindowOnScreen(mainWindow);
       scheduleWindowStateSend(mainWindow);
     });
-    screen.on('display-added', () => {
-      ensureMainWindowOnScreen(mainWindow);
-      scheduleWindowStateSend(mainWindow);
-    });
-    screen.on('display-removed', () => {
-      ensureMainWindowOnScreen(mainWindow);
-      scheduleWindowStateSend(mainWindow);
-    });
-    await ensureCastlabsComponents();
+    screen.on('display-added', () => scheduleWindowStateSend(mainWindow));
+    screen.on('display-removed', () => scheduleWindowStateSend(mainWindow));
+    // Widevine preparation must never block the first visible window.
+    // It continues in parallel and is normally ready before Spotify playback.
+    void ensureCastlabsComponents();
     await createWindow();
-    startupSequenceRunning = false;
-  }).catch((error) => {
-    startupSequenceRunning = false;
-    startupLog('Fatal startup failure', String(error && (error.stack || error.message || error)));
-    createStartupStatusWindow(`Ứng dụng không thể hoàn tất khởi động: ${error && error.message ? error.message : error}`);
-  });
-
-  app.on('child-process-gone', (_event, details) => {
-    startupLog('Electron child process gone', details || {});
-    const isEarlyGpuFailure = details && details.type === 'GPU'
-      && (!mainWindowRendererReady || (Date.now() - appStartTimestamp) < STARTUP_RECOVERY_WINDOW_MS);
-    if (isEarlyGpuFailure) recoverStartupRendering(`gpu-process-gone:${details.reason || 'unknown'}`);
   });
 
   app.on('activate', () => {
-    if (focusMainWindow()) return;
-    if (startupSequenceRunning) {
-      const status = createStartupStatusWindow();
-      if (status && !status.isDestroyed()) status.show();
-      return;
-    }
-    if (BrowserWindow.getAllWindows().length === 0) createWindow().catch((error) => {
-      startupLog('Activate window creation failed', String(error && (error.stack || error.message || error)));
-    });
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    else focusMainWindow();
   });
 
   app.on('window-all-closed', () => {
@@ -2619,9 +2325,6 @@ if (!gotSingleInstanceLock) {
   });
 
   app.on('before-quit', () => {
-    if (mainWindowRevealTimer) clearTimeout(mainWindowRevealTimer);
-    if (mainWindowLoadWatchdog) clearTimeout(mainWindowLoadWatchdog);
-    closeStartupStatusWindow();
     unregisterMineradioGlobalHotkeys();
     closeOverlayWindows();
     stopAudioSessionBridge();

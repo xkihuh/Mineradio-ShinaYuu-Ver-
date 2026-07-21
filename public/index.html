@@ -44,7 +44,7 @@ body::after,#desktop-window-shell::after{content:none}
 #desktop-window-shell{display:contents}
 #desktop-titlebar{display:none}
 body.desktop-shell{background:transparent}
-body.desktop-shell #desktop-window-shell{display:block;position:fixed;inset:0;overflow:hidden;border-radius:34px;clip-path:inset(0 round 34px);background:transparent;box-shadow:0 24px 80px rgba(0,0,0,.46);transform:translateZ(0)}
+body.desktop-shell #desktop-window-shell{display:block;position:fixed;inset:0;overflow:hidden;border-radius:0;clip-path:none;background:#08090B;box-shadow:none;transform:translateZ(0)}
 body.desktop-shell.desktop-maximized #desktop-window-shell,body.desktop-shell.desktop-fullscreen #desktop-window-shell,html:fullscreen body.desktop-shell #desktop-window-shell{border-radius:0!important;clip-path:none!important;box-shadow:none!important}
 body.desktop-shell #desktop-titlebar{position:fixed;z-index:500;top:0;left:0;right:0;height:44px;padding:0 12px 0 18px;display:flex;align-items:center;justify-content:space-between;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-app-region:drag;pointer-events:none}
 body.desktop-shell #desktop-titlebar::after{content:none}
@@ -322,7 +322,7 @@ body.empty-home-active .home-visual{animation:home-visual-drift 8.8s ease-in-out
 .home-card-art:not(.has-cover)::before{content:'';position:absolute;inset:18px;border-radius:50%;background:repeating-radial-gradient(circle,rgba(255,255,255,.16) 0 1px,transparent 1px 8px),conic-gradient(from 180deg,var(--tone-a),var(--tone-b),var(--tone-c),var(--tone-a));box-shadow:inset 0 0 0 14px rgba(5,5,8,.44),0 12px 28px rgba(0,0,0,.26)}
 .home-card-art::after{content:'';position:absolute;inset:0;background:linear-gradient(145deg,rgba(255,255,255,.12),transparent 42%,rgba(0,0,0,.28));pointer-events:none}
 .home-rail{align-self:stretch;min-height:0;display:grid;grid-template-rows:auto 1fr;gap:12px}
-.home-tile-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;min-height:0}
+.home-tile-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;min-height:0}
 .home-tile{--tone-a:#00f5d4;--tone-b:#2442ff;--tone-c:#f8f4ee;position:relative;min-width:0;min-height:166px;border:1px solid color-mix(in srgb,var(--home-accent) 9%,rgba(255,255,255,.075));border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.060),rgba(255,255,255,.025));box-shadow:0 16px 50px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.052);backdrop-filter:blur(20px) saturate(1.10);-webkit-backdrop-filter:blur(20px) saturate(1.10);padding:10px;color:#fff;text-align:left;font-family:inherit;cursor:pointer;transition:transform .2s,border-color .2s,background .2s,box-shadow .2s;overflow:hidden}
 .home-tile[data-home-tone="search"],.home-tile[data-home-tone="playlist"]{--tone-a:#9db8cf;--tone-b:#00f5d4;--tone-c:#2442ff}
 .home-tile[data-home-tone="local"],.home-tile[data-home-tone="podcast"]{--tone-a:#f8f4ee;--tone-b:#00f5d4;--tone-c:#2442ff}
@@ -548,11 +548,6 @@ html.control-glass-svg-ok #bottom-bar.visible{background:rgba(0,0,0,.10);backdro
 #bottom-bar.soft-hidden{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(88px) scale(.972);filter:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
 body.home-controls-locked #bottom-bar{opacity:0!important;pointer-events:none!important;transform:translateX(-50%) translateY(92px) scale(.985)!important;filter:none!important;background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important}
 #bottom-bar.stage-mode{bottom:14px;width:calc(100vw - 56px)}
-#player-visualizer-shell{position:absolute;z-index:3;left:50%;bottom:calc(100% + 10px);width:86%;height:30px;pointer-events:none;opacity:.88;transform-origin:50% 100%;transform:translate(-50%,0);transition:width .22s ease,height .22s ease,opacity .22s ease,transform .22s ease,filter .22s ease,bottom .22s ease;overflow:visible}
-#player-visualizer-shell.hidden{display:none}
-#player-visualizer-canvas{display:block;width:100%;height:100%;overflow:visible}
-body.home-controls-locked #player-visualizer-shell,body.immersive-mode #player-visualizer-shell{opacity:0!important}
-@media(max-width:760px){#player-visualizer-shell{height:24px;width:78%;bottom:calc(100% + 8px)}}
 #progress-bar{position:relative;z-index:1;align-self:center;width:calc(100% - clamp(86px,10vw,156px));height:4px;margin:4px auto 1px;background:rgba(255,255,255,0.095);border-radius:999px;cursor:pointer;transition:height .2s,background .2s,box-shadow .2s,width .2s;overflow:visible;box-shadow:inset 0 1px 1px rgba(255,255,255,.12),inset 0 -1px 1px rgba(0,0,0,.20)}
 #progress-bar:hover,#progress-bar.is-dragging{height:5px;background:rgba(255,255,255,.14);box-shadow:0 0 18px rgba(var(--fc-accent-rgb),.10),inset 0 1px 1px rgba(255,255,255,.18)}
 #progress-fill{height:100%;width:0%;background:linear-gradient(90deg,rgba(255,255,255,.92),rgba(var(--fc-accent-rgb),.74));border-radius:999px;transition:width .12s linear;box-shadow:0 0 16px rgba(var(--fc-accent-rgb),.18)}
@@ -620,7 +615,6 @@ body.home-controls-locked #player-visualizer-shell,body.immersive-mode #player-v
 .stage-text-mode-control .lyrics-toggle-btn{position:relative;z-index:2}
 .stage-text-mode-control .lyrics-toggle-btn[data-mode="lyrics"]{color:rgba(218,255,250,.96);background:rgba(var(--fc-accent-rgb),.085);box-shadow:0 0 20px rgba(var(--fc-accent-rgb),.10),inset 0 1px 0 rgba(255,255,255,.10)}
 .stage-text-mode-control .lyrics-toggle-btn[data-mode="title"]{color:rgba(237,242,255,.94);background:rgba(157,184,207,.09);box-shadow:0 0 20px rgba(157,184,207,.08),inset 0 1px 0 rgba(255,255,255,.09)}
-.stage-text-mode-control .lyrics-toggle-btn[data-mode="smart"]{color:rgba(226,255,246,.96);background:rgba(var(--fc-accent-rgb),.105);box-shadow:0 0 22px rgba(var(--fc-accent-rgb),.13),inset 0 1px 0 rgba(255,255,255,.10)}
 .stage-text-mode-control .lyrics-toggle-btn[data-mode="hidden"]{color:rgba(255,255,255,.38)}
 .stage-text-mode-popover{position:absolute;right:0;bottom:46px;transform:translateY(9px) scale(.98);width:250px;padding:7px;border-radius:17px;border:1px solid rgba(255,255,255,.105);background:radial-gradient(circle at 18% 0%,rgba(255,255,255,.13),transparent 36%),linear-gradient(145deg,rgba(17,20,23,.76),rgba(6,8,11,.86));backdrop-filter:blur(30px) saturate(1.32);-webkit-backdrop-filter:blur(30px) saturate(1.32);box-shadow:0 22px 64px rgba(0,0,0,.44),0 0 32px rgba(var(--fc-accent-rgb),.055),inset 0 1px 0 rgba(255,255,255,.12);display:grid;grid-template-columns:1fr;gap:5px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,transform .2s ease,visibility .2s;z-index:12;overflow:hidden}
 .stage-text-mode-popover::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.075),transparent 32%,rgba(var(--fc-accent-rgb),.038) 70%,transparent);mix-blend-mode:screen}
@@ -1210,7 +1204,7 @@ body.desktop-shell.diy-mode #bottom-bar.stage-mode{left:50%;width:min(1080px,cal
 .cover-color-side{min-width:0;display:flex;flex-direction:column;gap:8px}
 .cover-color-preview{height:34px;border-radius:10px;background:var(--picked,#9db8cf);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
 .cover-color-hint{font-size:11px;line-height:1.35;color:rgba(255,255,255,.46)}
-.cover-color-swatches{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:auto}
+.cover-color-swatches{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:auto}
 .cover-color-swatches button{height:22px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:var(--c,#9db8cf);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.20)}
 .cover-color-loupe{display:none;position:fixed;z-index:1500;width:112px;height:112px;border-radius:50%;border:2px solid #050505;background:var(--loupe-bg,#111);box-shadow:0 18px 48px rgba(0,0,0,.52),0 0 0 1px rgba(255,255,255,.24),inset 0 0 0 1px rgba(255,255,255,.18);pointer-events:none;overflow:hidden}
 .cover-color-loupe.show{display:block}
@@ -1816,18 +1810,12 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 }
 
 /* Visual console organization and adaptive popovers. */
-.fx-visualizer-section{display:flex;flex-direction:column;gap:10px}
-.fx-visualizer-section .fx-section-label{margin-top:0}
-.fx-visualizer-section .fx-seg{grid-template-columns:repeat(3,minmax(0,1fr))}
-.fx-visualizer-section .fx-seg.visualizer-styles{grid-template-columns:repeat(3,minmax(0,1fr))}
-.fx-visualizer-section .fx-seg.visualizer-color-modes{grid-template-columns:repeat(2,minmax(0,1fr))}
-.fx-visualizer-help{font-size:10px;line-height:1.45;color:rgba(255,255,255,.42);padding:0 3px 3px}
 .fx-panel-tabs{
   position:sticky;
   top:-18px;
   z-index:4;
   display:grid;
-  grid-template-columns:repeat(6,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:5px;
   margin:-2px -2px 14px;
   padding:5px;
@@ -2286,12 +2274,12 @@ html body.empty-home-active #empty-home .discord-now-playing{
 .bg-media-library-filter{height:30px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:rgba(255,255,255,.53);font:inherit;cursor:pointer}
 .bg-media-library-filter.active{background:rgba(var(--fc-accent-rgb),.14);color:#fff;box-shadow:inset 0 0 0 1px rgba(var(--fc-accent-rgb),.23)}
 .bg-media-library-body{position:relative;z-index:1;flex:1;min-height:0;overflow:auto;padding:4px 22px 22px;scrollbar-width:thin}
-.bg-media-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:14px}
-.bg-media-card{position:relative;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,.105);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012));box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 30px rgba(0,0,0,.10);cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.bg-media-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:14px;contain:layout style paint}
+.bg-media-card{position:relative;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,.105);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012));box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 30px rgba(0,0,0,.10);cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;content-visibility:auto;contain:layout paint style;contain-intrinsic-size:224px}
 .bg-media-card:hover{transform:translateY(-3px) scale(1.008);border-color:rgba(var(--fc-accent-rgb),.34);box-shadow:0 18px 42px rgba(0,0,0,.24),0 0 0 1px rgba(var(--fc-accent-rgb),.08),inset 0 1px 0 rgba(255,255,255,.15)}
 .bg-media-card.selected{border-color:rgba(var(--fc-accent-rgb),.62);box-shadow:0 0 0 2px rgba(var(--fc-accent-rgb),.14),0 18px 46px rgba(0,0,0,.26)}
 .bg-media-card-preview{position:relative;aspect-ratio:16/10;overflow:hidden;background:rgba(0,0,0,.15)}
-.bg-media-card-preview img,.bg-media-card-preview video{width:100%;height:100%;display:block;object-fit:cover;background:#08090a}
+.bg-media-card-preview img,.bg-media-card-preview video{width:100%;height:100%;display:block;object-fit:cover;background:#08090a;transform:translateZ(0)}
 .bg-media-card-preview::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 54%,rgba(0,0,0,.38));opacity:.72}
 .bg-media-card-type{position:absolute;left:9px;top:9px;z-index:2;padding:4px 8px;border:1px solid rgba(255,255,255,.15);border-radius:999px;background:rgba(0,0,0,.30);color:rgba(255,255,255,.82);font-size:10px;letter-spacing:.08em;text-transform:uppercase;backdrop-filter:blur(12px)}
 .bg-media-card-check{position:absolute;right:9px;top:9px;z-index:2;width:24px;height:24px;display:none;align-items:center;justify-content:center;border-radius:50%;background:rgb(var(--fc-accent-rgb));color:#07100f;font-weight:900;box-shadow:0 0 24px rgba(var(--fc-accent-rgb),.42)}
@@ -2305,31 +2293,7 @@ body.bg-media-library-open #fx-panel{pointer-events:none}
 
 
 
-/* ShinaYuu 1.1.5.7 - runtime diagnostics, GPU recovery, URL safety, and provider log cleanup */
-/* ShinaYuu 1.1.5.8 - adaptive hardware GPU profiles and stable opaque Windows composition */
-/* ShinaYuu 1.1.5.8 scroll-performance hotfix: native compositor scrolling */
-.native-compositor-scroll{
-  scroll-behavior:auto!important;
-  overscroll-behavior:contain;
-  overflow-anchor:auto;
-  will-change:scroll-position;
-  scrollbar-gutter:stable;
-}
-#search-results.native-compositor-scroll,
-#playlist-panel.native-compositor-scroll,
-#fx-panel.native-compositor-scroll{
-  backdrop-filter:blur(16px) saturate(1.14) brightness(1.02)!important;
-  -webkit-backdrop-filter:blur(16px) saturate(1.14) brightness(1.02)!important;
-}
-.search-result,.queue-item,.mini-queue-item,.pl-card,.pl-detail-row{
-  content-visibility:auto;
-  contain-intrinsic-size:auto 68px;
-}
-body.scroll-performance-mode #search-results.native-compositor-scroll,
-body.scroll-performance-mode #playlist-panel.native-compositor-scroll,
-body.scroll-performance-mode #fx-panel.native-compositor-scroll{
-  box-shadow:0 16px 44px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.08)!important;
-}
+/* ShinaYuu 1.1.5.4 - user-adjustable Liquid Glass transparency */
 :root{
   --liquid-glass-transparency:.10;
   --liquid-glass-panel-alpha:.864;
@@ -2380,42 +2344,6 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .home-mosaic-cell,
 html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
   background:none!important;
   background-color:var(--liquid-glass-home-fill)!important;
-}
-
-
-/* Final scroll compositor overrides: keep one glass layer, not dozens of moving blur layers. */
-#search-results.native-compositor-scroll,
-#playlist-panel.native-compositor-scroll,
-#fx-panel.native-compositor-scroll{
-  contain:paint;
-  backdrop-filter:blur(14px) saturate(1.12) brightness(1.02)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(1.12) brightness(1.02)!important;
-}
-#track-detail-body.native-compositor-scroll,
-#mini-queue-list.native-compositor-scroll{
-  contain:paint;
-}
-#search-results .search-result,
-#search-results .search-source-section,
-#playlist-panel .pl-card,
-#playlist-panel .queue-item,
-#playlist-panel .pl-detail-row,
-#playlist-panel .pl-inline-detail,
-#fx-panel .fx-panel-tabs,
-#fx-panel .fx-mini-btn,
-#fx-panel .fx-toggle,
-#fx-panel .fx-seg button,
-#fx-panel .panel-tab,
-#fx-panel .preset-card,
-#fx-panel .lyric-color-row,
-#fx-panel .fx-slider,
-#fx-panel .fx-fold,
-#mini-queue-list .mini-queue-item{
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
-#search-results .search-source-section{
-  background:rgba(8,10,14,.94)!important;
 }
 
 </style>
@@ -2745,48 +2673,6 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
   <div class="fx-slider"><label>Độ trong suốt nền</label><input id="fx-bgopacity" type="range" min="0" max="1" step="0.01"><output></output></div>
   <div class="fx-slider liquid-glass-transparency-control"><label>Độ trong suốt Liquid Glass</label><input id="fx-liquidglasstransparency" type="range" min="0" max="1" step="0.01"><output></output></div>
   <div class="fx-slider"><label>Sắc kính bảng điều khiển</label><input id="fx-glassaberration" type="range" min="0" max="140" step="1"><output></output></div>
-
-  <section id="fx-player-visualizer-section" class="fx-visualizer-section">
-    <div class="fx-section-label">Sóng nhạc</div>
-    <div id="t-playerVisualizer" class="fx-toggle on" onclick="togglePlayerVisualizer()"><div><b>Bật sóng nhạc</b><small>Hiển thị sóng nhạc theo thời gian thực phía trên thanh tiến độ</small></div><span></span></div>
-    <div id="player-visualizer-style-seg" class="fx-seg visualizer-styles">
-      <button type="button" data-visualizer-style="bars" onclick="setPlayerVisualizerStyle('bars')">Cột</button>
-      <button type="button" data-visualizer-style="wave" onclick="setPlayerVisualizerStyle('wave')">Sóng</button>
-      <button type="button" data-visualizer-style="mirror" onclick="setPlayerVisualizerStyle('mirror')">Đối xứng</button>
-      <button type="button" data-visualizer-style="dots" onclick="setPlayerVisualizerStyle('dots')">Chấm</button>
-      <button type="button" data-visualizer-style="ribbon" onclick="setPlayerVisualizerStyle('ribbon')">Dải lụa</button>
-      <button type="button" data-visualizer-style="stairs" onclick="setPlayerVisualizerStyle('stairs')">Bậc thang</button>
-      <button type="button" data-visualizer-style="pulse" onclick="setPlayerVisualizerStyle('pulse')">Xung nhịp</button>
-      <button type="button" data-visualizer-style="needles" onclick="setPlayerVisualizerStyle('needles')">Kim</button>
-      <button type="button" data-visualizer-style="orbs" onclick="setPlayerVisualizerStyle('orbs')">Quỹ đạo</button>
-    </div>
-    <div id="player-visualizer-color-seg" class="fx-seg visualizer-color-modes">
-      <button type="button" data-visualizer-color-mode="solid" onclick="setPlayerVisualizerColorMode('solid')">Một màu</button>
-      <button type="button" data-visualizer-color-mode="rainbow" onclick="setPlayerVisualizerColorMode('rainbow')">Rainbow</button>
-      <button type="button" data-visualizer-color-mode="rgb" onclick="setPlayerVisualizerColorMode('rgb')">RGB chuyển màu</button>
-      <button type="button" data-visualizer-color-mode="accent" onclick="setPlayerVisualizerColorMode('accent')">Màu giao diện</button>
-      <button type="button" data-visualizer-color-mode="cover" onclick="setPlayerVisualizerColorMode('cover')">Màu ảnh bìa</button>
-    </div>
-    <div class="lyric-color-row">
-      <input id="player-visualizer-color-picker" class="lyric-color-picker" type="color" value="#00f5d4" title="Màu sóng nhạc">
-      <div class="fx-color-row-label">Màu sóng nhạc<small id="player-visualizer-color-value">#00F5D4</small></div>
-      <button class="fx-mini-btn ghost" type="button" onclick="resetPlayerVisualizerColor()">Mặc định</button>
-    </div>
-    <div class="fx-slider"><label>Chiều rộng khung</label><input id="fx-visualizerwidth" type="range" min="0.35" max="1" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Chiều cao khung</label><input id="fx-visualizerheight" type="range" min="0.4" max="2.4" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Độ rộng sóng</label><input id="fx-visualizerbarwidth" type="range" min="0.35" max="2.4" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Chiều dài sóng</label><input id="fx-visualizerlength" type="range" min="0.35" max="2.8" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Khoảng cách</label><input id="fx-visualizergap" type="range" min="0.55" max="2.6" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Vị trí ngang</label><input id="fx-visualizerx" type="range" min="-240" max="240" step="1"><output></output></div>
-    <div class="fx-slider"><label>Vị trí dọc</label><input id="fx-visualizery" type="range" min="-60" max="80" step="1"><output></output></div>
-    <div class="fx-slider"><label>Góc xoay</label><input id="fx-visualizerangle" type="range" min="-30" max="30" step="1"><output></output></div>
-    <div class="fx-slider"><label>Độ trong suốt</label><input id="fx-visualizeropacity" type="range" min="0.1" max="1" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Độ nhạy âm thanh</label><input id="fx-visualizersensitivity" type="range" min="0.4" max="2.5" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Độ mượt</label><input id="fx-visualizersmoothing" type="range" min="0" max="0.95" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Độ phát sáng</label><input id="fx-visualizerglow" type="range" min="0" max="1.5" step="0.01"><output></output></div>
-    <div class="fx-slider"><label>Phản ứng theo nhịp</label><input id="fx-visualizerbeat" type="range" min="0" max="2" step="0.01"><output></output></div>
-    <div class="fx-visualizer-help">Sóng nhạc sử dụng phổ tần thời gian thực của YouTube, nhạc cục bộ và luồng phân tích Spotify; kết hợp dải trầm với xung nhịp để bám sát bài hát.</div>
-  </section>
 
   <div class="fx-section-label">Điều khiển chính</div>
   <div class="fx-slider"><label>Cường độ nhịp</label><input id="fx-intensity" type="range" min="0.2" max="1.6" step="0.01"><output></output></div>
@@ -3162,7 +3048,6 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
     </div>
     <div id="mini-queue-list" class="mini-queue-list"></div>
   </div>
-  <div id="player-visualizer-shell" aria-hidden="true"><canvas id="player-visualizer-canvas"></canvas></div>
   <div id="progress-bar"><div id="progress-fill"></div><div id="progress-thumb" aria-hidden="true"></div></div>
   <div id="controls">
     <div class="control-cluster actions">
@@ -3197,10 +3082,9 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
     <div id="stage-text-mode-control" class="stage-text-mode-control">
       <button id="stage-text-mode-btn" class="ctrl-btn lyrics-toggle-btn" type="button" data-mode="lyrics" onclick="toggleStageTextModeMenu(event)" title="Chế độ chữ trên sân khấu" aria-haspopup="menu" aria-expanded="false"><span id="stage-text-mode-icon" class="lyrics-word-icon">Lời</span></button>
       <div id="stage-text-mode-popover" class="stage-text-mode-popover" role="menu" aria-label="Chế độ hiển thị lời và tên bài hát" onclick="event.stopPropagation()">
-        <button class="stage-text-mode-option" type="button" role="menuitemradio" aria-checked="false" data-stage-text-mode="title" onclick="setStageTextMode('title')"><span class="stage-text-mode-option-icon">Tên</span><span class="stage-text-mode-option-copy"><strong data-stage-mode-title>Tên bài hát</strong><small data-stage-mode-desc>Chỉ hiển thị tên bài hát</small></span><span class="stage-text-mode-option-check">✓</span></button>
-        <button class="stage-text-mode-option active" type="button" role="menuitemradio" aria-checked="true" data-stage-text-mode="lyrics" onclick="setStageTextMode('lyrics')"><span class="stage-text-mode-option-icon">Lời</span><span class="stage-text-mode-option-copy"><strong data-stage-mode-title>Lời bài hát</strong><small data-stage-mode-desc>Hiển thị lời bài hát đồng bộ</small></span><span class="stage-text-mode-option-check">✓</span></button>
-        <button class="stage-text-mode-option" type="button" role="menuitemradio" aria-checked="false" data-stage-text-mode="smart" onclick="setStageTextMode('smart')"><span class="stage-text-mode-option-icon">Tự</span><span class="stage-text-mode-option-copy"><strong data-stage-mode-title>Lời và tên thông minh</strong><small data-stage-mode-desc>Hiển thị lời khi có câu hát; hiện tên bài ở đoạn không lời</small></span><span class="stage-text-mode-option-check">✓</span></button>
-        <button class="stage-text-mode-option" type="button" role="menuitemradio" aria-checked="false" data-stage-text-mode="hidden" onclick="setStageTextMode('hidden')"><span class="stage-text-mode-option-icon">Ẩn</span><span class="stage-text-mode-option-copy"><strong data-stage-mode-title>Không hiển thị</strong><small data-stage-mode-desc>Ẩn cả tên bài hát và lời bài hát</small></span><span class="stage-text-mode-option-check">✓</span></button>
+        <button class="stage-text-mode-option" type="button" role="menuitemradio" aria-checked="false" data-stage-text-mode="title" onclick="setStageTextMode('title')"><span class="stage-text-mode-option-icon">Tên</span><span class="stage-text-mode-option-copy"><strong data-stage-mode-title>Tên bài hát</strong><small data-stage-mode-desc>Chỉ hiện tên bài, không hiện lyrics</small></span><span class="stage-text-mode-option-check">✓</span></button>
+        <button class="stage-text-mode-option active" type="button" role="menuitemradio" aria-checked="true" data-stage-text-mode="lyrics" onclick="setStageTextMode('lyrics')"><span class="stage-text-mode-option-icon">Lời</span><span class="stage-text-mode-option-copy"><strong data-stage-mode-title>Lyrics</strong><small data-stage-mode-desc>Hiển thị lyrics đồng bộ hiện tại</small></span><span class="stage-text-mode-option-check">✓</span></button>
+        <button class="stage-text-mode-option" type="button" role="menuitemradio" aria-checked="false" data-stage-text-mode="hidden" onclick="setStageTextMode('hidden')"><span class="stage-text-mode-option-icon">Ẩn</span><span class="stage-text-mode-option-copy"><strong data-stage-mode-title>Không hiển thị</strong><small data-stage-mode-desc>Ẩn cả tên bài hát và lyrics</small></span><span class="stage-text-mode-option-check">✓</span></button>
       </div>
     </div>
     <div id="volume-control" class="volume-control">
@@ -3654,7 +3538,7 @@ var EXTRA_STATIC_TRANSLATIONS = {"你的偏好会在这里汇总":["Sở thích 
 Object.keys(EXTRA_STATIC_TRANSLATIONS).forEach(function(key){ STATIC_TRANSLATIONS[key] = EXTRA_STATIC_TRANSLATIONS[key]; });
 
 Object.assign(STATIC_TRANSLATIONS, {
-  '预设':['Cài đặt','Presets'], '外观':['Giao diện','Appearance'], '歌词':['Lời bài hát','Lyrics'], '动态':['Chuyển động','Motion'], '频谱':['Sóng nhạc','Visualizer'], '高级':['Nâng cao','Advanced'],
+  '预设':['Cài đặt','Presets'], '外观':['Giao diện','Appearance'], '歌词':['Lời bài hát','Lyrics'], '动态':['Chuyển động','Motion'], '高级':['Nâng cao','Advanced'],
   '预设与存档':['Preset và bản lưu','Presets and saves'], '界面与背景':['Giao diện và nền','Interface and background'], '画面基础':['Thiết lập hình ảnh','Visual basics'],
   '歌词溢光强度':['Cường độ sáng lời','Lyrics glow strength'], '文字颜色':['Màu chữ','Text color'], '跟唱高亮':['Tô sáng lời đang hát','Active lyric highlight'],
   '歌词溢光颜色':['Màu sáng lời','Lyrics glow color'], '歌词来源':['Nguồn lời bài hát','Lyrics source'], '字体与字距':['Phông chữ và khoảng cách','Font and spacing'],
@@ -3767,43 +3651,6 @@ Object.assign(UI_MESSAGE_TRANSLATIONS, {
   '已显示全部':['Đã hiển thị tất cả','All items shown']
 });
 
-Object.assign(STATIC_TRANSLATIONS, {
-  'Sóng nhạc':['Sóng nhạc','Audio visualizer'],
-  'Bật sóng nhạc':['Bật sóng nhạc','Enable visualizer'],
-  'Hiển thị sóng nhạc theo thời gian thực phía trên thanh tiến độ':['Hiển thị sóng nhạc theo thời gian thực phía trên thanh tiến độ','Show a real-time audio visualizer above the progress bar'],
-  'Cột':['Cột','Bars'], 'Sóng':['Sóng','Wave'], 'Đối xứng':['Đối xứng','Mirror'], 'Chấm':['Chấm','Dots'],
-  'Dải lụa':['Dải lụa','Ribbon'], 'Bậc thang':['Bậc thang','Steps'], 'Xung nhịp':['Xung nhịp','Pulse'],
-  'Kim':['Kim','Needles'], 'Quỹ đạo':['Quỹ đạo','Orbits'],
-  'Một màu':['Một màu','Solid color'], 'Rainbow':['Rainbow','Rainbow'], 'RGB chuyển màu':['RGB chuyển màu','RGB flow'],
-  'Màu giao diện':['Màu giao diện','Interface color'], 'Màu ảnh bìa':['Màu ảnh bìa','Cover color'],
-  'Màu sóng nhạc':['Màu sóng nhạc','Visualizer color'],
-  'Chiều rộng khung':['Chiều rộng khung','Frame width'], 'Chiều cao khung':['Chiều cao khung','Frame height'],
-  'Độ rộng sóng':['Độ rộng sóng','Element width'], 'Chiều dài sóng':['Chiều dài sóng','Amplitude length'],
-  'Khoảng cách':['Khoảng cách','Spacing'], 'Khoảng cách phần tử':['Khoảng cách phần tử','Element spacing'],
-  'Vị trí ngang':['Vị trí ngang','Horizontal position'], 'Vị trí dọc':['Vị trí dọc','Vertical position'],
-  'Góc xoay':['Góc xoay','Rotation'], 'Độ trong suốt':['Độ trong suốt','Opacity'],
-  'Độ nhạy âm thanh':['Độ nhạy âm thanh','Audio sensitivity'], 'Độ mượt':['Độ mượt','Smoothing'],
-  'Độ phát sáng':['Độ phát sáng','Glow'], 'Phản ứng theo nhịp':['Phản ứng theo nhịp','Beat response'],
-  'Sóng nhạc sử dụng phổ tần thời gian thực của YouTube, nhạc cục bộ và luồng phân tích Spotify; kết hợp dải trầm với xung nhịp để bám sát bài hát.':['Sóng nhạc sử dụng phổ tần thời gian thực của YouTube, nhạc cục bộ và luồng phân tích Spotify; kết hợp dải trầm với xung nhịp để bám sát bài hát.','The visualizer uses real-time spectrum data from YouTube, local audio, and Spotify analysis, combining bass energy with beat pulses to follow the track.'],
-  'Tên bài hát':['Tên bài hát','Track title'], 'Chỉ hiển thị tên bài hát':['Chỉ hiển thị tên bài hát','Show only the track title'],
-  'Lời bài hát':['Lời bài hát','Lyrics'], 'Hiển thị lời bài hát đồng bộ':['Hiển thị lời bài hát đồng bộ','Show synchronized lyrics'],
-  'Lời và tên thông minh':['Lời và tên thông minh','Smart lyrics and title'],
-  'Hiển thị lời khi có câu hát; hiện tên bài ở đoạn không lời':['Hiển thị lời khi có câu hát; hiện tên bài ở đoạn không lời','Show lyrics during vocals and the track title during instrumental gaps'],
-  'Không hiển thị':['Không hiển thị','Show nothing'],
-  'Ẩn cả tên bài hát và lời bài hát':['Ẩn cả tên bài hát và lời bài hát','Hide both the track title and lyrics'],
-  'Chế độ chữ trên sân khấu':['Chế độ chữ trên sân khấu','Stage text mode'],
-  'Chế độ hiển thị lời và tên bài hát':['Chế độ hiển thị lời và tên bài hát','Lyrics and track-title display mode']
-});
-Object.assign(UI_MESSAGE_TRANSLATIONS, {
-  'Đã bật sóng nhạc':['Đã bật sóng nhạc','Audio visualizer enabled'],
-  'Đã tắt sóng nhạc':['Đã tắt sóng nhạc','Audio visualizer disabled'],
-  'Màu sóng nhạc:':['Màu sóng nhạc:','Visualizer color:'],
-  'Chỉ hiển thị tên bài hát':['Chỉ hiển thị tên bài hát','Showing track title only'],
-  'Đã bật lời và tên thông minh':['Đã bật lời và tên thông minh','Smart lyrics and title enabled'],
-  'Đã ẩn tên bài hát và lời bài hát':['Đã ẩn tên bài hát và lời bài hát','Track title and lyrics hidden'],
-  'Đang hiển thị lời bài hát đồng bộ':['Đang hiển thị lời bài hát đồng bộ','Showing synchronized lyrics']
-});
-
 // Vietnamese is the canonical markup language. Add aliases so switching to English
 // still works after all static Chinese markup has been removed.
 Object.keys(STATIC_TRANSLATIONS).forEach(function(source){
@@ -3906,7 +3753,7 @@ function applyAppLanguage(root) {
     if (typeof syncStageTextModeUi === 'function') { try { syncStageTextModeUi(); } catch (_) {} }
     var fxTabs = document.querySelectorAll('#fx-panel-tabs [data-fx-tab]');
     Object.assign(STATIC_TRANSLATIONS, {"歌词延迟":["Độ trễ lyrics","Lyrics delay"]});
-var fxTabLabels = {presets:'预设',appearance:'外观',lyrics:'歌词',motion:'动态',visualizer:'频谱',advanced:'高级'};
+var fxTabLabels = {presets:'预设',appearance:'外观',lyrics:'歌词',motion:'动态',advanced:'高级'};
     Array.prototype.forEach.call(fxTabs, function(btn){ var key=btn.getAttribute('data-fx-tab'); if(fxTabLabels[key]) btn.textContent=localizeFixedText(fxTabLabels[key]); });
   }
 }
@@ -4567,23 +4414,6 @@ var fxDefaults = {
   backgroundOpacity: 1,
   liquidGlassTransparency: 0.10,
   controlGlassChromaticOffset: 90,
-  playerVisualizer: true,
-  playerVisualizerStyle: 'bars',
-  playerVisualizerColorMode: 'rainbow',
-  playerVisualizerColor: '#00f5d4',
-  playerVisualizerWidth: 0.86,
-  playerVisualizerHeight: 1.0,
-  playerVisualizerBarWidth: 1.0,
-  playerVisualizerLength: 1.0,
-  playerVisualizerGap: 1.0,
-  playerVisualizerOffsetX: 0,
-  playerVisualizerOffsetY: 0,
-  playerVisualizerAngle: 0,
-  playerVisualizerOpacity: 0.88,
-  playerVisualizerSensitivity: 1.15,
-  playerVisualizerSmoothing: 0.72,
-  playerVisualizerGlow: 0.70,
-  playerVisualizerBeatBoost: 0.85,
   backgroundColorCustom: false,
   backgroundImage: '',
   backgroundMedia: null,
@@ -4669,23 +4499,6 @@ var PACKAGED_DEFAULT_FX_SNAPSHOT = Object.freeze({
   backgroundOpacity: 1,
   liquidGlassTransparency: 0.10,
   controlGlassChromaticOffset: 90,
-  playerVisualizer: true,
-  playerVisualizerStyle: 'bars',
-  playerVisualizerColorMode: 'rainbow',
-  playerVisualizerColor: '#00f5d4',
-  playerVisualizerWidth: 0.86,
-  playerVisualizerHeight: 1.0,
-  playerVisualizerBarWidth: 1.0,
-  playerVisualizerLength: 1.0,
-  playerVisualizerGap: 1.0,
-  playerVisualizerOffsetX: 0,
-  playerVisualizerOffsetY: 0,
-  playerVisualizerAngle: 0,
-  playerVisualizerOpacity: 0.88,
-  playerVisualizerSensitivity: 1.15,
-  playerVisualizerSmoothing: 0.72,
-  playerVisualizerGlow: 0.70,
-  playerVisualizerBeatBoost: 0.85,
   backgroundColorCustom: false,
   floatLayer: false,
   cinema: true,
@@ -4777,7 +4590,12 @@ var controlsHideTimer = null;
 var controlsHandleDimTimer = null;
 var controlsLastMoveAt = 0;
 var controlsShelfSuppressUntil = 0;
+var controlsPointerFrame = 0;
+var controlsPointerX = 0;
+var controlsPointerY = 0;
 var cursorHideTimer = null;
+var cursorHideDeadline = 0;
+var cursorHiddenState = false;
 var CURSOR_HIDE_DELAY = 2500;
 var fxPanelPinned = false;
 var playlistPanelPinned = readBooleanPreference(PLAYLIST_PANEL_PIN_STORE_KEY, false);
@@ -4825,6 +4643,7 @@ var renderPowerState = { mode: '', width: 0, height: 0, pixelRatio: 0 };
 var backgroundCacheTrimTimer = 0;
 var runtimePerfState = {
   lastCacheTrimAt: 0,
+  nextCacheCheckAt: 0,
   cacheTrimCount: 0,
   lastCacheTrimReason: '',
   lastHeapSampleAt: 0,
@@ -5040,11 +4859,15 @@ function scheduleBackgroundCacheTrim() {
 }
 function maybeTrimRuntimeCaches(now) {
   now = now || performance.now();
+  if (now < runtimePerfState.nextCacheCheckAt) return;
+  runtimePerfState.nextCacheCheckAt = now + 4000;
   var deep = isDeepBackgroundMode();
-  var gap = deep ? (isBackgroundReleaseMode() ? 3600 : 7000) : 45000;
-  if (!deep && now < 30000) return;
+  var heapBytes = performance && performance.memory ? Number(performance.memory.usedJSHeapSize || 0) : 0;
+  var heapPressure = heapBytes >= 268435456;
+  var gap = heapPressure ? 12000 : (deep ? (isBackgroundReleaseMode() ? 3600 : 7000) : 45000);
+  if (!deep && !heapPressure && now < 30000) return;
   if (now - runtimePerfState.lastCacheTrimAt < gap) return;
-  trimRuntimeCaches(deep ? (isBackgroundReleaseMode() ? 'release-frame' : 'deep-frame') : 'active-frame', deep);
+  trimRuntimeCaches(heapPressure ? 'heap-pressure' : (deep ? (isBackgroundReleaseMode() ? 'release-frame' : 'deep-frame') : 'active-frame'), deep || heapPressure);
 }
 function applyRendererPowerMode() {
   if (typeof renderer === 'undefined' || !renderer) return;
@@ -6774,6 +6597,16 @@ function toggleBottomControlsFromHandle() {
   revealBottomControls(900);
 }
 
+function queueControlsAutoHideFromPointer(x, y) {
+  controlsPointerX = x;
+  controlsPointerY = y;
+  if (controlsPointerFrame) return;
+  controlsPointerFrame = requestAnimationFrame(function(){
+    controlsPointerFrame = 0;
+    updateControlsAutoHideFromPointer(controlsPointerX, controlsPointerY);
+  });
+}
+
 function updateControlsAutoHideFromPointer(x, y) {
   if (document.body.classList.contains('home-controls-locked')) return;
   if (isBottomControlsSuppressedForShelf()) return;
@@ -6864,6 +6697,7 @@ function isCursorAutoHideMode() {
 }
 
 function clearCursorAutoHideTimer() {
+  cursorHideDeadline = 0;
   if (cursorHideTimer) {
     clearTimeout(cursorHideTimer);
     cursorHideTimer = null;
@@ -6871,19 +6705,30 @@ function clearCursorAutoHideTimer() {
 }
 
 function setCursorHidden(hidden) {
-  document.body.classList.toggle('cursor-hidden', !!hidden && isCursorAutoHideMode());
+  var next = !!hidden && isCursorAutoHideMode();
+  if (cursorHiddenState === next) return;
+  cursorHiddenState = next;
+  document.body.classList.toggle('cursor-hidden', next);
 }
 
 function scheduleCursorHide(delay) {
-  clearCursorAutoHideTimer();
   if (!isCursorAutoHideMode()) {
+    clearCursorAutoHideTimer();
     setCursorHidden(false);
     return;
   }
-  cursorHideTimer = setTimeout(function(){
+  cursorHideDeadline = performance.now() + (delay == null ? CURSOR_HIDE_DELAY : delay);
+  if (cursorHideTimer) return;
+  function waitForCursorDeadline(){
+    var remaining = cursorHideDeadline - performance.now();
+    if (remaining > 20) {
+      cursorHideTimer = setTimeout(waitForCursorDeadline, Math.max(20, remaining));
+      return;
+    }
     cursorHideTimer = null;
-    setCursorHidden(true);
-  }, delay == null ? CURSOR_HIDE_DELAY : delay);
+    if (cursorHideDeadline) setCursorHidden(true);
+  }
+  cursorHideTimer = setTimeout(waitForCursorDeadline, delay == null ? CURSOR_HIDE_DELAY : delay);
 }
 
 function revealCursorForActivity() {
@@ -6904,7 +6749,7 @@ function syncCursorAutoHideMode() {
   }
 }
 
-['mousemove', 'pointermove', 'mousedown', 'wheel', 'touchstart'].forEach(function(type){
+['pointermove', 'mousedown', 'wheel', 'touchstart'].forEach(function(type){
   window.addEventListener(type, revealCursorForActivity, { passive:true, capture:true });
 });
 syncCursorAutoHideMode();
@@ -6931,7 +6776,15 @@ var UI_HIT_SELECTOR = '#search-area,#top-right,#fullscreen-diy-zone,#fx-panel,#f
 
 function isPointerOverUi(e) {
   if (!e) return false;
-  var el = document.elementFromPoint(e.clientX, e.clientY);
+  var el = e.target;
+  if (el && el.closest) return !!el.closest(UI_HIT_SELECTOR);
+  var path = typeof e.composedPath === 'function' ? e.composedPath() : null;
+  if (path && path.length) {
+    for (var i = 0; i < path.length; i++) {
+      if (path[i] && path[i].closest && path[i].closest(UI_HIT_SELECTOR)) return true;
+    }
+  }
+  el = document.elementFromPoint(e.clientX, e.clientY);
   return !!(el && el.closest && el.closest(UI_HIT_SELECTOR));
 }
 
@@ -7005,7 +6858,7 @@ window.addEventListener('mousedown', function(e){
   beginParticlePointerDrag(e);
 }, true);
 window.addEventListener('mousemove', function(e){
-  updateControlsAutoHideFromPointer(e.clientX, e.clientY);
+  queueControlsAutoHideFromPointer(e.clientX, e.clientY);
   idleGuidePointerMove(e);
   if (freeCamera && freeCamera.active) {
     markRenderInteraction('free-camera', 900);
@@ -9014,23 +8867,6 @@ function readSavedLyricLayout() {
       backgroundOpacity: savedBgOpacity,
       liquidGlassTransparency: savedLiquidGlassTransparency,
       controlGlassChromaticOffset: savedGlassOffset,
-      playerVisualizer: raw.playerVisualizer !== false,
-      playerVisualizerStyle: normalizePlayerVisualizerStyle(raw.playerVisualizerStyle),
-      playerVisualizerColorMode: normalizePlayerVisualizerColorMode(raw.playerVisualizerColorMode),
-      playerVisualizerColor: normalizeHexColor(raw.playerVisualizerColor || fxDefaults.playerVisualizerColor, fxDefaults.playerVisualizerColor),
-      playerVisualizerWidth: clampRange(raw.playerVisualizerWidth == null ? fxDefaults.playerVisualizerWidth : Number(raw.playerVisualizerWidth), 0.35, 1),
-      playerVisualizerHeight: clampRange(raw.playerVisualizerHeight == null ? fxDefaults.playerVisualizerHeight : Number(raw.playerVisualizerHeight), 0.4, 2.4),
-      playerVisualizerBarWidth: clampRange(raw.playerVisualizerBarWidth == null ? fxDefaults.playerVisualizerBarWidth : Number(raw.playerVisualizerBarWidth), 0.35, 2.4),
-      playerVisualizerLength: clampRange(raw.playerVisualizerLength == null ? fxDefaults.playerVisualizerLength : Number(raw.playerVisualizerLength), 0.35, 2.8),
-      playerVisualizerGap: clampRange(raw.playerVisualizerGap == null ? fxDefaults.playerVisualizerGap : Number(raw.playerVisualizerGap), 0.55, 2.6),
-      playerVisualizerOffsetX: clampRange(raw.playerVisualizerOffsetX == null ? fxDefaults.playerVisualizerOffsetX : Number(raw.playerVisualizerOffsetX), -240, 240),
-      playerVisualizerOffsetY: clampRange(raw.playerVisualizerOffsetY == null ? fxDefaults.playerVisualizerOffsetY : Number(raw.playerVisualizerOffsetY), -60, 80),
-      playerVisualizerAngle: clampRange(raw.playerVisualizerAngle == null ? fxDefaults.playerVisualizerAngle : Number(raw.playerVisualizerAngle), -30, 30),
-      playerVisualizerOpacity: clampRange(raw.playerVisualizerOpacity == null ? fxDefaults.playerVisualizerOpacity : Number(raw.playerVisualizerOpacity), 0.1, 1),
-      playerVisualizerSensitivity: clampRange(raw.playerVisualizerSensitivity == null ? fxDefaults.playerVisualizerSensitivity : Number(raw.playerVisualizerSensitivity), 0.4, 2.5),
-      playerVisualizerSmoothing: clampRange(raw.playerVisualizerSmoothing == null ? fxDefaults.playerVisualizerSmoothing : Number(raw.playerVisualizerSmoothing), 0, 0.95),
-      playerVisualizerGlow: clampRange(raw.playerVisualizerGlow == null ? fxDefaults.playerVisualizerGlow : Number(raw.playerVisualizerGlow), 0, 1.5),
-      playerVisualizerBeatBoost: clampRange(raw.playerVisualizerBeatBoost == null ? fxDefaults.playerVisualizerBeatBoost : Number(raw.playerVisualizerBeatBoost), 0, 2),
       backgroundColorCustom: savedBgCustom,
       backgroundImage: normalizeCustomBackgroundImage(raw.backgroundImage),
       backgroundMedia: normalizeCustomBackgroundMedia(raw.backgroundMedia || raw.backgroundImage),
@@ -9123,23 +8959,6 @@ function saveLyricLayout() {
       backgroundOpacity: clampRange(fx.backgroundOpacity == null ? fxDefaults.backgroundOpacity : Number(fx.backgroundOpacity), 0, 1),
       liquidGlassTransparency: normalizeLiquidGlassTransparency(fx.liquidGlassTransparency),
       controlGlassChromaticOffset: clampRange(fx.controlGlassChromaticOffset == null ? fxDefaults.controlGlassChromaticOffset : Number(fx.controlGlassChromaticOffset), 0, 140),
-      playerVisualizer: fx.playerVisualizer !== false,
-      playerVisualizerStyle: normalizePlayerVisualizerStyle(fx.playerVisualizerStyle),
-      playerVisualizerColorMode: normalizePlayerVisualizerColorMode(fx.playerVisualizerColorMode),
-      playerVisualizerColor: normalizeHexColor(fx.playerVisualizerColor || fxDefaults.playerVisualizerColor, fxDefaults.playerVisualizerColor),
-      playerVisualizerWidth: clampRange(Number(fx.playerVisualizerWidth) || fxDefaults.playerVisualizerWidth, 0.35, 1),
-      playerVisualizerHeight: clampRange(Number(fx.playerVisualizerHeight) || fxDefaults.playerVisualizerHeight, 0.4, 2.4),
-      playerVisualizerBarWidth: clampRange(Number(fx.playerVisualizerBarWidth) || fxDefaults.playerVisualizerBarWidth, 0.35, 2.4),
-      playerVisualizerLength: clampRange(Number(fx.playerVisualizerLength) || fxDefaults.playerVisualizerLength, 0.35, 2.8),
-      playerVisualizerGap: clampRange(Number(fx.playerVisualizerGap) || fxDefaults.playerVisualizerGap, 0.55, 2.6),
-      playerVisualizerOffsetX: clampRange(Number(fx.playerVisualizerOffsetX) || 0, -240, 240),
-      playerVisualizerOffsetY: clampRange(Number(fx.playerVisualizerOffsetY) || 0, -60, 80),
-      playerVisualizerAngle: clampRange(Number(fx.playerVisualizerAngle) || 0, -30, 30),
-      playerVisualizerOpacity: clampRange(Number(fx.playerVisualizerOpacity) || fxDefaults.playerVisualizerOpacity, 0.1, 1),
-      playerVisualizerSensitivity: clampRange(Number(fx.playerVisualizerSensitivity) || fxDefaults.playerVisualizerSensitivity, 0.4, 2.5),
-      playerVisualizerSmoothing: clampRange(Number(fx.playerVisualizerSmoothing) || fxDefaults.playerVisualizerSmoothing, 0, 0.95),
-      playerVisualizerGlow: clampRange(Number(fx.playerVisualizerGlow) || 0, 0, 1.5),
-      playerVisualizerBeatBoost: clampRange(Number(fx.playerVisualizerBeatBoost) || 0, 0, 2),
       backgroundColorCustom: fx.backgroundColorMode === 'custom' || !!fx.backgroundColorCustom,
       backgroundImage: normalizeCustomBackgroundImage(fx.backgroundImage),
       backgroundMedia: normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage),
@@ -9544,7 +9363,6 @@ function applyColorLabValue(hex, silent) {
   else if (id === 'lyric-color-picker') setLyricColorCustom(hex, true);
   else if (id === 'lyric-highlight-picker') setLyricHighlightCustom(hex, true);
   else if (id === 'lyric-glow-picker') setLyricGlowCustom(hex, true);
-  else if (id === 'player-visualizer-color-picker') setPlayerVisualizerColor(hex, true);
   if (!silent) showToast('颜色: ' + hex.toUpperCase());
 }
 function syncColorLabUi(hex) {
@@ -10860,32 +10678,12 @@ function getLyricLineProgress(line, nextLine, now) {
   return Math.max(0, Math.min(1, (now - line.t) / span));
 }
 
-function lyricLineActiveForSmartMode(line, nextLine, now) {
-  if (!line || line.spotifySilent || !String(line.text || '').trim()) return false;
-  var start = Math.max(0, Number(line.t) || 0);
-  if (now + 0.04 < start) return false;
-  var end = start + Math.max(0.35, Number(line.duration) || 0);
-  if (Array.isArray(line.words) && line.words.length) {
-    var lastWord = line.words[line.words.length - 1] || {};
-    var wordEnd = Number(lastWord.t) + Math.max(0.05, Number(lastWord.d) || 0);
-    if (isFinite(wordEnd)) end = Math.max(end, wordEnd);
-  }
-  var nextStart = nextLine && isFinite(Number(nextLine.t)) ? Number(nextLine.t) : 0;
-  if ((!line.duration || Number(line.duration) <= 0) && nextStart > start) end = Math.min(nextStart, start + 6);
-  if (nextStart > start && nextStart - end < 0.18) end = nextStart;
-  return now <= end + 0.08;
-}
-
 function tickLyricsParticles() {
   if (stageTextMode === 'hidden' || !fx.particleLyrics) {
     if (stageLyrics.current || stageLyrics.currentText || (stageLyrics.outgoing && stageLyrics.outgoing.length)) clearStageLyrics();
     return;
   }
   if (stageTextMode === 'title') {
-    renderStageTrackTitleNow();
-    return;
-  }
-  if (stageTextMode === 'smart' && (!playing || !lyricsLines.length)) {
     renderStageTrackTitleNow();
     return;
   }
@@ -10912,10 +10710,6 @@ function tickLyricsParticles() {
     }
   }
   if (newIdx < 0) {
-    if (stageTextMode === 'smart') {
-      renderStageTrackTitleNow();
-      return;
-    }
     var introText = currentLyricFallbackText();
     if (!introText) {
       clearStageLyrics();
@@ -10939,14 +10733,6 @@ function tickLyricsParticles() {
       newIdx = helper && typeof helper.findLyricIndex === 'function'
         ? helper.findLyricIndex(lyricsLines, t)
         : newIdx - 1;
-    }
-  }
-  if (stageTextMode === 'smart') {
-    var smartLine = lyricsLines[newIdx] || {};
-    var smartNextLine = lyricsLines[newIdx + 1];
-    if (!lyricLineActiveForSmartMode(smartLine, smartNextLine, t)) {
-      renderStageTrackTitleNow();
-      return;
     }
   }
   if (newIdx !== stageLyrics.currentIdx) {
@@ -19081,7 +18867,32 @@ async function addCollectTargetToPlaylist(pid) {
     updateLikeButtons();
   }
 }
-function cloneSong(song){ return hydrateCustomCover(Object.assign({}, song)); }
+function spotifyTrackIdFromSong(song) {
+  song = song || {};
+  var candidates = [song.spotifyId, song.id, song.spotifyUri, song.uri, song.externalUrl, song.href];
+  for (var i = 0; i < candidates.length; i++) {
+    var raw = String(candidates[i] || '').trim();
+    var uri = raw.match(/^spotify:track:([A-Za-z0-9]{16,32})$/i);
+    var url = raw.match(/(?:open\.spotify\.com\/track\/|\/v1\/tracks\/)([A-Za-z0-9]{16,32})/i);
+    var id = uri ? uri[1] : (url ? url[1] : (/^[A-Za-z0-9]{16,32}$/.test(raw) ? raw : ''));
+    if (id) return id;
+  }
+  return '';
+}
+function cloneSong(song){
+  var cloned = hydrateCustomCover(Object.assign({}, song));
+  if (cloned && (cloned.realProvider === 'spotify' || cloned.provider === 'spotify' || cloned.source === 'spotify' || cloned.playbackTransport === 'spotify')) {
+    var spotifyId = spotifyTrackIdFromSong(cloned);
+    if (spotifyId) {
+      cloned.id = spotifyId;
+      cloned.spotifyId = spotifyId;
+      cloned.spotifyUri = cloned.spotifyUri || ('spotify:track:' + spotifyId);
+      cloned.realProvider = 'spotify';
+      cloned.playbackTransport = 'spotify';
+    }
+  }
+  return cloned;
+}
 function avatarSrc(url) {
   if (!url) return '';
   return coverProxySrc(url, true);
@@ -20246,6 +20057,37 @@ async function tryAutoPlaybackFallback(song, data, idx, token, opts) {
   return false;
 }
 
+var youtubeEngineRepairRequest = null;
+async function repairYouTubeEngineForPlayback(song, idx, token, opts) {
+  opts = opts || {};
+  if (Number(opts.youtubeEngineRepairAttempt || 0) >= 1) return false;
+  showSourceFallbackNotice(
+    appLanguage === 'en' ? 'Repairing YouTube playback' : 'Đang tự sửa bộ phát YouTube',
+    appLanguage === 'en' ? 'ShinaYuu Music is restoring the YouTube component. Playback will retry automatically.' : 'ShinaYuu Music đang khôi phục thành phần YouTube. Bài hát sẽ tự phát lại sau khi hoàn tất.'
+  );
+  if (!youtubeEngineRepairRequest) {
+    youtubeEngineRepairRequest = apiJson('/api/youtube/engine/repair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+      timeoutMs: 90000
+    }).finally(function(){ youtubeEngineRepairRequest = null; });
+  }
+  var result = null;
+  try { result = await youtubeEngineRepairRequest; }
+  catch (error) { result = { ok:false, ready:false, message:String(error && error.message || error || '') }; }
+  if (token !== trackSwitchToken) return true;
+  if (!result || !result.ready) return false;
+  try {
+    var quality = normalizePlaybackQuality(opts.qualityOverride || playbackQuality);
+    playbackDescriptorCache.delete(playbackDescriptorKey(song, quality));
+  } catch (_) {}
+  await playQueueAt(idx, Object.assign({}, opts, {
+    youtubeEngineRepairAttempt: Number(opts.youtubeEngineRepairAttempt || 0) + 1
+  }));
+  return true;
+}
+
 function handlePlaybackUnavailable(song, data) {
   hideLoading();
   forcePlaybackControlsInteractive();
@@ -20255,7 +20097,7 @@ function handlePlaybackUnavailable(song, data) {
   if (isPlaybackEngineFailure(data)) {
     showSourceFallbackNotice(
       appLanguage === 'en' ? 'YouTube playback engine needs attention' : 'Bộ máy phát YouTube chưa sẵn sàng',
-      appLanguage === 'en' ? 'The current track was kept in place. Check the terminal for yt-dlp preparation, then press Play to retry.' : 'Bài hiện tại vẫn được giữ nguyên. Hãy kiểm tra trạng thái chuẩn bị yt-dlp trong Terminal rồi nhấn Phát để thử lại.'
+      appLanguage === 'en' ? 'Automatic repair did not finish. Restart the app once and check whether Windows Security blocked the YouTube component.' : 'Tự sửa chưa hoàn tất. Hãy mở lại app một lần và kiểm tra Windows Security có chặn thành phần YouTube hay không.'
     );
   } else {
     showToast(playbackRestrictionMessage(song, data));
@@ -20352,49 +20194,12 @@ async function resolvePlaybackDescriptor(song, quality, options) {
     ? apiJson('/api/qq/song/url?mid='+encodeURIComponent(song.mid||song.songmid||song.id||'')+'&mediaMid='+encodeURIComponent(song.mediaMid||song.media_mid||'')+qualityParam)
     : apiJson('/api/song/url?id='+encodeURIComponent(song.spotifyId||song.id||'')+qualityParam);
   var promise=Promise.resolve(request).then(function(value){
-    playbackDescriptorCache.set(key,{value:value,expiresAt:Date.now()+(provider==='qq'?90000:30000)});
+    playbackDescriptorCache.set(key,{value:value,expiresAt:Date.now()+(provider==='qq'?8*60*1000:2*60*1000)});
     return value;
   }).catch(function(error){playbackDescriptorCache.delete(key);throw error;});
   playbackDescriptorCache.set(key,{promise:promise,expiresAt:now+20000});
   return promise;
 }
-function invalidatePlaybackDescriptor(song, quality) {
-  if (!song) return;
-  playbackDescriptorCache.delete(playbackDescriptorKey(song, quality || normalizePlaybackQuality(playbackQuality)));
-}
-var htmlAudioRecoveryState = { timer: 0, serial: 0 };
-function clearHtmlAudioRecoveryTimer() {
-  if (htmlAudioRecoveryState.timer) clearTimeout(htmlAudioRecoveryState.timer);
-  htmlAudioRecoveryState.timer = 0;
-}
-function scheduleHtmlAudioRecovery(audioEl, reason, delayMs) {
-  if (!audioEl || audioEl !== audio) return;
-  var ctx = audioEl._shinayuuPlaybackContext;
-  if (!ctx || ctx.provider !== 'qq' || ctx.token !== trackSwitchToken) return;
-  var attempt = Math.max(0, Number(ctx.recoveryAttempt) || 0);
-  if (attempt >= 2) return;
-  clearHtmlAudioRecoveryTimer();
-  var serial = ++htmlAudioRecoveryState.serial;
-  htmlAudioRecoveryState.timer = setTimeout(function(){
-    htmlAudioRecoveryState.timer = 0;
-    if (serial !== htmlAudioRecoveryState.serial || audioEl !== audio || ctx.token !== trackSwitchToken) return;
-    var resumeAt = Math.max(0, Number(audioEl.currentTime) || 0);
-    invalidatePlaybackDescriptor(ctx.song, ctx.quality);
-    showSourceFallbackNotice(
-      appLanguage === 'en' ? 'Recovering YouTube stream' : 'Đang khôi phục luồng YouTube',
-      appLanguage === 'en' ? 'The signed audio URL expired or stalled. ShinaYuu Music is requesting a fresh stream.' : 'URL âm thanh đã hết hạn hoặc bị treo. ShinaYuu Music đang lấy luồng phát mới.'
-    );
-    playQueueAt(ctx.idx, {
-      preserveHomeState: true,
-      manual: true,
-      resumeAt: resumeAt,
-      qualityOverride: ctx.quality,
-      streamRecoveryAttempt: attempt + 1,
-      qqQualityTried: ctx.qqQualityTried || []
-    }).catch(function(error){ console.warn('[YouTubeStreamRecovery]', reason, error); });
-  }, Math.max(120, Number(delayMs) || 0));
-}
-
 function prefetchQueuePlayback(index) {
   if (!playQueue || !playQueue.length) return;
   var target=((Number(index)||0)+playQueue.length)%playQueue.length;
@@ -20404,7 +20209,82 @@ function prefetchQueuePlayback(index) {
   resolvePlaybackDescriptor(song,quality,{prefetch:true}).catch(function(){});
 }
 function scheduleNextPlaybackPrefetch(index) {
-  setTimeout(function(){prefetchQueuePlayback((Number(index)||0)+1);},220);
+  setTimeout(function(){prefetchQueuePlayback((Number(index)||0)+1);},80);
+}
+
+function schedulePlaybackVisualPreparation(song, data, proxyAudioUrl, bmKey, podcastDjMode, idx, token) {
+  setTimeout(function(){
+    Promise.resolve().then(async function(){
+      if (token !== trackSwitchToken) return;
+      try {
+        currentBeatMap = null;
+        beatMapNextIdx = 0;
+        resetAudioVisualState();
+        resetBeatCameraSync(audio ? audio.currentTime : 0);
+        cancelBeatAnalysisTimer();
+        beatMapToken++;
+        var bmTok = beatMapToken;
+        var realtimeOnlyTrack = !!(song && (song.realProvider === 'youtube' || song.source === 'youtube'));
+        if (realtimeOnlyTrack) {
+          currentBeatMap = null;
+          beatMapNextIdx = 0;
+          resetRealtimeBeatEngine();
+          resetBeatCameraSync(audio ? audio.currentTime : 0);
+          hideBeatChip();
+        } else if (podcastDjMode) {
+          djBeatMapToken++;
+          cancelDjBeatAnalysisTimer();
+          resetDjBeatMapState();
+          currentBeatMap = null;
+          beatMapNextIdx = 0;
+          var djTok = djBeatMapToken;
+          var djKey = djSongKey(song);
+          if (djBeatMapCache[djKey]) {
+            currentDjBeatMap = djBeatMapCache[djKey];
+            applyPodcastDjProfileFromMap(currentDjBeatMap);
+            syncPodcastDjMapCursor(audio ? audio.currentTime : 0, true);
+            hideBeatChip();
+            notifyDesktopLyricsBeatMapReady();
+            console.log('podcast DJ beatmap 缓存命中:', currentDjBeatMap.cameraBeats.length, '个主拍');
+          } else {
+            showBeatChip('DJ 离线锁拍准备中…');
+            var djDurationSec = Math.max(0, Number(song.duration) || 0);
+            if (djDurationSec > 10000) djDurationSec /= 1000;
+            schedulePodcastDjAnalysis(djKey, data.url, djTok, djDurationSec);
+          }
+          maybeAnnounceDjMode();
+        } else if (bmKey && beatMapCache[bmKey]) {
+          currentBeatMap = beatMapCache[bmKey];
+          applyCinemaProfileFromBeatMap(currentBeatMap);
+          syncBeatMapPlaybackCursor(audio ? audio.currentTime : 0);
+          notifyDesktopLyricsBeatMapReady();
+          console.log('beatmap 缓存命中:', currentBeatMap.kicks.length, '个鼓点');
+          scheduleQueueBeatPrefetch(idx, 2600);
+        } else {
+          var diskBeatMap = bmKey ? await readBeatDiskCache(bmKey) : null;
+          if (token !== trackSwitchToken) return;
+          if (diskBeatMap) {
+            currentBeatMap = diskBeatMap;
+            applyCinemaProfileFromBeatMap(currentBeatMap);
+            syncBeatMapPlaybackCursor(audio ? audio.currentTime : 0);
+            notifyDesktopLyricsBeatMapReady();
+            console.log('beatmap D盘缓存命中:', currentBeatMap.kicks.length, '个鼓点');
+            scheduleQueueBeatPrefetch(idx, 2600);
+          } else {
+            scheduleBeatAnalysis(bmKey || song.id, proxyAudioUrl, bmTok, song);
+          }
+        }
+      } catch (visualErr) {
+        if (token !== trackSwitchToken) return;
+        console.warn('[PlaybackVisualPrep]', song && song.name, visualErr);
+        currentBeatMap = null;
+        beatMapNextIdx = 0;
+        safePlaybackStep('visual-prep-hide-chip', hideBeatChip);
+      }
+    }).catch(function(visualErr){
+      console.warn('[PlaybackVisualPrepAsync]', song && song.name, visualErr);
+    });
+  }, 0);
 }
 
 async function playQueueAt(idx, opts) {
@@ -20489,6 +20369,7 @@ async function playQueueAt(idx, opts) {
     var data = await resolvePlaybackDescriptor(song, requestedQuality, { prefetch: false });
     if (token !== trackSwitchToken) return;
     if (!data.url && !data.proxyUrl) {
+      if (isQQPlayback && isPlaybackEngineFailure(data) && await repairYouTubeEngineForPlayback(song, idx, token, opts)) return;
       if (isQQPlayback && !isPlaybackEngineFailure(data) && await retryQQPlaybackWithCompatibleQuality(song, idx, token, opts, data, requestedQuality)) return;
       if (await tryAutoPlaybackFallback(song, data, idx, token, opts)) return;
       handlePlaybackUnavailable(song, data);
@@ -20530,15 +20411,6 @@ async function playQueueAt(idx, opts) {
     applyVolumeToAudio();
     var proxyAudioUrl = isLocalPlayback ? (data.proxyUrl || data.url) : (data.proxyUrl || ('/api/audio?url=' + encodeURIComponent(data.url)));
     audio.src = proxyAudioUrl;
-    audio._shinayuuPlaybackContext = {
-      token: token,
-      idx: idx,
-      song: song,
-      provider: playbackProvider,
-      quality: requestedQuality,
-      recoveryAttempt: Math.max(0, Number(opts.streamRecoveryAttempt) || 0),
-      qqQualityTried: Array.isArray(opts.qqQualityTried) ? opts.qqQualityTried.slice() : []
-    };
     updatePlaybackProgressUi();
     audio.onended = function(){
       if (token !== trackSwitchToken) return;
@@ -20548,85 +20420,12 @@ async function playQueueAt(idx, opts) {
     };
     scheduleAudioResumePosition(audio, opts.resumeAt, token);
     audio.load();
-    markPlayPhase('visual-prep');
-    try {
-    // 重置 beatmap 状态
-    currentBeatMap = null;
-    beatMapNextIdx = 0;
-    resetAudioVisualState();
-    resetBeatCameraSync(0);
-    cancelBeatAnalysisTimer();
-    beatMapToken++;
-    var bmTok = beatMapToken;
-    var realtimeOnlyTrack = !!(song && (song.realProvider === 'youtube' || song.source === 'youtube'));
-    if (realtimeOnlyTrack) {
-      // YouTube is analysed from the live PCM that is currently reaching the
-      // speakers. Do not build or merge an offline grid: signed stream seeks
-      // and network buffering can shift a precomputed map away from reality.
-      currentBeatMap = null;
-      beatMapNextIdx = 0;
-      resetRealtimeBeatEngine();
-      resetBeatCameraSync(audio ? audio.currentTime : 0);
-      hideBeatChip();
-    } else if (podcastDjMode) {
-      // 播客走独立 DJ 离线锁拍系统, 不写入普通歌曲 beatMap.
-      djBeatMapToken++;
-      cancelDjBeatAnalysisTimer();
-      resetDjBeatMapState();
-      currentBeatMap = null;
-      beatMapNextIdx = 0;
-      var djTok = djBeatMapToken;
-      var djKey = djSongKey(song);
-      if (djBeatMapCache[djKey]) {
-        currentDjBeatMap = djBeatMapCache[djKey];
-        applyPodcastDjProfileFromMap(currentDjBeatMap);
-        syncPodcastDjMapCursor(audio ? audio.currentTime : 0, true);
-        hideBeatChip();
-        notifyDesktopLyricsBeatMapReady();
-        console.log('podcast DJ beatmap 缓存命中:', currentDjBeatMap.cameraBeats.length, '个主拍');
-      } else {
-        showBeatChip('DJ 离线锁拍准备中…');
-        var djDurationSec = Math.max(0, Number(song.duration) || 0);
-        if (djDurationSec > 10000) djDurationSec /= 1000;
-        schedulePodcastDjAnalysis(djKey, data.url, djTok, djDurationSec);
-      }
-      maybeAnnounceDjMode();
-    } else if (bmKey && beatMapCache[bmKey]) {
-      // 如果缓存有, 直接用
-      currentBeatMap = beatMapCache[bmKey];
-      applyCinemaProfileFromBeatMap(currentBeatMap);
-      syncBeatMapPlaybackCursor(audio ? audio.currentTime : 0);
-      notifyDesktopLyricsBeatMapReady();
-      console.log('beatmap 缓存命中:', currentBeatMap.kicks.length, '个鼓点');
-      scheduleQueueBeatPrefetch(idx, 2600);
-    } else {
-      var diskBeatMap = bmKey ? await readBeatDiskCache(bmKey) : null;
-      if (diskBeatMap) {
-        currentBeatMap = diskBeatMap;
-        applyCinemaProfileFromBeatMap(currentBeatMap);
-        syncBeatMapPlaybackCursor(audio ? audio.currentTime : 0);
-        notifyDesktopLyricsBeatMapReady();
-        console.log('beatmap D盘缓存命中:', currentBeatMap.kicks.length, '个鼓点');
-        scheduleQueueBeatPrefetch(idx, 2600);
-      } else {
-        // 后台延迟分析, 避免新歌刚开始播放时抢占解码和渲染资源
-        scheduleBeatAnalysis(bmKey || song.id, proxyAudioUrl, bmTok, song);
-      }
-    }
-    } catch (visualErr) {
-      console.warn('[PlaybackVisualPrep]', song && song.name, visualErr);
-      currentBeatMap = null;
-      beatMapNextIdx = 0;
-      safePlaybackStep('visual-prep-hide-chip', hideBeatChip);
-    }
+    // Start audible playback before reading beat-map caches or preparing
+    // secondary visual data. Those tasks are not required for audio output and
+    // previously made track changes feel delayed on slower disks and CPUs.
     markPlayPhase('audio-start');
     var playbackStarted = await playAudio({ silent: isQQPlayback });
     if (!playbackStarted) {
-      if (isQQPlayback && !opts.freshStreamRetry) {
-        invalidatePlaybackDescriptor(song, requestedQuality);
-        await playQueueAt(idx, Object.assign({}, opts, { preserveHomeState: true, manual: true, freshStreamRetry: true, resumeAt: Number(opts.resumeAt) || 0 }));
-        return;
-      }
       if (isQQPlayback && await retryQQPlaybackWithCompatibleQuality(song, idx, token, opts, data, requestedQuality)) return;
       forcePlaybackControlsInteractive();
       if (opts.manual) {
@@ -20638,6 +20437,8 @@ async function playQueueAt(idx, opts) {
     }
     forcePlaybackControlsInteractive();
     scheduleNextPlaybackPrefetch(idx);
+    markPlayPhase('visual-prep-background');
+    schedulePlaybackVisualPreparation(song, data, proxyAudioUrl, bmKey, podcastDjMode, idx, token);
     markPlayPhase('session-begin');
     safePlaybackStep('listen-session-begin', function(){ beginListenSession(song, playbackContext); });
     markPlayPhase('lyrics-fetch');
@@ -21409,7 +21210,7 @@ function renderLyrics() {
 }
 function normalizeStageTextMode(mode) {
   mode = String(mode || '').toLowerCase();
-  return /^(title|lyrics|smart|hidden)$/.test(mode) ? mode : 'lyrics';
+  return mode === 'title' || mode === 'hidden' ? mode : 'lyrics';
 }
 function readStageTextMode(fallback) {
   try {
@@ -21432,26 +21233,20 @@ function stageTextModeCopy(mode) {
   if (mode === 'title') return {
     icon: english ? 'T' : 'Tên',
     title: english ? 'Track title' : 'Tên bài hát',
-    desc: english ? 'Show only the track title' : 'Chỉ hiển thị tên bài hát',
+    desc: english ? 'Show only the track title' : 'Chỉ hiện tên bài, không hiện lyrics',
     toast: english ? 'Showing track title only' : 'Chỉ hiển thị tên bài hát'
-  };
-  if (mode === 'smart') return {
-    icon: english ? 'Auto' : 'Tự',
-    title: english ? 'Smart lyrics and title' : 'Lời và tên thông minh',
-    desc: english ? 'Show lyrics during vocals and the title during instrumental gaps' : 'Hiển thị lời khi có câu hát; hiện tên bài ở đoạn không lời',
-    toast: english ? 'Smart lyrics and title enabled' : 'Đã bật lời và tên thông minh'
   };
   if (mode === 'hidden') return {
     icon: english ? 'Off' : 'Ẩn',
     title: english ? 'Show nothing' : 'Không hiển thị',
-    desc: english ? 'Hide both the title and lyrics' : 'Ẩn cả tên bài hát và lời bài hát',
-    toast: english ? 'Stage text hidden' : 'Đã ẩn tên bài hát và lời bài hát'
+    desc: english ? 'Hide both title and lyrics' : 'Ẩn cả tên bài hát và lyrics',
+    toast: english ? 'Stage text hidden' : 'Đã ẩn tên bài hát và lyrics'
   };
   return {
     icon: english ? 'LRC' : 'Lời',
-    title: english ? 'Lyrics' : 'Lời bài hát',
-    desc: english ? 'Show synchronized lyrics' : 'Hiển thị lời bài hát đồng bộ',
-    toast: english ? 'Showing synchronized lyrics' : 'Đang hiển thị lời bài hát đồng bộ'
+    title: 'Lyrics',
+    desc: english ? 'Show synchronized lyrics' : 'Hiển thị lyrics đồng bộ hiện tại',
+    toast: english ? 'Showing synchronized lyrics' : 'Đang hiển thị lyrics đồng bộ'
   };
 }
 function syncStageTextModeUi() {
@@ -21502,7 +21297,7 @@ function toggleStageTextModeMenu(event) {
   }
 }
 function renderStageTrackTitleNow() {
-  if (stageTextMode !== 'title' && stageTextMode !== 'smart') return;
+  if (stageTextMode !== 'title') return;
   var title = currentStageTrackTitle();
   if (!title) {
     if (stageLyrics.current || stageLyrics.currentText || (stageLyrics.outgoing && stageLyrics.outgoing.length)) clearStageLyrics();
@@ -21533,7 +21328,7 @@ function applyStageTextModeRuntime(options) {
     createLyricsParticles();
     stageLyrics.currentIdx = -999;
     stageLyrics.currentText = '';
-    if (stageTextMode === 'title' || stageTextMode === 'smart') renderStageTrackTitleNow();
+    if (stageTextMode === 'title') renderStageTrackTitleNow();
   }
   syncStageTextModeUi();
   if (!options.silent) showToast(stageTextModeCopy(stageTextMode).toast);
@@ -21563,7 +21358,7 @@ function toggleLyricsPanel(force) {
     setStageTextMode('lyrics');
     return;
   }
-  var order = ['lyrics', 'smart', 'title', 'hidden'];
+  var order = ['lyrics', 'title', 'hidden'];
   var index = order.indexOf(normalizeStageTextMode(stageTextMode));
   setStageTextMode(order[(index + 1) % order.length]);
 }
@@ -21595,42 +21390,17 @@ function animateListItems(container, selector, opts) {
     overwrite: true
   });
 }
-var nativeScrollPerformanceState = {
-  activeUntil: 0,
-  cleanupTimer: null,
-  lastScroller: null
-};
-function isNativeScrollPerformanceActive(now) {
-  return (now || performance.now()) < nativeScrollPerformanceState.activeUntil;
-}
-function markNativeScrollPerformance(scroller, holdMs) {
-  var now = performance.now();
-  nativeScrollPerformanceState.activeUntil = Math.max(nativeScrollPerformanceState.activeUntil, now + (holdMs || 150));
-  nativeScrollPerformanceState.lastScroller = scroller || nativeScrollPerformanceState.lastScroller;
-  if (document.body) document.body.classList.add('scroll-performance-mode');
-  if (nativeScrollPerformanceState.cleanupTimer) clearTimeout(nativeScrollPerformanceState.cleanupTimer);
-  var waitMs = Math.max(60, nativeScrollPerformanceState.activeUntil - now + 28);
-  nativeScrollPerformanceState.cleanupTimer = setTimeout(function clearNativeScrollPerformanceMode(){
-    nativeScrollPerformanceState.cleanupTimer = null;
-    var remaining = nativeScrollPerformanceState.activeUntil - performance.now();
-    if (remaining > 0) {
-      nativeScrollPerformanceState.cleanupTimer = setTimeout(clearNativeScrollPerformanceMode, remaining + 28);
-      return;
-    }
-    if (document.body) document.body.classList.remove('scroll-performance-mode');
-    nativeScrollPerformanceState.lastScroller = null;
-  }, waitMs);
-}
 function smoothScrollToItem(scroller, item, opts) {
   if (!scroller || !item) return;
   opts = opts || {};
-  var viewport = scroller.clientHeight;
-  var itemHeight = item.offsetHeight;
-  var target = item.offsetTop - Math.max(0, (viewport - itemHeight) * (opts.align == null ? 0.42 : opts.align));
-  target = Math.max(0, Math.min(target, Math.max(0, scroller.scrollHeight - viewport)));
-  if (typeof scroller.__syncSmoothWheelTarget === 'function') scroller.__syncSmoothWheelTarget(target);
-  if (scroller.scrollTo) {
-    scroller.scrollTo({ top: target, behavior: opts.instant ? 'auto' : 'smooth' });
+  var target = item.offsetTop - Math.max(0, (scroller.clientHeight - item.offsetHeight) * (opts.align == null ? 0.42 : opts.align));
+  target = Math.max(0, Math.min(target, Math.max(0, scroller.scrollHeight - scroller.clientHeight)));
+  if (window.gsap) {
+    if (typeof scroller.__syncSmoothWheelTarget === 'function') scroller.__syncSmoothWheelTarget(target);
+    window.gsap.killTweensOf(scroller);
+    window.gsap.to(scroller, { scrollTop: target, duration: opts.duration || 0.30, ease: opts.ease || 'power2.out', overwrite: true });
+  } else if (scroller.scrollTo) {
+    scroller.scrollTo({ top: target, behavior: 'smooth' });
   } else {
     scroller.scrollTop = target;
   }
@@ -21638,16 +21408,44 @@ function smoothScrollToItem(scroller, item, opts) {
 function bindSmoothWheelScroll(scroller) {
   if (!scroller || scroller.__smoothWheelBound) return;
   scroller.__smoothWheelBound = true;
-  scroller.classList.add('native-compositor-scroll');
-  scroller.__syncSmoothWheelTarget = function(top){ return isFinite(top) ? top : scroller.scrollTop; };
-  scroller.addEventListener('wheel', function(){
-    markNativeScrollPerformance(scroller, 180);
-  }, { passive: true });
+  var targetTop = scroller.scrollTop;
+  var tween = null;
+  scroller.__syncSmoothWheelTarget = function(top){
+    if (tween) {
+      tween.kill();
+      tween = null;
+    }
+    targetTop = isFinite(top) ? top : scroller.scrollTop;
+  };
+  scroller.addEventListener('wheel', function(e){
+    if (!window.gsap || e.ctrlKey) return;
+    var max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    if (max <= 0 || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    var delta = e.deltaY;
+    if (e.deltaMode === 1) delta *= 18;
+    else if (e.deltaMode === 2) delta *= scroller.clientHeight;
+    var current = tween ? targetTop : scroller.scrollTop;
+    var next = Math.max(0, Math.min(max, current + delta));
+    if (next === current && ((delta < 0 && scroller.scrollTop <= 0) || (delta > 0 && scroller.scrollTop >= max - 1))) {
+      targetTop = scroller.scrollTop;
+      return;
+    }
+    e.preventDefault();
+    targetTop = next;
+    if (tween) tween.kill();
+    tween = window.gsap.to(scroller, {
+      scrollTop: targetTop,
+      duration: 0.24,
+      ease: 'power2.out',
+      overwrite: true,
+      onComplete: function(){
+        tween = null;
+        targetTop = scroller.scrollTop;
+      }
+    });
+  }, { passive: false });
   scroller.addEventListener('scroll', function(){
-    markNativeScrollPerformance(scroller, 150);
-  }, { passive: true });
-  scroller.addEventListener('pointerdown', function(){
-    markNativeScrollPerformance(scroller, 110);
+    if (!tween) targetTop = scroller.scrollTop;
   }, { passive: true });
 }
 function bindSmoothQueueScrolling() {
@@ -21667,7 +21465,6 @@ function animateVisiblePanelList(listEl, selector, scroller, activeSelector, opt
   if (!listEl) return;
   opts = opts || {};
   requestAnimationFrame(function(){
-    if (typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive()) return;
     animateListItems(listEl, selector, { x: -8, y: 6, stagger: 0.01, duration: 0.20, limit: 16 });
     var active = activeSelector ? listEl.querySelector(activeSelector) : null;
     if (active && scroller && opts.scrollActive !== false) smoothScrollToItem(scroller, active, { duration: 0.32 });
@@ -21790,7 +21587,7 @@ function renderMiniQueuePanel(opts) {
   $list.innerHTML = playQueue.map(function(song, i){
     var thumb = songCoverSrc(song, 60);
     var imgTag = thumb ? '<img src="' + thumb + '" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">' : '<div class="mini-queue-cover"></div>';
-    return '<div class="mini-queue-item' + (i === currentIdx ? ' now' : '') + '" onclick="playQueueAt(' + i + ')">' +
+    return '<div class="mini-queue-item' + (i === currentIdx ? ' now' : '') + '" onpointerenter="prefetchQueuePlayback(' + i + ')" onpointerdown="prefetchQueuePlayback(' + i + ')" onclick="playQueueAt(' + i + ')">' +
       imgTag +
       '<div class="mini-queue-info"><div class="mini-queue-name">' + escHtml(song.name) + '</div><div class="mini-queue-sub">' + escHtml(song.artist || '') + '</div></div>' +
       '<button class="mini-queue-remove mini-queue-next" onclick="event.stopPropagation();queueIndexNext(' + i + ')" title="Play next">下</button>' +
@@ -21824,7 +21621,7 @@ function renderQueuePanel(opts) {
   $ql.innerHTML = playQueue.map(function(song, i){
     var thumb = songCoverSrc(song, 60);
     var imgTag = thumb ? '<img src="' + thumb + '" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">' : '<div style="width:38px;height:38px;border-radius:6px;background:rgba(255,255,255,.06);flex-shrink:0"></div>';
-    return '<div class="queue-item' + (i === currentIdx ? ' now' : '') + '" onclick="playQueueAt(' + i + ')">' +
+    return '<div class="queue-item' + (i === currentIdx ? ' now' : '') + '" onpointerenter="prefetchQueuePlayback(' + i + ')" onpointerdown="prefetchQueuePlayback(' + i + ')" onclick="playQueueAt(' + i + ')">' +
       imgTag +
       '<div class="qi-info"><div class="qi-name">' + escHtml(song.name) + '</div><div class="qi-sub"><button class="queue-artist-link" type="button" onclick="event.stopPropagation();openQueueArtist(' + i + ')">' + escHtml(song.artist || '未知歌手') + '</button></div></div>' +
       '<div class="qi-act">' +
@@ -21977,7 +21774,7 @@ async function openPlaylistPanelDetail(provider, pid, title) {
     var endpoint = provider === 'qq' ? '/api/qq/playlist/tracks?id=' : (provider === 'local' ? '/api/local/playlist?id=' : '/api/playlist/tracks?id=');
     var r=await apiJson(endpoint+encodeURIComponent(pid));
     if(playlistPanelDetailState.token!==token)return;
-    playlistPanelDetailState.loading=false;playlistPanelDetailState.tracks=(r&&r.tracks||[]).map(cloneSong);playlistPanelDetailState.renderLimit=Math.min(playlistPanelDetailState.tracks.length,PLAYLIST_DETAIL_INITIAL_RENDER);renderPlaylistPanelDetailState();
+    playlistPanelDetailState.loading=false;playlistPanelDetailState.tracks=(r&&r.tracks||[]).map(cloneSong).filter(function(song){return song&&song.name&&(songProviderKey(song)!=='netease'||!!spotifyTrackIdFromSong(song));});playlistPanelDetailState.renderLimit=Math.min(playlistPanelDetailState.tracks.length,PLAYLIST_DETAIL_INITIAL_RENDER);renderPlaylistPanelDetailState();
   } catch(e){console.warn('[PlaylistPanelDetail]',pid,e);if(playlistPanelDetailState.token!==token)return;playlistPanelDetailState.loading=false;playlistPanelDetailState.tracks=[];playlistPanelDetailState.renderLimit=PLAYLIST_DETAIL_INITIAL_RENDER;renderPlaylistPanelDetailState();showToast(appLanguage==='en'?'Playlist details failed to load.':'Không thể tải chi tiết playlist.');}
 }
 function playPlaylistPanelDetail() {
@@ -22250,7 +22047,15 @@ async function loadPlaylistIntoQueueById(id, autoplay, title) {
         ? await apiJson('/api/qq/playlist/tracks?id=' + encodeURIComponent(qqPlaylistId))
         : await apiJson('/api/playlist/tracks?id=' + encodeURIComponent(rawId));
     if (r.error || !r.tracks || !r.tracks.length) { showToast(r.error || (appLanguage==='en'?'The playlist is empty.':'Playlist đang trống.')); return; }
-    playQueue = r.tracks.map(cloneSong); currentIdx = 0;
+    var normalizedPlaylistTracks = r.tracks.map(cloneSong).filter(function(song){
+      if (!song || !song.name) return false;
+      return songProviderKey(song) !== 'netease' || !!spotifyTrackIdFromSong(song);
+    });
+    if (!normalizedPlaylistTracks.length) {
+      showToast(appLanguage === 'en' ? 'Spotify returned incomplete playlist data. Refresh the playlist and try again.' : 'Spotify trả về dữ liệu playlist chưa đầy đủ. Hãy làm mới playlist rồi thử lại.');
+      return;
+    }
+    playQueue = normalizedPlaylistTracks; currentIdx = 0;
     if (!qqPlaylistId && !localPlaylistId && isLikedPlaylistContext(rawId, title, r.playlist)) markSongsLiked(playQueue, true);
     if (!qqPlaylistId && !localPlaylistId) syncLikeStatusForSongs(playQueue);
     safeRenderQueuePanel('playlist-load'); safeSwitchPlaylistTab('queue','playlist-load'); safeShelfRebuild('playlist-load',true); forcePlaybackControlsInteractive();
@@ -22312,12 +22117,6 @@ function bindPlaybackProgressEvents(audioEl) {
   ['play', 'playing', 'pause', 'ended', 'emptied', 'abort', 'error'].forEach(function(name){
     audioEl.addEventListener(name, function(){ syncPlaybackStateFromAudioEvent(name); });
   });
-  ['playing', 'timeupdate', 'canplay'].forEach(function(name){
-    audioEl.addEventListener(name, clearHtmlAudioRecoveryTimer);
-  });
-  audioEl.addEventListener('error', function(){ scheduleHtmlAudioRecovery(audioEl, 'error', 180); });
-  audioEl.addEventListener('stalled', function(){ scheduleHtmlAudioRecovery(audioEl, 'stalled', 6500); });
-  audioEl.addEventListener('waiting', function(){ scheduleHtmlAudioRecovery(audioEl, 'waiting', 9000); });
 }
 function emitProgressDragParticles(x, y) {
   var now = performance.now();
@@ -22375,6 +22174,12 @@ async function commitHtmlAudioSeek(targetSec) {
   var wasPlaying = !audio.paused && !audio.ended;
   progressDragState.committing = true;
   try {
+    // Dispatch the Range seek first so Chromium can start fetching the target
+    // position immediately. Visual cursors are reset directly afterwards and
+    // no longer delay the actual media operation.
+    onPlaybackClockDiscontinuity(targetSec, 'html-seek-request');
+    audio.currentTime = targetSec;
+    setProgressVisual(durationSec > 0 ? targetSec / durationSec * 100 : 0);
     resetRealtimeBeatEngine();
     resetBeatCameraSync(targetSec);
     syncBeatMapPlaybackCursor(targetSec, true);
@@ -22383,11 +22188,6 @@ async function commitHtmlAudioSeek(targetSec) {
     scheduledBeatFlag = false;
     beatPulse = 0;
     beatOnsetFlag = false;
-    // Commit exactly once. Updating currentTime on every pointermove caused a
-    // burst of overlapping Range requests and left Chromium on stale buffers.
-    onPlaybackClockDiscontinuity(targetSec, 'html-seek-request');
-    audio.currentTime = targetSec;
-    setProgressVisual(durationSec > 0 ? targetSec / durationSec * 100 : 0);
     var actual = await waitForMediaSeek(audio, serial, 4600);
     if (serial !== progressDragState.seekSerial || switchToken !== trackSwitchToken) return false;
     syncBeatMapPlaybackCursor(actual, true);
@@ -22677,23 +22477,6 @@ function normalizeFxArchiveSnapshot(raw) {
     backgroundColor: normalizeHexColor(raw.backgroundColor || fxDefaults.backgroundColor, fxDefaults.backgroundColor),
     backgroundOpacity: archiveNumber(raw, 'backgroundOpacity', fxDefaults.backgroundOpacity, 0, 1),
     liquidGlassTransparency: archiveNumber(raw, 'liquidGlassTransparency', fxDefaults.liquidGlassTransparency, 0, 1),
-    playerVisualizer: raw.playerVisualizer !== false,
-    playerVisualizerStyle: archiveMode(raw, 'playerVisualizerStyle', /^(bars|wave|mirror|dots|ribbon|stairs|pulse|needles|orbs)$/, fxDefaults.playerVisualizerStyle),
-    playerVisualizerColorMode: archiveMode(raw, 'playerVisualizerColorMode', /^(solid|rainbow|rgb|accent|cover)$/, fxDefaults.playerVisualizerColorMode),
-    playerVisualizerColor: normalizeHexColor(raw.playerVisualizerColor || fxDefaults.playerVisualizerColor, fxDefaults.playerVisualizerColor),
-    playerVisualizerWidth: archiveNumber(raw, 'playerVisualizerWidth', fxDefaults.playerVisualizerWidth, 0.35, 1),
-    playerVisualizerHeight: archiveNumber(raw, 'playerVisualizerHeight', fxDefaults.playerVisualizerHeight, 0.4, 2.4),
-    playerVisualizerBarWidth: archiveNumber(raw, 'playerVisualizerBarWidth', fxDefaults.playerVisualizerBarWidth, 0.35, 2.4),
-    playerVisualizerLength: archiveNumber(raw, 'playerVisualizerLength', fxDefaults.playerVisualizerLength, 0.35, 2.8),
-    playerVisualizerGap: archiveNumber(raw, 'playerVisualizerGap', fxDefaults.playerVisualizerGap, 0.55, 2.6),
-    playerVisualizerOffsetX: archiveNumber(raw, 'playerVisualizerOffsetX', fxDefaults.playerVisualizerOffsetX, -240, 240),
-    playerVisualizerOffsetY: archiveNumber(raw, 'playerVisualizerOffsetY', fxDefaults.playerVisualizerOffsetY, -60, 80),
-    playerVisualizerAngle: archiveNumber(raw, 'playerVisualizerAngle', fxDefaults.playerVisualizerAngle, -30, 30),
-    playerVisualizerOpacity: archiveNumber(raw, 'playerVisualizerOpacity', fxDefaults.playerVisualizerOpacity, 0.1, 1),
-    playerVisualizerSensitivity: archiveNumber(raw, 'playerVisualizerSensitivity', fxDefaults.playerVisualizerSensitivity, 0.4, 2.5),
-    playerVisualizerSmoothing: archiveNumber(raw, 'playerVisualizerSmoothing', fxDefaults.playerVisualizerSmoothing, 0, 0.95),
-    playerVisualizerGlow: archiveNumber(raw, 'playerVisualizerGlow', fxDefaults.playerVisualizerGlow, 0, 1.5),
-    playerVisualizerBeatBoost: archiveNumber(raw, 'playerVisualizerBeatBoost', fxDefaults.playerVisualizerBeatBoost, 0, 2),
     controlGlassChromaticOffset: archiveNumber(raw, 'controlGlassChromaticOffset', fxDefaults.controlGlassChromaticOffset, 0, 140),
     backgroundColorCustom: raw.backgroundColorMode === 'custom' || !!raw.backgroundColorCustom,
     floatLayer: !!raw.floatLayer,
@@ -23481,6 +23264,8 @@ function readBackgroundMediaFile(file) {
 }
 
 var BACKGROUND_MEDIA_FOLDER_STORE_KEY = 'shinayuu-background-media-folder-v1';
+var BACKGROUND_MEDIA_RENDER_INITIAL = 30;
+var BACKGROUND_MEDIA_RENDER_BATCH = 20;
 var backgroundMediaLibraryState = {
   folderPath: '',
   folderName: '',
@@ -23488,11 +23273,51 @@ var backgroundMediaLibraryState = {
   filter: 'all',
   query: '',
   truncated: false,
-  objectUrls: []
+  objectUrls: [],
+  loaded: false,
+  loading: false,
+  scannedAt: 0,
+  renderToken: 0,
+  renderIdleHandle: 0,
+  queryTimer: 0,
+  previewObserver: null
 };
 function releaseBackgroundMediaObjectUrls() {
   (backgroundMediaLibraryState.objectUrls || []).forEach(function(url){ try { URL.revokeObjectURL(url); } catch (_) {} });
   backgroundMediaLibraryState.objectUrls = [];
+}
+function cancelBackgroundMediaIdle(handle) {
+  if (!handle) return;
+  if (typeof cancelIdleCallback === 'function') cancelIdleCallback(handle);
+  else clearTimeout(handle);
+}
+function scheduleBackgroundMediaIdle(callback) {
+  if (typeof requestIdleCallback === 'function') return requestIdleCallback(callback, { timeout: 90 });
+  return setTimeout(function(){ callback({ timeRemaining: function(){ return 8; }, didTimeout: true }); }, 16);
+}
+function isBackgroundMediaLibraryOpen() {
+  var modal = document.getElementById('background-media-library');
+  return !!(modal && modal.classList.contains('open'));
+}
+function teardownBackgroundMediaPreviewObserver() {
+  if (backgroundMediaLibraryState.previewObserver) {
+    try { backgroundMediaLibraryState.previewObserver.disconnect(); } catch (_) {}
+    backgroundMediaLibraryState.previewObserver = null;
+  }
+}
+function ensureBackgroundMediaPreviewObserver() {
+  if (backgroundMediaLibraryState.previewObserver || typeof IntersectionObserver !== 'function') return backgroundMediaLibraryState.previewObserver;
+  var root = document.querySelector('.bg-media-library-body');
+  backgroundMediaLibraryState.previewObserver = new IntersectionObserver(function(entries, observer){
+    entries.forEach(function(entry){
+      if (!entry.isIntersecting) return;
+      var media = entry.target;
+      var src = media && media.dataset ? media.dataset.src : '';
+      if (src && !media.getAttribute('src')) media.src = src;
+      observer.unobserve(media);
+    });
+  }, { root: root || null, rootMargin: '220px 0px', threshold: 0.01 });
+  return backgroundMediaLibraryState.previewObserver;
 }
 function backgroundMediaUiText(vi, en) { return appLanguage === 'en' ? en : vi; }
 function localizeBackgroundMediaLibrary() {
@@ -23510,7 +23335,7 @@ function localizeBackgroundMediaLibrary() {
     button.textContent = backgroundMediaUiText(labels[0], labels[1]);
   });
   var empty = document.getElementById('background-media-library-empty');
-  if (empty) {
+  if (empty && !backgroundMediaLibraryState.loading) {
     var strong = empty.querySelector('strong');
     var span = empty.querySelector('span');
     if (strong) strong.textContent = backgroundMediaUiText('Không tìm thấy ảnh hoặc video', 'No images or videos found');
@@ -23547,62 +23372,101 @@ function readSavedBackgroundMediaFolder() {
     return raw && typeof raw === 'object' ? raw : {};
   } catch (_) { return {}; }
 }
+function setBackgroundMediaLibraryLoading(loading) {
+  backgroundMediaLibraryState.loading = !!loading;
+  var empty = document.getElementById('background-media-library-empty');
+  if (empty && loading) {
+    var strong = empty.querySelector('strong');
+    var span = empty.querySelector('span');
+    if (strong) strong.textContent = backgroundMediaUiText('Đang đọc thư mục nền…', 'Loading background folder…');
+    if (span) span.textContent = backgroundMediaUiText('Danh sách được tải theo từng phần để giữ ứng dụng mượt.', 'The library is loaded progressively to keep the app responsive.');
+    empty.classList.add('visible');
+  }
+  var count = document.getElementById('background-media-library-count');
+  if (count && loading) count.textContent = backgroundMediaUiText('Đang tải…', 'Loading…');
+}
 function setBackgroundMediaLibraryResult(result, openAfter) {
   if (!result || result.ok === false) {
     if (result && !result.canceled) showToast(backgroundMediaUiText('Không thể đọc thư mục nền: ', 'Could not read the background folder: ') + String(result.error || 'Unknown error'));
     return false;
   }
   if (!result.keepObjectUrls) releaseBackgroundMediaObjectUrls();
-  backgroundMediaLibraryState.folderPath = String(result.folderPath || '');
-  backgroundMediaLibraryState.folderName = String(result.folderName || '').trim() || backgroundMediaUiText('Thư mục đã chọn', 'Selected folder');
+  backgroundMediaLibraryState.folderPath = String(result.folderPath || backgroundMediaLibraryState.folderPath || '');
+  backgroundMediaLibraryState.folderName = String(result.folderName || backgroundMediaLibraryState.folderName || '').trim() || backgroundMediaUiText('Thư mục đã chọn', 'Selected folder');
   backgroundMediaLibraryState.items = Array.isArray(result.items) ? result.items : [];
   backgroundMediaLibraryState.truncated = !!result.truncated;
+  backgroundMediaLibraryState.scannedAt = Number(result.scannedAt) || backgroundMediaLibraryState.scannedAt || 0;
+  backgroundMediaLibraryState.loaded = true;
+  backgroundMediaLibraryState.loading = false;
   backgroundMediaLibraryState.query = '';
   var search = document.getElementById('background-media-library-search');
   if (search) search.value = '';
   saveBackgroundMediaFolderState();
-  renderBackgroundMediaLibrary();
   updateCustomBackgroundControls();
-  if (openAfter !== false) openBackgroundMediaLibrary();
+  if (openAfter === true) openBackgroundMediaLibrary();
+  else if (isBackgroundMediaLibraryOpen()) renderBackgroundMediaLibrary();
   return true;
 }
 async function chooseBackgroundMediaFolder() {
   try {
     if (window.desktopWindow && typeof window.desktopWindow.chooseBackgroundMediaFolder === 'function') {
+      setBackgroundMediaLibraryLoading(true);
       var result = await window.desktopWindow.chooseBackgroundMediaFolder();
+      setBackgroundMediaLibraryLoading(false);
       setBackgroundMediaLibraryResult(result, true);
       return;
     }
     var input = document.getElementById('background-image-input');
     if (input) input.click();
   } catch (error) {
+    setBackgroundMediaLibraryLoading(false);
     showToast(backgroundMediaUiText('Không thể mở thư mục nền: ', 'Could not open the background folder: ') + String(error && error.message || error));
   }
 }
-async function refreshBackgroundMediaFolder(silent) {
+async function loadBackgroundMediaFolder(options) {
+  options = options || {};
+  if (backgroundMediaLibraryState.loading) return;
   var folderPath = backgroundMediaLibraryState.folderPath || readSavedBackgroundMediaFolder().folderPath || '';
   if (!folderPath || !window.desktopWindow || typeof window.desktopWindow.scanBackgroundMediaFolder !== 'function') {
-    if (!silent) chooseBackgroundMediaFolder();
+    if (!options.silent) chooseBackgroundMediaFolder();
     return;
   }
+  backgroundMediaLibraryState.loading = true;
+  setBackgroundMediaLibraryLoading(true);
   try {
-    var result = await window.desktopWindow.scanBackgroundMediaFolder(folderPath);
-    if (!setBackgroundMediaLibraryResult(result, false) && !silent) showToast(backgroundMediaUiText('Thư mục không còn khả dụng.', 'The folder is no longer available.'));
+    if (!options.force && typeof window.desktopWindow.getCachedBackgroundMediaFolder === 'function') {
+      var cached = await window.desktopWindow.getCachedBackgroundMediaFolder(folderPath);
+      if (cached && cached.ok && cached.cached && Array.isArray(cached.items) && cached.items.length) {
+        setBackgroundMediaLibraryResult(cached, false);
+        return;
+      }
+    }
+    var result = await window.desktopWindow.scanBackgroundMediaFolder(folderPath, {
+      force: options.force === true,
+      preferCache: options.force !== true
+    });
+    if (!setBackgroundMediaLibraryResult(result, false) && !options.silent) showToast(backgroundMediaUiText('Thư mục không còn khả dụng.', 'The folder is no longer available.'));
   } catch (error) {
-    if (!silent) showToast(backgroundMediaUiText('Không thể làm mới thư mục.', 'Could not refresh the folder.'));
+    backgroundMediaLibraryState.loading = false;
+    setBackgroundMediaLibraryLoading(false);
+    if (!options.silent) showToast(backgroundMediaUiText('Không thể làm mới thư mục.', 'Could not refresh the folder.'));
   }
+}
+async function refreshBackgroundMediaFolder(silent) {
+  return loadBackgroundMediaFolder({ force: true, silent: !!silent });
 }
 function openBackgroundMediaLibrary() {
   var modal = document.getElementById('background-media-library');
   if (!modal) return;
-  if (!backgroundMediaLibraryState.items.length && !backgroundMediaLibraryState.folderPath) {
+  if (!backgroundMediaLibraryState.folderPath && !backgroundMediaLibraryState.items.length) {
     chooseBackgroundMediaFolder();
     return;
   }
-  renderBackgroundMediaLibrary();
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bg-media-library-open');
+  if (backgroundMediaLibraryState.loaded) renderBackgroundMediaLibrary();
+  else loadBackgroundMediaFolder({ force: false, silent: true });
   setTimeout(function(){ var search = document.getElementById('background-media-library-search'); if (search) search.focus(); }, 80);
 }
 function closeBackgroundMediaLibrary() {
@@ -23611,7 +23475,22 @@ function closeBackgroundMediaLibrary() {
   modal.classList.remove('open');
   modal.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('bg-media-library-open');
-  document.querySelectorAll('#background-media-library video').forEach(function(video){ try { video.pause(); } catch (_) {} });
+  backgroundMediaLibraryState.renderToken++;
+  cancelBackgroundMediaIdle(backgroundMediaLibraryState.renderIdleHandle);
+  backgroundMediaLibraryState.renderIdleHandle = 0;
+  teardownBackgroundMediaPreviewObserver();
+  document.querySelectorAll('#background-media-library video').forEach(function(video){
+    try { video.pause(); video.removeAttribute('src'); video.load(); } catch (_) {}
+  });
+  setTimeout(function(){
+    if (isBackgroundMediaLibraryOpen()) return;
+    var grid = document.getElementById('background-media-library-grid');
+    if (grid) grid.textContent = '';
+    if (backgroundMediaLibraryState.items.some(function(item){ return !!item.file; })) {
+      releaseBackgroundMediaObjectUrls();
+      backgroundMediaLibraryState.items.forEach(function(item){ if (item.file) item.url = ''; });
+    }
+  }, 220);
 }
 function handleBackgroundMediaLibraryMaskClick(event) {
   if (event && event.target && event.target.id === 'background-media-library') closeBackgroundMediaLibrary();
@@ -23622,13 +23501,27 @@ function setBackgroundMediaLibraryFilter(filter) {
 }
 function setBackgroundMediaLibraryQuery(value) {
   backgroundMediaLibraryState.query = String(value || '').trim().toLowerCase();
-  renderBackgroundMediaLibrary();
+  if (backgroundMediaLibraryState.queryTimer) clearTimeout(backgroundMediaLibraryState.queryTimer);
+  backgroundMediaLibraryState.queryTimer = setTimeout(function(){
+    backgroundMediaLibraryState.queryTimer = 0;
+    renderBackgroundMediaLibrary();
+  }, 100);
 }
 function isBackgroundMediaItemSelected(item) {
   var current = normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage);
   if (!current || !item) return false;
   if (current.path && item.path) return String(current.path) === String(item.path);
   return !!(current.src && item.url && String(current.src) === String(item.url));
+}
+function ensureBackgroundMediaItemUrl(item) {
+  if (!item) return '';
+  if (item.url) return item.url;
+  if (item.file) {
+    item.url = URL.createObjectURL(item.file);
+    backgroundMediaLibraryState.objectUrls.push(item.url);
+    return item.url;
+  }
+  return '';
 }
 function selectBackgroundMediaItem(item) {
   if (!item) return;
@@ -23637,7 +23530,7 @@ function selectBackgroundMediaItem(item) {
   } else {
     setCustomBackgroundMedia({
       type: item.type,
-      src: item.url,
+      src: ensureBackgroundMediaItemUrl(item),
       name: item.name,
       mime: item.mime,
       size: item.size,
@@ -23645,7 +23538,6 @@ function selectBackgroundMediaItem(item) {
       folderPath: backgroundMediaLibraryState.folderPath
     });
   }
-  renderBackgroundMediaLibrary();
   closeBackgroundMediaLibrary();
 }
 function createBackgroundMediaCard(item) {
@@ -23660,19 +23552,27 @@ function createBackgroundMediaCard(item) {
   var media;
   if (item.type === 'video') {
     media = document.createElement('video');
-    media.src = item.url;
     media.muted = true;
     media.loop = true;
     media.playsInline = true;
-    media.preload = 'metadata';
-    card.addEventListener('mouseenter', function(){ var p = media.play(); if (p && p.catch) p.catch(function(){}); });
-    card.addEventListener('mouseleave', function(){ try { media.pause(); media.currentTime = 0; } catch (_) {} });
+    media.preload = 'none';
+    card.addEventListener('mouseenter', function(){
+      if (!media.getAttribute('src')) { media.src = ensureBackgroundMediaItemUrl(item); media.preload = 'metadata'; }
+      var play = media.play();
+      if (play && play.catch) play.catch(function(){});
+    });
+    card.addEventListener('mouseleave', function(){
+      try { media.pause(); media.removeAttribute('src'); media.preload = 'none'; media.load(); } catch (_) {}
+    });
   } else {
     media = document.createElement('img');
-    media.src = item.url;
     media.alt = item.name || '';
     media.loading = 'lazy';
     media.decoding = 'async';
+    media.dataset.src = ensureBackgroundMediaItemUrl(item);
+    var observer = ensureBackgroundMediaPreviewObserver();
+    if (observer) observer.observe(media);
+    else media.src = media.dataset.src;
   }
   preview.appendChild(media);
   var type = document.createElement('span');
@@ -23695,8 +23595,23 @@ function createBackgroundMediaCard(item) {
   meta.appendChild(name); meta.appendChild(pathLine); card.appendChild(meta);
   return card;
 }
+function updateBackgroundMediaLibraryMeta(filteredLength) {
+  var empty = document.getElementById('background-media-library-empty');
+  if (empty) empty.classList.toggle('visible', !backgroundMediaLibraryState.loading && filteredLength === 0);
+  var folder = document.getElementById('background-media-library-folder');
+  var pathLabel = document.getElementById('background-media-library-path');
+  var count = document.getElementById('background-media-library-count');
+  if (folder) folder.textContent = backgroundMediaLibraryState.folderName || backgroundMediaUiText('Chưa chọn thư mục', 'No folder selected');
+  if (pathLabel) pathLabel.textContent = backgroundMediaLibraryState.folderPath || backgroundMediaUiText('Thư mục được chọn từ trình duyệt', 'Folder selected from the browser');
+  if (count && !backgroundMediaLibraryState.loading) count.textContent = filteredLength + '/' + backgroundMediaLibraryState.items.length + backgroundMediaUiText(' tệp', ' files') + (backgroundMediaLibraryState.truncated ? backgroundMediaUiText(' · đã giới hạn danh sách', ' · list limited') : '');
+  document.querySelectorAll('.bg-media-library-filter').forEach(function(button){ button.classList.toggle('active', button.dataset.filter === backgroundMediaLibraryState.filter); });
+  var media = normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage);
+  var imageValue = document.getElementById('bg-image-value');
+  if (imageValue) imageValue.textContent = customBackgroundMediaLabel(media);
+}
 function renderBackgroundMediaLibrary() {
   localizeBackgroundMediaLibrary();
+  if (!isBackgroundMediaLibraryOpen()) return;
   var grid = document.getElementById('background-media-library-grid');
   if (!grid) return;
   var query = backgroundMediaLibraryState.query;
@@ -23706,22 +23621,28 @@ function renderBackgroundMediaLibrary() {
     if (!query) return true;
     return String(item.name || '').toLowerCase().indexOf(query) >= 0 || String(item.relativePath || '').toLowerCase().indexOf(query) >= 0;
   });
+  backgroundMediaLibraryState.renderToken++;
+  var token = backgroundMediaLibraryState.renderToken;
+  cancelBackgroundMediaIdle(backgroundMediaLibraryState.renderIdleHandle);
+  backgroundMediaLibraryState.renderIdleHandle = 0;
+  teardownBackgroundMediaPreviewObserver();
   grid.textContent = '';
-  var fragment = document.createDocumentFragment();
-  filtered.forEach(function(item){ fragment.appendChild(createBackgroundMediaCard(item)); });
-  grid.appendChild(fragment);
-  var empty = document.getElementById('background-media-library-empty');
-  if (empty) empty.classList.toggle('visible', filtered.length === 0);
-  var folder = document.getElementById('background-media-library-folder');
-  var pathLabel = document.getElementById('background-media-library-path');
-  var count = document.getElementById('background-media-library-count');
-  if (folder) folder.textContent = backgroundMediaLibraryState.folderName || backgroundMediaUiText('Chưa chọn thư mục', 'No folder selected');
-  if (pathLabel) pathLabel.textContent = backgroundMediaLibraryState.folderPath || backgroundMediaUiText('Thư mục được chọn từ trình duyệt', 'Folder selected from the browser');
-  if (count) count.textContent = filtered.length + '/' + backgroundMediaLibraryState.items.length + backgroundMediaUiText(' tệp', ' files') + (backgroundMediaLibraryState.truncated ? backgroundMediaUiText(' · đã giới hạn danh sách', ' · list limited') : '');
-  document.querySelectorAll('.bg-media-library-filter').forEach(function(button){ button.classList.toggle('active', button.dataset.filter === filter); });
-  var media = normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage);
-  var imageValue = document.getElementById('bg-image-value');
-  if (imageValue) imageValue.textContent = customBackgroundMediaLabel(media);
+  updateBackgroundMediaLibraryMeta(filtered.length);
+  var cursor = 0;
+  function appendBatch(limit) {
+    if (token !== backgroundMediaLibraryState.renderToken || !isBackgroundMediaLibraryOpen()) return;
+    var fragment = document.createDocumentFragment();
+    var end = Math.min(filtered.length, cursor + limit);
+    for (; cursor < end; cursor++) fragment.appendChild(createBackgroundMediaCard(filtered[cursor]));
+    grid.appendChild(fragment);
+    if (cursor < filtered.length) {
+      backgroundMediaLibraryState.renderIdleHandle = scheduleBackgroundMediaIdle(function(deadline){
+        var allowance = deadline && typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() > 4 ? BACKGROUND_MEDIA_RENDER_BATCH * 2 : BACKGROUND_MEDIA_RENDER_BATCH;
+        appendBatch(allowance);
+      });
+    } else backgroundMediaLibraryState.renderIdleHandle = 0;
+  }
+  appendBatch(BACKGROUND_MEDIA_RENDER_INITIAL);
 }
 function loadBrowserBackgroundMediaFolder(files) {
   releaseBackgroundMediaObjectUrls();
@@ -23730,8 +23651,6 @@ function loadBrowserBackgroundMediaFolder(files) {
   list.forEach(function(file){
     var type = inferBackgroundMediaType(file.name, file.type);
     if (!type) return;
-    var url = URL.createObjectURL(file);
-    backgroundMediaLibraryState.objectUrls.push(url);
     items.push({
       id: String(file.webkitRelativePath || file.name) + ':' + file.size + ':' + file.lastModified,
       name: file.name,
@@ -23740,35 +23659,40 @@ function loadBrowserBackgroundMediaFolder(files) {
       mime: file.type || (type === 'video' ? 'video/mp4' : 'image/jpeg'),
       size: file.size || 0,
       modifiedAt: file.lastModified || 0,
-      url: url,
+      url: '',
       file: file
     });
   });
   var firstPath = list[0] && String(list[0].webkitRelativePath || '');
   var folderName = firstPath ? firstPath.split('/')[0] : backgroundMediaUiText('Thư mục đã chọn', 'Selected folder');
-  setBackgroundMediaLibraryResult({ ok: true, folderPath: '', folderName: folderName, items: items, truncated: false, keepObjectUrls: true }, true);
+  setBackgroundMediaLibraryResult({ ok: true, folderPath: '', folderName: folderName, items: items, truncated: false, keepObjectUrls: true, scannedAt: Date.now() }, true);
 }
 function initializeBackgroundMediaLibrary() {
   localizeBackgroundMediaLibrary();
   var modal = document.getElementById('background-media-library');
   if (modal && !modal.__liquidPointerBound) {
     modal.__liquidPointerBound = true;
+    var pointerFrame = 0;
+    var pointerEvent = null;
     modal.addEventListener('pointermove', function(event){
-      var shell = modal.querySelector('.bg-media-library-shell');
-      if (!shell) return;
-      var rect = shell.getBoundingClientRect();
-      shell.style.setProperty('--bg-media-x', ((event.clientX - rect.left) / Math.max(1, rect.width) * 100).toFixed(1) + '%');
-      shell.style.setProperty('--bg-media-y', ((event.clientY - rect.top) / Math.max(1, rect.height) * 100).toFixed(1) + '%');
-    });
+      pointerEvent = event;
+      if (pointerFrame) return;
+      pointerFrame = requestAnimationFrame(function(){
+        pointerFrame = 0;
+        var shell = modal.querySelector('.bg-media-library-shell');
+        if (!shell || !pointerEvent) return;
+        var rect = shell.getBoundingClientRect();
+        shell.style.setProperty('--bg-media-x', ((pointerEvent.clientX - rect.left) / Math.max(1, rect.width) * 100).toFixed(1) + '%');
+        shell.style.setProperty('--bg-media-y', ((pointerEvent.clientY - rect.top) / Math.max(1, rect.height) * 100).toFixed(1) + '%');
+      });
+    }, { passive: true });
   }
   var saved = readSavedBackgroundMediaFolder();
   var current = normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage);
-  var folderPath = String(saved.folderPath || (current && current.folderPath) || '');
-  if (folderPath && window.desktopWindow && typeof window.desktopWindow.scanBackgroundMediaFolder === 'function') {
-    backgroundMediaLibraryState.folderPath = folderPath;
-    backgroundMediaLibraryState.folderName = String(saved.folderName || '');
-    refreshBackgroundMediaFolder(true);
-  } else updateCustomBackgroundControls();
+  backgroundMediaLibraryState.folderPath = String(saved.folderPath || (current && current.folderPath) || '');
+  backgroundMediaLibraryState.folderName = String(saved.folderName || '');
+  backgroundMediaLibraryState.loaded = false;
+  updateCustomBackgroundControls();
   document.addEventListener('keydown', function(event){
     var open = document.getElementById('background-media-library');
     if (event.key === 'Escape' && open && open.classList.contains('open')) {
@@ -24198,189 +24122,6 @@ function updateHomeAudioVisual(dt) {
     bars[i].style.opacity = String(clampRange(0.36 + prev * 0.68, 0.32, 1));
   }
 }
-function normalizePlayerVisualizerStyle(value) {
-  value = String(value || '');
-  return /^(bars|wave|mirror|dots|ribbon|stairs|pulse|needles|orbs)$/.test(value) ? value : 'bars';
-}
-function normalizePlayerVisualizerColorMode(value) {
-  value = String(value || '');
-  return /^(solid|rainbow|rgb|accent|cover)$/.test(value) ? value : 'rainbow';
-}
-var playerVisualizerState = { canvas: null, ctx: null, smooth: [], phase: 0, width: 0, height: 0 };
-function playerVisualizerBaseColor() {
-  var mode = normalizePlayerVisualizerColorMode(fx.playerVisualizerColorMode);
-  if (mode === 'accent' && typeof uiAccentHex === 'function') return uiAccentHex();
-  if (mode === 'cover' && typeof visualTintHex === 'function') return visualTintHex();
-  return normalizeHexColor(fx.playerVisualizerColor || '#00f5d4', '#00f5d4');
-}
-function playerVisualizerColorAt(index, count, nowSeconds) {
-  var mode = normalizePlayerVisualizerColorMode(fx.playerVisualizerColorMode);
-  var ratio = count > 1 ? index / (count - 1) : 0;
-  if (mode === 'rainbow') return 'hsl(' + ((nowSeconds * 36 + ratio * 300) % 360).toFixed(1) + ' 94% 67%)';
-  if (mode === 'rgb') return 'hsl(' + ((nowSeconds * 54 + ratio * 70) % 360).toFixed(1) + ' 100% 65%)';
-  return playerVisualizerBaseColor();
-}
-function applyPlayerVisualizerLayout() {
-  var shell = document.getElementById('player-visualizer-shell');
-  if (!shell || !fx) return;
-  shell.classList.toggle('hidden', fx.playerVisualizer === false);
-  shell.style.width = Math.round(clampRange(Number(fx.playerVisualizerWidth) || .86, .35, 1) * 100) + '%';
-  shell.style.height = Math.round(30 * clampRange(Number(fx.playerVisualizerHeight) || 1, .4, 2.4)) + 'px';
-  shell.style.opacity = String(clampRange(Number(fx.playerVisualizerOpacity) || .88, .1, 1));
-  shell.style.bottom = 'calc(100% + ' + Math.round(10 + Math.max(0, (Number(fx.playerVisualizerLength) || 1) - 1) * 8) + 'px)';
-  shell.style.transform = 'translate(calc(-50% + ' + Math.round(Number(fx.playerVisualizerOffsetX) || 0) + 'px),' + Math.round(Number(fx.playerVisualizerOffsetY) || 0) + 'px) rotate(' + Math.round(Number(fx.playerVisualizerAngle) || 0) + 'deg)';
-}
-function updatePlayerVisualizerControls() {
-  var toggle = document.getElementById('t-playerVisualizer');
-  if (toggle) toggle.classList.toggle('on', fx.playerVisualizer !== false);
-  document.querySelectorAll('[data-visualizer-style]').forEach(function(btn){ btn.classList.toggle('active', btn.getAttribute('data-visualizer-style') === normalizePlayerVisualizerStyle(fx.playerVisualizerStyle)); });
-  document.querySelectorAll('[data-visualizer-color-mode]').forEach(function(btn){ btn.classList.toggle('active', btn.getAttribute('data-visualizer-color-mode') === normalizePlayerVisualizerColorMode(fx.playerVisualizerColorMode)); });
-  var picker = document.getElementById('player-visualizer-color-picker');
-  var label = document.getElementById('player-visualizer-color-value');
-  var color = normalizeHexColor(fx.playerVisualizerColor || '#00f5d4', '#00f5d4');
-  if (picker) picker.value = color;
-  if (label) label.textContent = color.toUpperCase();
-  applyPlayerVisualizerLayout();
-}
-function togglePlayerVisualizer() {
-  fx.playerVisualizer = fx.playerVisualizer === false;
-  updatePlayerVisualizerControls();
-  saveLyricLayout();
-  showToast(localizeUiMessage(fx.playerVisualizer ? 'Đã bật sóng nhạc' : 'Đã tắt sóng nhạc'));
-}
-function setPlayerVisualizerStyle(style) {
-  fx.playerVisualizerStyle = normalizePlayerVisualizerStyle(style);
-  updatePlayerVisualizerControls();
-  saveLyricLayout();
-}
-function setPlayerVisualizerColorMode(mode) {
-  fx.playerVisualizerColorMode = normalizePlayerVisualizerColorMode(mode);
-  updatePlayerVisualizerControls();
-  saveLyricLayout();
-}
-function setPlayerVisualizerColor(color, silent) {
-  fx.playerVisualizerColor = normalizeHexColor(color || '#00f5d4', '#00f5d4');
-  fx.playerVisualizerColorMode = 'solid';
-  updatePlayerVisualizerControls();
-  saveLyricLayout();
-  if (!silent) showToast(localizeUiMessage('Màu sóng nhạc:') + ' ' + fx.playerVisualizerColor.toUpperCase());
-}
-function resetPlayerVisualizerColor() { setPlayerVisualizerColor(fxDefaults.playerVisualizerColor); }
-function resizePlayerVisualizerCanvas(canvas, ctx) {
-  var rect = canvas.getBoundingClientRect();
-  var dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-  var width = Math.max(2, Math.round(rect.width * dpr));
-  var height = Math.max(2, Math.round(rect.height * dpr));
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width; canvas.height = height;
-    playerVisualizerState.width = width; playerVisualizerState.height = height;
-  }
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { width: rect.width, height: rect.height };
-}
-function updatePlayerVisualizer(dt) {
-  if (!fx || fx.playerVisualizer === false) return;
-  var canvas = playerVisualizerState.canvas || document.getElementById('player-visualizer-canvas');
-  if (!canvas) return;
-  var ctx = playerVisualizerState.ctx || canvas.getContext('2d');
-  if (!ctx) return;
-  playerVisualizerState.canvas = canvas; playerVisualizerState.ctx = ctx;
-  var size = resizePlayerVisualizerCanvas(canvas, ctx);
-  var width = size.width, height = size.height;
-  ctx.clearRect(0, 0, width, height);
-  var spacingScale = clampRange(Number(fx.playerVisualizerGap) || 1, .55, 2.6);
-  var widthScale = clampRange(Number(fx.playerVisualizerBarWidth) || 1, .35, 2.4);
-  var lengthScale = clampRange(Number(fx.playerVisualizerLength) || 1, .35, 2.8);
-  var baseUnit = 8 * spacingScale + 5 * widthScale;
-  var count = Math.max(16, Math.min(96, Math.round(width / Math.max(6, baseUnit))));
-  if (playerVisualizerState.smooth.length !== count) playerVisualizerState.smooth = new Array(count).fill(0);
-  var sensitivity = clampRange(Number(fx.playerVisualizerSensitivity) || 1.15, .4, 2.5);
-  var smoothing = clampRange(Number(fx.playerVisualizerSmoothing) || .72, 0, .95);
-  var attack = .30 + (1 - smoothing) * .42;
-  var release = .055 + (1 - smoothing) * .15;
-  var beat = clampRange(Number(beatPulse) || 0, 0, 1.4) * clampRange(Number(fx.playerVisualizerBeatBoost) || .85, 0, 2);
-  var nowSeconds = performance.now() / 1000;
-  var values = playerVisualizerState.smooth;
-  for (var i = 0; i < count; i++) {
-    var ratio = count > 1 ? i / (count - 1) : 0;
-    var sourceIndex = frequencyData && frequencyData.length ? Math.min(frequencyData.length - 1, Math.floor(Math.pow(ratio, 1.65) * Math.min(frequencyData.length - 1, 220))) : 0;
-    var raw = frequencyData && frequencyData.length ? Number(frequencyData[sourceIndex] || 0) / 255 : 0;
-    raw = Math.max(raw, smoothBass * (1 - ratio) * .46 + smoothMid * .24 + smoothTreb * ratio * .24);
-    raw = clampRange(raw * sensitivity + beat * (.16 + (1 - ratio) * .28), .018, 1.22);
-    var prev = Number(values[i]) || 0;
-    values[i] = prev + (raw - prev) * (raw > prev ? attack : release);
-  }
-  var style = normalizePlayerVisualizerStyle(fx.playerVisualizerStyle);
-  var glow = clampRange(Number(fx.playerVisualizerGlow) || 0, 0, 1.5);
-  var barGap = Math.max(1.2, spacingScale * 2.8);
-  var unit = width / count;
-  var drawableStep = Math.max(unit, (width - barGap * (count - 1)) / count);
-  var barW = Math.max(1.1, Math.min(drawableStep - 0.5, drawableStep * (0.42 + widthScale * 0.24)));
-  var totalUsed = count * barW + (count - 1) * barGap;
-  var startX = Math.max(0, (width - totalUsed) * 0.5);
-  var ampRange = Math.max(6, height - 4);
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.globalAlpha = clampRange(Number(fx.playerVisualizerOpacity) || .88, .1, 1);
-  if (style === 'wave' || style === 'ribbon' || style === 'orbs') {
-    ctx.beginPath();
-    for (var wi = 0; wi < count; wi++) {
-      var wx = startX + wi * (barW + barGap) + barW / 2;
-      var wy = height - 2 - values[wi] * ampRange * lengthScale;
-      if (wi === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
-    }
-    var waveColor = playerVisualizerColorAt(Math.floor(count / 2), count, nowSeconds);
-    ctx.strokeStyle = waveColor; ctx.lineWidth = style === 'ribbon' ? Math.max(2, barW * 0.45) : (style === 'orbs' ? Math.max(1.1, barW * 0.22) : Math.max(1.2, barW * 0.20));
-    ctx.shadowBlur = glow * 16; ctx.shadowColor = waveColor; ctx.stroke();
-    if (style === 'ribbon') {
-      ctx.lineTo(startX + totalUsed, height); ctx.lineTo(startX, height); ctx.closePath();
-      var gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, waveColor); gradient.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.globalAlpha *= .30; ctx.fillStyle = gradient; ctx.fill();
-      ctx.globalAlpha = clampRange(Number(fx.playerVisualizerOpacity) || .88, .1, 1);
-    } else if (style === 'orbs') {
-      for (var oi = 0; oi < count; oi++) {
-        var ox = startX + oi * (barW + barGap) + barW / 2;
-        var oy = height - 2 - values[oi] * ampRange * lengthScale;
-        var orbColor = playerVisualizerColorAt(oi, count, nowSeconds);
-        ctx.beginPath();
-        ctx.fillStyle = orbColor; ctx.shadowColor = orbColor; ctx.shadowBlur = glow * 12;
-        ctx.arc(ox, oy, Math.max(1.4, barW * 0.26 + values[oi] * 2.4), 0, Math.PI * 2); ctx.fill();
-      }
-    }
-  } else {
-    for (var bi = 0; bi < count; bi++) {
-      var value = values[bi];
-      var color = playerVisualizerColorAt(bi, count, nowSeconds);
-      var x0 = startX + bi * (barW + barGap);
-      var amp = Math.max(1.5, value * ampRange * lengthScale);
-      ctx.fillStyle = color; ctx.strokeStyle = color; ctx.shadowColor = color; ctx.shadowBlur = glow * 13;
-      if (style === 'dots') {
-        ctx.beginPath(); ctx.arc(x0 + barW / 2, height - 2 - amp, Math.max(1.2, barW * .34 + value * 1.4), 0, Math.PI * 2); ctx.fill();
-      } else if (style === 'mirror') {
-        var half = Math.min(height / 2 - 1, amp * .53);
-        ctx.fillRect(x0, height / 2 - half, barW, half);
-        ctx.fillRect(x0, height / 2, barW, half);
-      } else if (style === 'stairs') {
-        var stepAmp = Math.max(2, Math.round(amp / Math.max(3, ampRange * 0.12)) * Math.max(3, ampRange * 0.12));
-        ctx.fillRect(x0, height - 2 - stepAmp, barW, stepAmp);
-      } else if (style === 'pulse') {
-        var pulseHalf = Math.max(1.5, amp * 0.46);
-        var yMid = height * 0.5;
-        ctx.fillRect(x0, yMid - pulseHalf, barW, pulseHalf * 2);
-      } else if (style === 'needles') {
-        ctx.lineWidth = Math.max(1, barW * 0.28);
-        ctx.beginPath();
-        ctx.moveTo(x0 + barW / 2, height - 1.5);
-        ctx.lineTo(x0 + barW / 2, height - 1.5 - amp);
-        ctx.stroke();
-      } else {
-        ctx.fillRect(x0, height - 2 - amp, barW, amp);
-      }
-    }
-  }
-  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-}
-
 function setRange(id, value) {
   var el = document.getElementById(id);
   if (!el) return;
@@ -24388,7 +24129,6 @@ function setRange(id, value) {
   if (id === 'fx-coverres') value = normalizeCoverResolution(value);
   if (id === 'fx-glassaberration') value = normalizeControlGlassChromaticOffset(value);
   if (id === 'fx-liquidglasstransparency') value = normalizeLiquidGlassTransparency(value);
-  if (/^fx-visualizer(x|y|angle)$/.test(id)) value = Math.round(Number(value) || 0);
   el.value = value;
   var out = el.parentElement.querySelector('output');
   if (out) out.textContent = id === 'fx-coverres'
@@ -24397,7 +24137,7 @@ function setRange(id, value) {
       ? Math.round(normalizeLiquidGlassTransparency(value) * 100) + '%'
       : (id === 'fx-lyricdelay'
         ? ((Number(value) >= 0 ? '+' : '') + Number(value).toFixed(2) + 's')
-        : (id === 'fx-lyricweight' || id === 'fx-glassaberration' || id === 'fx-lyrictiltx' || id === 'fx-lyrictilty' || id === 'fx-shelfangle' || /^fx-visualizer(x|y|angle)$/.test(id) ? String(Math.round(Number(value) || 0)) : Number(value).toFixed(id === 'fx-lyricspacing' ? 3 : 2))));
+        : (id === 'fx-lyricweight' || id === 'fx-glassaberration' || id === 'fx-lyrictiltx' || id === 'fx-lyrictilty' || id === 'fx-shelfangle' ? String(Math.round(Number(value) || 0)) : Number(value).toFixed(id === 'fx-lyricspacing' ? 3 : 2))));
 }
 function updateDevelopmentFxControls() {
   [
@@ -24492,21 +24232,7 @@ function updateFxInputs() {
   setRange('fx-bgopacity', fx.backgroundOpacity == null ? 1 : fx.backgroundOpacity);
   setRange('fx-liquidglasstransparency', fx.liquidGlassTransparency);
   setRange('fx-glassaberration', fx.controlGlassChromaticOffset);
-  setRange('fx-visualizerwidth', fx.playerVisualizerWidth);
-  setRange('fx-visualizerheight', fx.playerVisualizerHeight);
-  setRange('fx-visualizerbarwidth', fx.playerVisualizerBarWidth);
-  setRange('fx-visualizerlength', fx.playerVisualizerLength);
-  setRange('fx-visualizergap', fx.playerVisualizerGap);
-  setRange('fx-visualizerx', fx.playerVisualizerOffsetX);
-  setRange('fx-visualizery', fx.playerVisualizerOffsetY);
-  setRange('fx-visualizerangle', fx.playerVisualizerAngle);
-  setRange('fx-visualizeropacity', fx.playerVisualizerOpacity);
-  setRange('fx-visualizersensitivity', fx.playerVisualizerSensitivity);
-  setRange('fx-visualizersmoothing', fx.playerVisualizerSmoothing);
-  setRange('fx-visualizerglow', fx.playerVisualizerGlow);
-  setRange('fx-visualizerbeat', fx.playerVisualizerBeatBoost);
   applyLiquidGlassTransparency();
-  updatePlayerVisualizerControls();
   setRange('fx-desktoplyricssize', fx.desktopLyricsSize);
   setRange('fx-desktoplyricsopacity', fx.desktopLyricsOpacity);
   setRange('fx-desktoplyricsy', fx.desktopLyricsY);
@@ -24605,7 +24331,6 @@ function resetFxSliderValue(id, key, btn) {
   if (key === 'coverResolution') applyCoverParticleResolution(fx[key], { reload: true });
   if (key === 'controlGlassChromaticOffset') applyControlGlassChromaticOffset();
   if (key === 'liquidGlassTransparency') applyLiquidGlassTransparency();
-  if (/^playerVisualizer/.test(key)) updatePlayerVisualizerControls();
   syncFxUniforms();
   if (key === 'lyricLetterSpacing' || key === 'lyricLineHeight' || key === 'lyricWeight') refreshCurrentLyricStyle();
   if (key === 'lyricDelay') pushDesktopLyricsState(true);
@@ -24631,7 +24356,7 @@ function ensureFxSliderResetButton(id, key) {
 }
 var fxPanelTab = 'presets';
 function setFxPanelTab(tab) {
-  var allowed = { presets:1, appearance:1, lyrics:1, motion:1, visualizer:1, advanced:1 };
+  var allowed = { presets:1, appearance:1, lyrics:1, motion:1, advanced:1 };
   fxPanelTab = allowed[tab] ? tab : 'presets';
   var panel = document.getElementById('fx-panel');
   if (panel) panel.setAttribute('data-active-tab', fxPanelTab);
@@ -24652,7 +24377,6 @@ function fxPanelTargetForNode(node, current) {
   var id = node.id || '';
   var inputId = fxPanelInputId(node);
   if (id === 'preset-grid' || id === 'user-archive-grid') return 'presets';
-  if (id === 'fx-player-visualizer-section') return 'visualizer';
   if (id === 'fx-lyric-fold') return 'lyrics';
   if (id === 'fx-overlay-fold' || id === 'fx-stage-fold') return 'motion';
   if (id === 'fx-advanced' || node.classList.contains('fx-actions')) return 'advanced';
@@ -24675,7 +24399,6 @@ function organizeFxPanel() {
     ['appearance', '\u5916\u89c2'],
     ['lyrics', '\u6b4c\u8bcd'],
     ['motion', '\u52a8\u6001'],
-    ['visualizer', '\u9891\u8c31'],
     ['advanced', '\u9ad8\u7ea7']
   ];
   var tabs = document.createElement('div');
@@ -24842,19 +24565,6 @@ function relabelFxPanelControls() {
   setFxSliderLabel('fx-bgopacity', '背景透明度');
   setFxSliderLabel('fx-liquidglasstransparency', '液态玻璃透明度');
   setFxSliderLabel('fx-glassaberration', '玻璃色差');
-  setFxSliderLabel('fx-visualizerwidth', 'Chiều rộng khung');
-  setFxSliderLabel('fx-visualizerheight', 'Chiều cao khung');
-  setFxSliderLabel('fx-visualizerbarwidth', 'Độ rộng sóng');
-  setFxSliderLabel('fx-visualizerlength', 'Chiều dài sóng');
-  setFxSliderLabel('fx-visualizergap', 'Khoảng cách phần tử');
-  setFxSliderLabel('fx-visualizerx', 'Vị trí ngang');
-  setFxSliderLabel('fx-visualizery', 'Vị trí dọc');
-  setFxSliderLabel('fx-visualizerangle', 'Góc xoay');
-  setFxSliderLabel('fx-visualizeropacity', 'Độ trong suốt');
-  setFxSliderLabel('fx-visualizersensitivity', 'Độ nhạy âm thanh');
-  setFxSliderLabel('fx-visualizersmoothing', 'Độ mượt');
-  setFxSliderLabel('fx-visualizerglow', 'Độ phát sáng');
-  setFxSliderLabel('fx-visualizerbeat', 'Phản ứng theo nhịp');
   setFxSliderLabel('fx-lyricspacing', '字间距');
   setFxSliderLabel('fx-lyriclineheight', '行距');
   setFxSliderLabel('fx-lyricweight', '字重');
@@ -25228,7 +24938,6 @@ function bindFxPanel() {
   buildLyricColorControls();
   var ids = [
     ['fx-intensity','intensity'],['fx-depth','depth'],['fx-coverres','coverResolution'],['fx-cineshake','cinemaShake'],['fx-lyricglow','lyricGlowStrength'],['fx-lyricdelay','lyricDelay'],['fx-bgopacity','backgroundOpacity'],['fx-liquidglasstransparency','liquidGlassTransparency'],['fx-glassaberration','controlGlassChromaticOffset'],
-    ['fx-visualizerwidth','playerVisualizerWidth'],['fx-visualizerheight','playerVisualizerHeight'],['fx-visualizerbarwidth','playerVisualizerBarWidth'],['fx-visualizerlength','playerVisualizerLength'],['fx-visualizergap','playerVisualizerGap'],['fx-visualizerx','playerVisualizerOffsetX'],['fx-visualizery','playerVisualizerOffsetY'],['fx-visualizerangle','playerVisualizerAngle'],['fx-visualizeropacity','playerVisualizerOpacity'],['fx-visualizersensitivity','playerVisualizerSensitivity'],['fx-visualizersmoothing','playerVisualizerSmoothing'],['fx-visualizerglow','playerVisualizerGlow'],['fx-visualizerbeat','playerVisualizerBeatBoost'],
     ['fx-desktoplyricssize','desktopLyricsSize'],['fx-desktoplyricsopacity','desktopLyricsOpacity'],['fx-desktoplyricsy','desktopLyricsY'],['fx-wallpaperopacity','wallpaperOpacity'],
     ['fx-shelfsize','shelfSize'],['fx-shelfx','shelfOffsetX'],['fx-shelfy','shelfOffsetY'],['fx-shelfz','shelfOffsetZ'],['fx-shelfangle','shelfAngleY'],['fx-shelfopacity','shelfOpacity'],['fx-shelfbgalpha','shelfBgOpacity'],
     ['fx-lyricspacing','lyricLetterSpacing'],['fx-lyriclineheight','lyricLineHeight'],['fx-lyricweight','lyricWeight'],
@@ -25262,10 +24971,6 @@ function bindFxPanel() {
         fx.controlGlassChromaticOffset = normalizeControlGlassChromaticOffset(fx.controlGlassChromaticOffset);
         applyControlGlassChromaticOffset();
       }
-      if (/^playerVisualizer/.test(pair[1])) {
-        if (/^(playerVisualizerOffsetX|playerVisualizerOffsetY|playerVisualizerAngle)$/.test(pair[1])) fx[pair[1]] = Math.round(Number(fx[pair[1]]) || 0);
-        updatePlayerVisualizerControls();
-      }
       if (pair[1] === 'desktopLyricsSize') fx.desktopLyricsSize = clampRange(fx.desktopLyricsSize, 0.72, 1.55);
       if (pair[1] === 'desktopLyricsOpacity') fx.desktopLyricsOpacity = clampRange(fx.desktopLyricsOpacity, 0.28, 1);
       if (pair[1] === 'desktopLyricsY') fx.desktopLyricsY = clampRange(fx.desktopLyricsY, 0.08, 0.92);
@@ -25292,7 +24997,7 @@ function bindFxPanel() {
           ? Math.round(fx.liquidGlassTransparency * 100) + '%'
           : (pair[1] === 'lyricDelay'
             ? ((fx.lyricDelay >= 0 ? '+' : '') + fx.lyricDelay.toFixed(2) + 's')
-            : (pair[1] === 'lyricWeight' || pair[1] === 'controlGlassChromaticOffset' || pair[1] === 'lyricTiltX' || pair[1] === 'lyricTiltY' || pair[1] === 'shelfAngleY' || /^(playerVisualizerOffsetX|playerVisualizerOffsetY|playerVisualizerAngle)$/.test(pair[1]) ? String(Math.round(fx[pair[1]])) : Number(el.value).toFixed(pair[1] === 'lyricLetterSpacing' ? 3 : 2))));
+            : (pair[1] === 'lyricWeight' || pair[1] === 'controlGlassChromaticOffset' || pair[1] === 'lyricTiltX' || pair[1] === 'lyricTiltY' || pair[1] === 'shelfAngleY' ? String(Math.round(fx[pair[1]])) : Number(el.value).toFixed(pair[1] === 'lyricLetterSpacing' ? 3 : 2))));
       syncFxUniforms();
       if (/^shelf(Size|OffsetX|OffsetY|OffsetZ|AngleY|Opacity|BgOpacity)$/.test(pair[1]) && shelfManager && shelfManager.refreshTheme) shelfManager.refreshTheme();
       if (pair[1] === 'lyricLetterSpacing' || pair[1] === 'lyricLineHeight' || pair[1] === 'lyricWeight') refreshCurrentLyricStyle();
@@ -25382,15 +25087,9 @@ function bindFxPanel() {
       e.target.value = '';
     });
   }
-  ['ui-accent-picker','visual-tint-picker','home-accent-picker','home-icon-picker','visual-icon-picker','bg-color-picker','shelf-accent-picker','lyric-color-picker','lyric-highlight-picker','lyric-glow-picker','player-visualizer-color-picker'].forEach(function(id){
+  ['ui-accent-picker','visual-tint-picker','home-accent-picker','home-icon-picker','visual-icon-picker','bg-color-picker','shelf-accent-picker','lyric-color-picker','lyric-highlight-picker','lyric-glow-picker'].forEach(function(id){
     bindColorLabPicker(document.getElementById(id));
   });
-  var visualizerColorPicker = document.getElementById('player-visualizer-color-picker');
-  if (visualizerColorPicker && !visualizerColorPicker._visualizerBound) {
-    visualizerColorPicker._visualizerBound = true;
-    visualizerColorPicker.addEventListener('input', function(){ setPlayerVisualizerColor(visualizerColorPicker.value, true); });
-    visualizerColorPicker.addEventListener('change', function(){ setPlayerVisualizerColor(visualizerColorPicker.value, false); });
-  }
   bindColorLabRows();
   var sv = document.getElementById('color-lab-sv');
   if (sv && !sv._bound) {
@@ -26611,37 +26310,13 @@ async function copySpotifyRedirectUri() {
     showToast(appLanguage === 'en' ? 'Redirect URI copied' : 'Đã sao chép Redirect URI');
   }
 }
-function normalizeExternalAppUrl(value) {
-  try {
-    var raw = String(value || '').trim();
-    if (!raw) return '';
-    var parsed = new URL(raw);
-    if (['http:', 'https:', 'mailto:'].indexOf(parsed.protocol) < 0) return '';
-    return parsed.href;
-  } catch (_) {
-    return '';
-  }
-}
 async function openExternalUrl(url) {
-  var normalized = normalizeExternalAppUrl(url);
-  if (!normalized) {
-    console.warn('[ExternalUrl] Invalid URL ignored:', String(url || ''));
-    showToast(appLanguage === 'en' ? 'This link is invalid.' : 'Liên kết này không hợp lệ.');
-    return false;
+  var nativeShell = window.nativeShell;
+  if (nativeShell && nativeShell.isNativeApp && typeof nativeShell.openExternal === 'function') {
+    try { await nativeShell.openExternal(url); return true; } catch (e) { console.warn('Native external URL:', e); }
   }
-  var nativeShell = window.nativeShell || window.desktopWindow;
-  if (nativeShell && (nativeShell.isNativeApp || nativeShell.isDesktop) && typeof nativeShell.openExternal === 'function') {
-    try {
-      var result = await nativeShell.openExternal(normalized);
-      if (!result || result.ok !== false) return true;
-      throw new Error(result.error || 'OPEN_EXTERNAL_FAILED');
-    } catch (e) {
-      console.warn('Native external URL:', e);
-      return false;
-    }
-  }
-  var opened = window.open(normalized, '_blank', 'noopener');
-  return !!opened;
+  window.open(url, '_blank', 'noopener');
+  return true;
 }
 function openSpotifyDashboard() {
   openExternalUrl('https://developer.spotify.com/dashboard');
@@ -29942,12 +29617,12 @@ var renderPerfState = {
 };
 window.__mineradioPerf = renderPerfState;
 var splashWarmRenderLast = 0;
+var thumbCoverPulseElement = document.getElementById('thumb-cover');
 function isMainSceneCoveredBySplash() {
   return document.body.classList.contains('splash-active') && !document.body.classList.contains('splash-revealing');
 }
 function getAdaptiveRenderFps() {
   if (isDeepBackgroundMode()) return 1;
-  if (typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive()) return 30;
   if (RENDER_VISIBLE_VSYNC) return 0;
   var tier = (typeof getRenderLoadTier === 'function') ? getRenderLoadTier() : 0;
   if (typeof isRenderInteractionActive === 'function' && isRenderInteractionActive()) {
@@ -30193,7 +29868,7 @@ function animate() {
   var vinylSpinSpeed = (0.40 + smoothBass * 0.09) * vinylSpeedMul;
   uniforms.uVinylSpin.value = (uniforms.uVinylSpin.value + dt * vinylSpinSpeed) % (Math.PI * 2);
 
-  if (!(typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive(now))) updateParticlePointerFrame();
+  updateParticlePointerFrame();
   uniforms.uBass.value   = bass;
   uniforms.uMid.value    = mid;
   uniforms.uTreble.value = treble;
@@ -30210,15 +29885,11 @@ function animate() {
   uniforms.uBurstAmt.value *= 0.90;
   tickPresetTransition();
 
-  var nativeScrollActive = typeof isNativeScrollPerformanceActive === 'function' && isNativeScrollPerformanceActive(now);
-  if (!nativeScrollActive) {
-    updateRipples(dt);
-    updateFloatLayer(dt);
-    if (shelfManager) shelfManager.update(dt);
-    tickLyricsParticles();
-    updateHomeAudioVisual(dt);
-  }
-  updatePlayerVisualizer(dt);
+  updateRipples(dt);
+  updateFloatLayer(dt);
+  if (shelfManager) shelfManager.update(dt);
+  tickLyricsParticles();
+  updateHomeAudioVisual(dt);
 
   // 电影镜头
   updateCinema(dt);
@@ -30247,17 +29918,13 @@ function animate() {
   if (backCoverGroup) {
     backCoverGroup.rotation.copy(particles.rotation);
   }
-  if (!nativeScrollActive) {
-    updateSkullParticleLayer(dt);
-    updateStageLyrics3D(dt);
-    syncDesktopOverlayState();
-  }
+  updateSkullParticleLayer(dt);
+  updateStageLyrics3D(dt);
 
   // 缩略图脉动
   if (currentIdx >= 0) {
     var s = 1 + bass * 0.08;
-    var thumbCoverEl = document.getElementById('thumb-cover');
-    if (thumbCoverEl) thumbCoverEl.style.transform = 'scale(' + s + ')';
+    if (thumbCoverPulseElement) thumbCoverPulseElement.style.transform = 'scale(' + s + ')';
   }
 
   renderer.render(scene, camera);
@@ -30571,20 +30238,36 @@ function initHomeLiquidGlass() {
     requestAnimationFrame(function(){ lockQueued=false; enforceHomeClearGlass(); });
   }
   enforceHomeClearGlass();
+  var liquidPointerFrame = 0;
+  var liquidPointerEvent = null;
+  var liquidHomeRect = null;
+  var liquidPanel = null;
+  var liquidPanelRect = null;
+  function invalidateLiquidPointerRects(){ liquidHomeRect = null; liquidPanelRect = null; }
+  window.addEventListener('resize', invalidateLiquidPointerRects, { passive:true });
   home.addEventListener('pointermove', function(event){
-    var rect = home.getBoundingClientRect();
-    var px = ((event.clientX-rect.left)/Math.max(1,rect.width))*100;
-    var py = ((event.clientY-rect.top)/Math.max(1,rect.height))*100;
-    home.style.setProperty('--liquid-x', px.toFixed(2)+'%');
-    home.style.setProperty('--liquid-y', py.toFixed(2)+'%');
-    home.style.setProperty('--liquid-tilt-x', ((50-py)*0.012).toFixed(3)+'deg');
-    home.style.setProperty('--liquid-tilt-y', ((px-50)*0.014).toFixed(3)+'deg');
-    var panel = event.target && event.target.closest ? event.target.closest(panels) : null;
-    if (panel) {
-      var panelRect = panel.getBoundingClientRect();
-      panel.style.setProperty('--liquid-local-x', ((((event.clientX-panelRect.left)/Math.max(1,panelRect.width))*100).toFixed(2))+'%');
-      panel.style.setProperty('--liquid-local-y', ((((event.clientY-panelRect.top)/Math.max(1,panelRect.height))*100).toFixed(2))+'%');
-    }
+    liquidPointerEvent = event;
+    var nextPanel = event.target && event.target.closest ? event.target.closest(panels) : null;
+    if (nextPanel !== liquidPanel) { liquidPanel = nextPanel; liquidPanelRect = null; }
+    if (liquidPointerFrame) return;
+    liquidPointerFrame = requestAnimationFrame(function(){
+      liquidPointerFrame = 0;
+      var currentEvent = liquidPointerEvent;
+      if (!currentEvent) return;
+      if (!liquidHomeRect) liquidHomeRect = home.getBoundingClientRect();
+      var rect = liquidHomeRect;
+      var px = ((currentEvent.clientX-rect.left)/Math.max(1,rect.width))*100;
+      var py = ((currentEvent.clientY-rect.top)/Math.max(1,rect.height))*100;
+      home.style.setProperty('--liquid-x', px.toFixed(2)+'%');
+      home.style.setProperty('--liquid-y', py.toFixed(2)+'%');
+      home.style.setProperty('--liquid-tilt-x', ((50-py)*0.012).toFixed(3)+'deg');
+      home.style.setProperty('--liquid-tilt-y', ((px-50)*0.014).toFixed(3)+'deg');
+      if (liquidPanel) {
+        if (!liquidPanelRect) liquidPanelRect = liquidPanel.getBoundingClientRect();
+        liquidPanel.style.setProperty('--liquid-local-x', ((((currentEvent.clientX-liquidPanelRect.left)/Math.max(1,liquidPanelRect.width))*100).toFixed(2))+'%');
+        liquidPanel.style.setProperty('--liquid-local-y', ((((currentEvent.clientY-liquidPanelRect.top)/Math.max(1,liquidPanelRect.height))*100).toFixed(2))+'%');
+      }
+    });
   }, {passive:true});
   home.addEventListener('pointerleave', function(){
     home.style.setProperty('--liquid-x','50%');home.style.setProperty('--liquid-y','30%');

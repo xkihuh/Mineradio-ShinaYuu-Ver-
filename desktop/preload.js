@@ -3,7 +3,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('desktopWindow', {
   isDesktop: true,
   runtime: 'castlabs-electron',
-  openExternal: (url) => ipcRenderer.invoke('shinayuu-open-external', url),
   getRuntimeStatus: () => ipcRenderer.invoke('shinayuu-runtime-get-status'),
   minimize: () => ipcRenderer.invoke('desktop-window-minimize'),
   toggleMaximize: () => ipcRenderer.invoke('desktop-window-toggle-maximize'),
@@ -20,7 +19,8 @@ contextBridge.exposeInMainWorld('desktopWindow', {
   refreshLocalMusicLibrary: () => ipcRenderer.invoke('shinayuu-local-music-refresh'),
   removeLocalMusicSource: (sourceId) => ipcRenderer.invoke('shinayuu-local-music-remove', sourceId),
   chooseBackgroundMediaFolder: () => ipcRenderer.invoke('shinayuu-background-media-choose-folder'),
-  scanBackgroundMediaFolder: (folderPath) => ipcRenderer.invoke('shinayuu-background-media-scan-folder', folderPath),
+  getCachedBackgroundMediaFolder: (folderPath) => ipcRenderer.invoke('shinayuu-background-media-get-cached-folder', folderPath),
+  scanBackgroundMediaFolder: (folderPath, options) => ipcRenderer.invoke('shinayuu-background-media-scan-folder', folderPath, options || {}),
   onLocalMusicLibraryChanged: (callback) => {
     if (typeof callback !== 'function') return () => {};
     const listener = (_event, payload) => callback(payload || {});
@@ -70,43 +70,6 @@ contextBridge.exposeInMainWorld('desktopWindow', {
     ipcRenderer.on('desktop-window-state', listener);
     return () => ipcRenderer.removeListener('desktop-window-state', listener);
   },
-});
-
-contextBridge.exposeInMainWorld('nativeShell', {
-  isNativeApp: true,
-  runtime: 'castlabs-electron',
-  openExternal: (url) => ipcRenderer.invoke('shinayuu-open-external', url),
-});
-
-function rendererDiagnosticPayload(type, value, event) {
-  let message = '';
-  let stack = '';
-  try {
-    if (value && typeof value === 'object') {
-      message = String(value.message || value.name || value);
-      stack = String(value.stack || '');
-    } else {
-      message = String(value == null ? '' : value);
-    }
-  } catch (_) {
-    message = 'Unable to serialize renderer diagnostic';
-  }
-  return {
-    type,
-    message,
-    stack,
-    source: String(event && event.filename || ''),
-    line: Number(event && event.lineno || 0),
-    column: Number(event && event.colno || 0),
-  };
-}
-
-window.addEventListener('unhandledrejection', (event) => {
-  ipcRenderer.send('shinayuu-renderer-diagnostic', rendererDiagnosticPayload('unhandledrejection', event && event.reason, event));
-});
-
-window.addEventListener('error', (event) => {
-  ipcRenderer.send('shinayuu-renderer-diagnostic', rendererDiagnosticPayload('error', event && (event.error || event.message), event));
 });
 
 window.addEventListener('DOMContentLoaded', () => {

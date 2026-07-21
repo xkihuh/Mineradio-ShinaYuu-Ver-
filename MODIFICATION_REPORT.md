@@ -1,24 +1,33 @@
-ShinaYuu Music 1.1.6.5 - Modification Report
+# ShinaYuu Music 1.1.6.7 - Modification Report
 
-BASE
-- Built directly from ShinaYuu Music 1.1.6.4.
+## Base
 
-CHANGES
-- Added a verified yt-dlp bundle preparation step to both Windows build paths.
-- Added packaged-engine detection, checksum validation, atomic restore, and three-attempt download recovery.
-- Added automatic invalid-cache cleanup and shared preparation promises.
-- Added the internal YouTube engine repair API.
-- Added one automatic playback retry after successful repair.
-- Replaced Terminal-oriented error text with normal user-facing automatic recovery status.
-- Added Castlabs Electron as the packaged Node-compatible JavaScript runtime for yt-dlp.
-- Added release notices and regression coverage for the recovery pipeline.
+- Built directly from the cleaned and rounded-window ShinaYuu Music 1.1.6.6 source.
 
-PRESERVATION
-- No main-window or startup-shell changes.
-- No Spotify playback or authentication changes.
-- No UI/UX, animation, Three.js, GSAP, Liquid Glass, lyrics, GPU, CPU optimization, or wallpaper changes.
+## Playback responsiveness changes
 
-VERSION
-- Package: 1.1.6-patch.5
-- Display/build: 1.1.6.5
-- Installer: ShinaYuu-Music-1.1.6.5-Setup.exe
+- Moved beat-map cache reads and optional visual preparation after audible HTMLAudio playback starts.
+- Added token-guarded background visual preparation so a late disk read cannot overwrite a newer track.
+- Starts queue-item prefetch on pointer hover/down, increases the safe YouTube playback-descriptor cache window, and begins next-track prefetch sooner.
+- Added an eight-minute in-memory YouTube stream-descriptor cache to avoid repeating yt-dlp work during quick queue changes or seek recovery.
+- Dispatches HTMLAudio seek Range requests before resetting beat and camera cursors.
+- Uses Spotify playlist/search Track ID and URI as an immediate local descriptor.
+- Returns on the first exact Spotify SDK playing state while retaining wrong-track detection.
+- Treats an accepted Spotify seek as immediate, then confirms and corrects the clock asynchronously.
+
+## Preserved
+
+- Audio quality, provider separation, and Spotify exact-track verification.
+- Window startup, opaque native window, and rounded corners.
+- UI/UX, Three.js, GSAP, Liquid Glass, animation, lyrics, wallpaper, Discord, and CPU optimization behavior.
+
+## Version
+
+- Package: 1.1.6-patch.7
+- Display/build: 1.1.6.7
+- Installer: ShinaYuu-Music-1.1.6.7-Setup.exe
+
+## Source package policy
+
+- No generated TXT test reports.
+- No historical standalone release files.

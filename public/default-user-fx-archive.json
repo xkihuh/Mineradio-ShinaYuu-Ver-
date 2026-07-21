@@ -45,21 +45,6 @@
     "backgroundColorMode": "cover",
     "backgroundColor": "#000000",
     "backgroundOpacity": 1,
-    "liquidGlassTransparency": 0.78,
-    "playerVisualizer": true,
-    "playerVisualizerStyle": "bars",
-    "playerVisualizerColorMode": "rainbow",
-    "playerVisualizerColor": "#00f5d4",
-    "playerVisualizerWidth": 0.86,
-    "playerVisualizerHeight": 1.0,
-    "playerVisualizerOffsetX": 0,
-    "playerVisualizerOffsetY": 0,
-    "playerVisualizerAngle": 0,
-    "playerVisualizerOpacity": 0.88,
-    "playerVisualizerSensitivity": 1.15,
-    "playerVisualizerSmoothing": 0.72,
-    "playerVisualizerGlow": 0.7,
-    "playerVisualizerBeatBoost": 0.85,
     "controlGlassChromaticOffset": 90,
     "backgroundColorCustom": false,
     "floatLayer": false,
@@ -97,9 +82,6 @@
     "shelfOpacity": 1,
     "shelfBgOpacity": 0.9,
     "shelfAccentColor": "#ffffff",
-    "cam": "off",
-    "playerVisualizerBarWidth": 1.0,
-    "playerVisualizerLength": 1.0,
-    "playerVisualizerGap": 1.0
+    "cam": "off"
   }
 }
