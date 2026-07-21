@@ -1,4 +1,18 @@
+## 1.1.6.10
+
+- Fixed the missing rounded-window renderer argument that left the visible shell square.
+- Added manual update checking in Visual Console > Advanced.
+- Added the app name and display version footer in Advanced settings.
+
 # Changelog
+
+## 1.1.6.10
+
+- Fixed Spotify playlists showing a non-zero track count while opening with no rows.
+- Added fallback to the playlist item page embedded in playlist metadata.
+- Added clear reconnect guidance when playlist-read scopes are missing.
+- Added Spotify context playback for saved playlists whose item list is restricted by Spotify.
+- Preserved the updater, rounded window, playback, YouTube, wallpaper, lyrics and visual behavior from 1.1.6.8.
 
 ## 1.1.6.8 — 2026-07-21
 

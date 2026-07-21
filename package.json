@@ -1,7 +1,7 @@
 {
   "name": "shinayuu-music",
   "productName": "ShinaYuu Music",
-  "version": "1.1.6-patch.8",
+  "version": "1.1.6-patch.10",
   "description": "A Windows visual music player powered by Castlabs Electron with Spotify, YouTube, synchronized lyrics, Discord Rich Presence, and integrated master volume control.",
   "author": "ShinaYuu",
   "main": "desktop/main.js",
@@ -99,16 +99,16 @@
       "uninstallerSidebar": "build/installerSidebar.bmp",
       "installerHeader": "build/installerHeader.bmp",
       "include": "build/installer.nsh",
-      "artifactName": "ShinaYuu-Music-1.1.6.8-Setup.${ext}"
+      "artifactName": "ShinaYuu-Music-1.1.6.10-Setup.${ext}"
     },
-    "buildVersion": "1.1.6.8",
+    "buildVersion": "1.1.6.10",
     "electronDist": "node_modules/electron/dist"
   },
   "mineradio": {
     "update": {
       "provider": "github",
-      "owner": "xkihuh",
-      "repo": "Mineradio-ShinaYuu-Ver",
+      "owner": "",
+      "repo": "",
       "preview": false,
       "preferMirrors": false,
       "mirrors": [],
@@ -142,7 +142,7 @@
       "largeImageKey": "shinayuu",
       "largeImageText": "ShinaYuu Music"
     },
-    "displayVersion": "1.1.6.8",
+    "displayVersion": "1.1.6.10",
     "runtime": {
       "engine": "castlabs-electron",
       "electronVersion": "42.5.2+wvcus",

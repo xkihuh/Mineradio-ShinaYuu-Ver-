@@ -1,6 +1,6 @@
 # Automatic Update Setup
 
-ShinaYuu Music 1.1.6.8 checks for a newer public release about ten seconds after startup and every six hours afterward.
+ShinaYuu Music 1.1.6.10 checks for a newer public release about ten seconds after startup and every six hours afterward.
 
 ## 1. Configure the release repository
 
@@ -39,13 +39,13 @@ The `dist` folder will contain the installer, its checksum, and `latest.yml`. A 
 Create a public release with tag:
 
 ```text
-v1.1.6.8
+v1.1.6.10
 ```
 
 Upload files from the same build:
 
-- `ShinaYuu-Music-1.1.6.8-Setup.exe`
-- `ShinaYuu-Music-1.1.6.8-Setup.exe.blockmap` when present
+- `ShinaYuu-Music-1.1.6.10-Setup.exe`
+- `ShinaYuu-Music-1.1.6.10-Setup.exe.blockmap` when present
 - `latest.yml`
 
 Do not mix an installer from one build with metadata from another build.

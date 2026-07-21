@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.6.8';
+const UA = 'ShinaYuu Music/1.1.6.10';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const YOUTUBE_TOKEN_FILE = process.env.YOUTUBE_TOKEN_FILE || path.join(path.dirname(TOKEN_FILE), 'youtube-token.json');
@@ -2715,6 +2715,33 @@ function spotifyPlaylistPageTotal(page) {
   return Number(page.total || page.items && page.items.total || page.tracks && page.tracks.total || 0);
 }
 
+function spotifyPlaylistEmbeddedPage(playlist) {
+  if (!playlist || typeof playlist !== 'object') return null;
+  if (playlist.items && typeof playlist.items === 'object') return playlist.items;
+  if (playlist.tracks && typeof playlist.tracks === 'object') return playlist.tracks;
+  return null;
+}
+
+function spotifyPlaylistContextUri(value) {
+  if (!value) return '';
+  if (typeof value === 'object') {
+    const uri = String(value.uri || value.spotifyUri || value.contextUri || '').trim();
+    if (/^spotify:playlist:[A-Za-z0-9]+$/i.test(uri)) return uri;
+    return spotifyPlaylistContextUri(value.id || value.href || value.external_urls && value.external_urls.spotify || '');
+  }
+  const raw = String(value || '').trim();
+  const uri = raw.match(/^spotify:playlist:([A-Za-z0-9]+)$/i);
+  if (uri) return `spotify:playlist:${uri[1]}`;
+  const url = raw.match(/(?:open\.spotify\.com\/playlist\/|\/v1\/playlists\/)([A-Za-z0-9]+)/i);
+  if (url) return `spotify:playlist:${url[1]}`;
+  return /^[A-Za-z0-9]+$/.test(raw) ? `spotify:playlist:${raw}` : '';
+}
+
+function spotifyPlaylistReadScopesReady(token) {
+  const granted = new Set(String(token && token.scope || '').split(/\s+/).filter(Boolean));
+  return granted.has('playlist-read-private') && granted.has('playlist-read-collaborative');
+}
+
 function spotifyTrackHasPlaylistMetadata(track) {
   if (!track || typeof track !== 'object') return false;
   const id = spotifyTrackIdFromValue(track);
@@ -2862,33 +2889,89 @@ async function spotifySearch(query, limit = 18) {
 
 async function spotifyUserPlaylists(limit = 50) {
   const data = await spotifyApi(`/me/playlists?limit=${Math.max(1, Math.min(50, Number(limit) || 50))}`);
-  return ((data && data.items) || []).map((playlist) => ({
-    provider: 'netease',
-    realProvider: 'spotify',
-    source: 'netease',
-    id: playlist.id || '',
-    name: playlist.name || '',
-    cover: playlist.images && playlist.images[0] && playlist.images[0].url || '',
-    trackCount: playlist.items && playlist.items.total || playlist.tracks && playlist.tracks.total || 0,
-    playCount: 0,
-    creator: playlist.owner && (playlist.owner.display_name || playlist.owner.id) || '',
-    subscribed: true,
-    specialType: 0,
-    collaborative: !!playlist.collaborative,
-    public: playlist.public,
-  })).filter((playlist) => playlist.id);
+  const profile = cachedSpotifyProfile(spotifyToken());
+  return ((data && data.items) || []).map((playlist) => {
+    const id = String(playlist.id || '');
+    const ownerId = String(playlist.owner && playlist.owner.id || '');
+    return {
+      provider: 'netease',
+      realProvider: 'spotify',
+      source: 'netease',
+      id,
+      name: playlist.name || '',
+      cover: playlist.images && playlist.images[0] && playlist.images[0].url || '',
+      trackCount: playlist.items && playlist.items.total || playlist.tracks && playlist.tracks.total || 0,
+      playCount: 0,
+      creator: playlist.owner && (playlist.owner.display_name || playlist.owner.id) || '',
+      ownerId,
+      ownedByCurrentUser: !!(profile && profile.id && ownerId && profile.id === ownerId),
+      subscribed: true,
+      specialType: 0,
+      collaborative: !!playlist.collaborative,
+      public: playlist.public,
+      spotifyUri: spotifyPlaylistContextUri(playlist) || spotifyPlaylistContextUri(id),
+      contextUri: spotifyPlaylistContextUri(playlist) || spotifyPlaylistContextUri(id),
+      itemsHref: String(playlist.items && playlist.items.href || playlist.tracks && playlist.tracks.href || ''),
+      externalUrl: String(playlist.external_urls && playlist.external_urls.spotify || ''),
+    };
+  }).filter((playlist) => playlist.id);
 }
 
 async function spotifyPlaylistTracks(id, limit = 100) {
   const encodedId = encodeURIComponent(id);
   const market = providerConfig().spotifyMarket;
   const encodedMarket = encodeURIComponent(market);
-  const [playlist, firstPage] = await Promise.all([
-    spotifyApi(`/playlists/${encodedId}?market=${encodedMarket}`),
-    spotifyApi(`/playlists/${encodedId}/items?market=${encodedMarket}&additional_types=track&limit=50`),
-  ]);
+  const token = await validSpotifyToken(true);
+  const profile = cachedSpotifyProfile(token);
+  const playlist = await spotifyApi(`/playlists/${encodedId}?market=${encodedMarket}`);
+  const embeddedPage = spotifyPlaylistEmbeddedPage(playlist);
+  const declaredTotal = spotifyPlaylistPageTotal(embeddedPage)
+    || Number(playlist && playlist.items && playlist.items.total || playlist && playlist.tracks && playlist.tracks.total || 0);
+
+  let firstPage = null;
+  let itemEndpointError = null;
+  let itemSource = 'none';
+  const itemHref = String(embeddedPage && embeddedPage.href || '').trim();
+  const itemEndpoint = itemHref
+    ? itemHref.replace(/^https:\/\/api\.spotify\.com\/v1/i, '')
+    : `/playlists/${encodedId}/items?market=${encodedMarket}&additional_types=track&limit=50`;
+
+  try {
+    firstPage = await spotifyApi(itemEndpoint);
+    itemSource = spotifyPlaylistPageItems(firstPage).length ? 'items-endpoint' : 'items-endpoint-empty';
+  } catch (error) {
+    itemEndpointError = error;
+    console.warn('[SpotifyPlaylist] item endpoint failed:', id, error && (error.message || error));
+  }
+
+  // GET /playlists/{id} now embeds an items page for playlists owned by the
+  // current user or collaborative playlists. Prefer it whenever the dedicated
+  // /items endpoint returns an unexpectedly empty page or is temporarily
+  // unavailable. This prevents a playlist showing a correct count but 0 rows.
+  if (spotifyPlaylistPageItems(embeddedPage).length
+      && (!firstPage || !spotifyPlaylistPageItems(firstPage).length)) {
+    firstPage = embeddedPage;
+    itemSource = 'playlist-embedded-items';
+  }
+
+  // One lightweight retry without market/additional_types covers older tokens
+  // and Spotify edge responses where metadata reports items but the first
+  // request returns an empty page.
+  if ((!firstPage || !spotifyPlaylistPageItems(firstPage).length) && declaredTotal > 0 && !itemEndpointError) {
+    try {
+      const retryPage = await spotifyApi(`/playlists/${encodedId}/items?limit=50`);
+      if (spotifyPlaylistPageItems(retryPage).length) {
+        firstPage = retryPage;
+        itemSource = 'items-endpoint-retry';
+      }
+    } catch (error) {
+      itemEndpointError = error;
+      console.warn('[SpotifyPlaylist] item endpoint retry failed:', id, error && (error.message || error));
+    }
+  }
 
   const entries = [];
+  const seenPages = new Set();
   let page = firstPage;
   while (page && entries.length < limit) {
     for (const entry of spotifyPlaylistPageItems(page)) {
@@ -2898,18 +2981,31 @@ async function spotifyPlaylistTracks(id, limit = 100) {
       entries.push(entry);
     }
     const nextUrl = spotifyPlaylistPageNext(page);
-    if (!nextUrl || entries.length >= limit) break;
-    const next = new URL(nextUrl);
-    page = await spotifyApi(next.pathname.replace(/^\/v1/, '') + next.search);
+    if (!nextUrl || entries.length >= limit || seenPages.has(nextUrl)) break;
+    seenPages.add(nextUrl);
+    try {
+      const next = new URL(nextUrl);
+      page = await spotifyApi(next.pathname.replace(/^\/v1/, '') + next.search);
+    } catch (error) {
+      itemEndpointError = itemEndpointError || error;
+      console.warn('[SpotifyPlaylist] pagination failed:', id, error && (error.message || error));
+      break;
+    }
   }
 
   // Spotify Development Mode can return sparse playlist item objects after
-  // the 2026 playlist-field migration. Hydrate only incomplete entries through
-  // the official single-track endpoint, with low concurrency to avoid 429s.
+  // the playlist-field migration. Hydrate only incomplete entries through the
+  // official single-track endpoint, with low concurrency to avoid 429s.
   const normalized = await mapWithConcurrency(entries, 4, (entry) => normalizeSpotifyPlaylistTrack(entry, market));
   const tracks = normalized.filter(Boolean);
-  const declaredTotal = spotifyPlaylistPageTotal(firstPage)
-    || Number(playlist && playlist.items && playlist.items.total || playlist && playlist.tracks && playlist.tracks.total || 0);
+  const ownerId = String(playlist && playlist.owner && playlist.owner.id || '');
+  const ownedByCurrentUser = !!(profile && profile.id && ownerId && profile.id === ownerId);
+  const contextUri = spotifyPlaylistContextUri(playlist) || spotifyPlaylistContextUri(id);
+  const missingReadScopes = !spotifyPlaylistReadScopesReady(token);
+  let itemAccess = 'available';
+  if (!tracks.length && declaredTotal > 0) {
+    itemAccess = itemEndpointError && Number(itemEndpointError.status) === 403 ? 'restricted' : 'unavailable';
+  }
 
   return {
     playlist: {
@@ -2918,13 +3014,30 @@ async function spotifyPlaylistTracks(id, limit = 100) {
       cover: playlist && playlist.images && playlist.images[0] && playlist.images[0].url || '',
       trackCount: declaredTotal || tracks.length,
       creator: playlist && playlist.owner && (playlist.owner.display_name || playlist.owner.id) || '',
+      ownerId,
+      ownedByCurrentUser,
+      collaborative: !!(playlist && playlist.collaborative),
+      public: playlist && playlist.public,
+      spotifyUri: contextUri,
+      contextUri,
+      canContextPlay: !!contextUri,
+      itemAccess,
+      requiresReauthorization: missingReadScopes,
+      externalUrl: String(playlist && playlist.external_urls && playlist.external_urls.spotify || ''),
     },
     tracks,
     diagnostics: {
+      declaredTotal,
       receivedItems: entries.length,
       playableTracks: tracks.length,
       skippedItems: Math.max(0, entries.length - tracks.length),
       hydratedSparseItems: entries.filter((entry) => !spotifyTrackHasPlaylistMetadata(unwrapSpotifyPlaylistItem(entry))).length,
+      itemSource,
+      itemEndpointStatus: itemEndpointError ? Number(itemEndpointError.status || 0) : 200,
+      itemEndpointError: itemEndpointError ? String(itemEndpointError.message || itemEndpointError) : '',
+      ownedByCurrentUser,
+      collaborative: !!(playlist && playlist.collaborative),
+      missingReadScopes,
     },
   };
 }
@@ -3270,19 +3383,32 @@ async function spotifyTransferPlayback(deviceId, play = false) {
   return true;
 }
 
-async function spotifyStartPlayback({ deviceId, uri, positionMs = 0 } = {}) {
-  if (!uri || !/^spotify:track:[A-Za-z0-9]+$/.test(String(uri))) {
-    throw Object.assign(new Error('SPOTIFY_TRACK_URI_REQUIRED'), { status: 400 });
+async function spotifyStartPlayback({ deviceId, uri, contextUri, offsetUri, positionMs = 0 } = {}) {
+  const normalizedUri = String(uri || '').trim();
+  const normalizedContextUri = spotifyPlaylistContextUri(contextUri);
+  if (!/^spotify:track:[A-Za-z0-9]+$/.test(normalizedUri) && !normalizedContextUri) {
+    throw Object.assign(new Error(normalizedContextUri ? 'SPOTIFY_CONTEXT_URI_REQUIRED' : 'SPOTIFY_TRACK_URI_REQUIRED'), { status: 400 });
   }
   const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : '';
-  const normalizedUri = String(uri);
   const normalizedPositionMs = Math.max(0, Math.round(Number(positionMs) || 0));
+  const body = normalizedContextUri
+    ? {
+        context_uri: normalizedContextUri,
+        ...(String(offsetUri || '').trim() ? { offset: { uri: String(offsetUri).trim() } } : {}),
+        position_ms: normalizedPositionMs,
+      }
+    : { uris: [normalizedUri], position_ms: normalizedPositionMs };
   await spotifyApi(`/me/player/play${query}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uris: [normalizedUri], position_ms: normalizedPositionMs }),
+    body: JSON.stringify(body),
   });
-  return { uri: normalizedUri, deviceId: String(deviceId || ''), positionMs: normalizedPositionMs };
+  return {
+    uri: normalizedUri,
+    contextUri: normalizedContextUri,
+    deviceId: String(deviceId || ''),
+    positionMs: normalizedPositionMs,
+  };
 }
 
 async function spotifyPausePlayback(deviceId = '') {

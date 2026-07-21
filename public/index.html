@@ -29,7 +29,8 @@ try {
 html,body{font-family:var(--font-sans);background:#000;color:#fff;overflow:hidden;height:100vh;width:100vw;user-select:none;-webkit-font-smoothing:antialiased}
 body.cursor-hidden,body.cursor-hidden *{cursor:none!important}
 html.desktop-shell-root,html.desktop-shell-root body{background:transparent}
-html.desktop-rounded-window-root,html.desktop-rounded-window-root body{background:transparent!important}
+html.desktop-rounded-window-root,html.desktop-rounded-window-root body{background:transparent!important;border-radius:30px;overflow:hidden}
+body.desktop-shell.desktop-rounded-window{border-radius:30px;overflow:hidden}
 :root{--font-sans:"Noto Sans SC","PingFang SC","HarmonyOS Sans SC","Alibaba PuHuiTi","Inter",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;--font-mono:"JetBrains Mono","Geist Mono","SF Mono",ui-monospace,monospace;--fc-bg:#08090B;--fc-paper:#0E1014;--fc-ink:#E8ECEF;--fc-ink-2:#D2D7DC;--fc-muted:#8A9099;--fc-hair:#1A1D22;--fc-hair-2:#262A31;--fc-accent:#00F5D4;--fc-accent-hov:#00E0BE;--fc-accent-rgb:0,245,212;--fc-blue:#2442ff;--fc-warm:#f8f4ee;--chill-ink:#030608;--chill-deep:#061116;--chill-cyan:#8fe9ff;--chill-blue:#73a7ff;--chill-mint:#9cffdf;--chill-soft:rgba(214,248,255,.9);--champagne:#f4d28a;--champagne-deep:#9a6f2c;--home-accent:#00f5d4;--home-accent-rgb:0,245,212;--visual-tint:#9db8cf;--source-netease:#d95b67;--source-qq:#00F5D4;--source-local:#9db8cf}
 :root{--glass-bg:linear-gradient(112deg,rgba(72,74,76,.62),rgba(24,27,30,.70) 48%,rgba(8,12,14,.74));--glass-bg-focus:linear-gradient(112deg,rgba(88,91,92,.68),rgba(28,32,35,.76) 50%,rgba(8,13,15,.82));--glass-border:rgba(0,245,212,.30);--glass-border-soft:rgba(255,255,255,.095);--glass-shadow:0 22px 64px rgba(0,0,0,.30),0 0 34px rgba(0,245,212,.052),inset 0 1px 0 rgba(255,255,255,.16),inset 0 -24px 58px rgba(0,0,0,.16);--glass-shadow-focus:0 24px 72px rgba(0,0,0,.34),0 0 0 1px rgba(0,245,212,.13),0 0 42px rgba(0,245,212,.075),inset 0 1px 0 rgba(255,255,255,.20)}
 :root{--saved-panel-glass-bg:rgba(0,0,0,.10);--saved-panel-glass-filter:blur(12px) saturate(1.8) brightness(1.16);--saved-panel-glass-svg-filter:url(#mineradio-control-glass-filter) saturate(1);--saved-panel-glass-shadow:inset 0 0 2px 1px rgba(255,255,255,.35),inset 0 0 10px 4px rgba(255,255,255,.15),0 4px 16px rgba(17,17,26,.05),0 8px 24px rgba(17,17,26,.05),0 16px 56px rgba(17,17,26,.05),inset 0 4px 16px rgba(17,17,26,.05),inset 0 8px 24px rgba(17,17,26,.05),inset 0 16px 56px rgba(17,17,26,.05);--saved-panel-glass-radius:50px;--saved-button-glass-bg:rgba(0,0,0,.10);--saved-button-glass-filter:blur(12px) saturate(1.8) brightness(1.16);--saved-button-glass-svg-filter:url(#mineradio-control-glass-filter) saturate(1);--saved-button-glass-shadow:inset 0 0 2px 1px rgba(255,255,255,.34),inset 0 0 10px 4px rgba(255,255,255,.13),0 10px 30px rgba(0,0,0,.18);--saved-button-glass-hover-bg:rgba(255,255,255,.055);--saved-button-glass-hover-shadow:inset 0 0 2px 1px rgba(255,255,255,.42),inset 0 0 12px 5px rgba(255,255,255,.17),0 12px 34px rgba(0,0,0,.22),0 0 18px rgba(255,255,255,.06)}
@@ -1272,6 +1273,18 @@ body.desktop-shell.diy-mode #bottom-bar.stage-mode{left:50%;width:min(1080px,cal
 .fx-advanced-body{display:none;margin-top:8px}
 .fx-advanced.open .fx-advanced-body{display:block}
 .fx-advanced .fx-slider label{font-size:10.5px;color:rgba(255,255,255,.48)}
+.fx-app-update-card{margin-top:10px;padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.038),rgba(255,255,255,.018));box-shadow:inset 0 1px 0 rgba(255,255,255,.045)}
+.fx-check-update-btn{width:100%;min-height:42px;padding:8px 11px;border:1px solid rgba(var(--fc-accent-rgb),.22);border-radius:10px;background:rgba(var(--fc-accent-rgb),.065);color:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:inherit;cursor:pointer;transition:background .18s,border-color .18s,transform .18s,opacity .18s}
+.fx-check-update-btn:hover{background:rgba(var(--fc-accent-rgb),.11);border-color:rgba(var(--fc-accent-rgb),.38);transform:translateY(-1px)}
+.fx-check-update-btn:disabled{cursor:wait;opacity:.64;transform:none}
+.fx-check-update-main{font-size:11.5px;font-weight:760;letter-spacing:.25px;text-align:left}
+.fx-check-update-status{font-size:9.5px;color:rgba(255,255,255,.42);text-align:right;max-width:58%;line-height:1.35}
+.fx-app-identity{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.72)}
+.fx-app-identity-mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(var(--fc-accent-rgb),.18),rgba(255,255,255,.035));border:1px solid rgba(var(--fc-accent-rgb),.22);font-size:10px;font-weight:850;letter-spacing:.08em;color:rgba(255,255,255,.92)}
+.fx-app-identity-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
+.fx-app-identity-name{font-size:11.5px;font-weight:760;color:rgba(255,255,255,.82)}
+.fx-app-identity-version{font-size:9.5px;color:rgba(255,255,255,.38);font-variant-numeric:tabular-nums}
+
 .fx-fold{margin-top:12px;border:1px solid rgba(255,255,255,.055);border-radius:13px;background:rgba(255,255,255,.022);overflow:hidden}
 .fx-fold-head{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;padding:12px 12px;color:rgba(255,255,255,.70);user-select:none;transition:background .2s,color .2s}
 .fx-fold-head:hover{background:rgba(255,255,255,.035);color:#fff}
@@ -2892,6 +2905,21 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
       <div class="fx-slider"><label>Cường độ phát sáng</label><input id="fx-bloom" type="range" min="0" max="1.6" step="0.01"><output></output></div>
       <div class="fx-slider"><label>Độ phân tán</label><input id="fx-scatter" type="range" min="0" max="0.5" step="0.01"><output></output></div>
       <div class="fx-slider"><label>Nén nền</label><input id="fx-bgfade" type="range" min="0" max="1.2" step="0.01"><output></output></div>
+
+      <div class="fx-section-label" id="fx-update-section-label">Cập nhật ứng dụng</div>
+      <div class="fx-app-update-card">
+        <button id="fx-check-update-btn" class="fx-check-update-btn" type="button" onclick="checkLatestUpdateFromAdvanced()">
+          <span id="fx-check-update-main" class="fx-check-update-main">Kiểm tra cập nhật</span>
+          <span id="fx-check-update-status" class="fx-check-update-status">Sẵn sàng</span>
+        </button>
+        <div class="fx-app-identity" aria-label="ShinaYuu Music 1.1.6.10">
+          <div class="fx-app-identity-mark">SY</div>
+          <div class="fx-app-identity-copy">
+            <div class="fx-app-identity-name">ShinaYuu Music</div>
+            <div id="fx-app-version" class="fx-app-identity-version">Phiên bản 1.1.6.10</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3746,6 +3774,7 @@ function applyAppLanguage(root) {
   if (en) en.classList.toggle('active', appLanguage==='en');
   if (typeof updateSearchModeTabs === 'function') updateSearchModeTabs();
   if (typeof updateLoginProviderUi === 'function') updateLoginProviderUi();
+  if (typeof syncAdvancedUpdateUi === 'function') syncAdvancedUpdateUi();
   if (typeof visualGuideActive !== 'undefined' && visualGuideActive && typeof showVisualGuideStep === 'function') showVisualGuideStep(visualGuideStep);
   var fullLanguagePass = !root || root === document || root === document.body;
   if (fullLanguagePass) {
@@ -3949,6 +3978,9 @@ var smoothWheelScrollBound = false;
 var coverProcessToken = 0, aiDepthPipeline = null, aiDepthReady = false, aiDepthBusy = false, aiDepthFailUntil = 0;
 var coverDepthCache = Object.create(null), coverDepthCacheKeys = [];
 var aiDepthLastRunAt = 0, aiDepthMinGapMs = 18000;
+var SHINAYUU_APP_DISPLAY_VERSION = '1.1.6.10';
+var advancedUpdateCheckBusy = false;
+var advancedUpdateStatusKind = 'ready';
 var updatePreviewState = {
   visible: false,
   open: false,
@@ -3962,8 +3994,8 @@ var updatePreviewState = {
   installerPath: '',
   installerOpened: false,
   cached: false,
-  currentVersion: '0.9.11',
-  version: '1.1.0',
+  currentVersion: SHINAYUU_APP_DISPLAY_VERSION,
+  version: SHINAYUU_APP_DISPLAY_VERSION,
   configured: false,
   preview: true,
   updateAvailable: false,
@@ -21688,7 +21720,7 @@ async function refreshUserPlaylists(force) {
   if ($pl && !userPlaylists.length) $pl.innerHTML = '<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.32);font-size:11.5px">' + (appLanguage==='en'?'No playlists found.':'Chưa tìm thấy playlist.') + '</div>';
   return { spotify: neteaseLists.length, youtube: qqPlaylists.length, local: localPlaylists.length, youtubeError: result[2].syncError || '' };
 }
-var playlistPanelDetailState = { key: '', loading: false, playlist: null, tracks: [], token: 0, renderLimit: PLAYLIST_DETAIL_INITIAL_RENDER };
+var playlistPanelDetailState = { key: '', loading: false, playlist: null, tracks: [], token: 0, renderLimit: PLAYLIST_DETAIL_INITIAL_RENDER, emptyReason: '', requiresReauthorization: false };
 function playlistPanelKey(provider, id) {
   provider = provider === 'qq' ? 'qq' : (provider === 'local' ? 'local' : 'netease');
   return provider + ':' + String(id || '');
@@ -21719,7 +21751,17 @@ function playlistPanelDetailHtml(pl, provider) {
           '<button type="button" class="pl-detail-row-artist" data-pl-detail-artist="' + i + '">' + escHtml(song.artist || '未知歌手') + '</button></div>' +
         '</div>';
       }).join('');
-  if (!loading && !rows) rows = '<div style="text-align:center;padding:14px 0;color:rgba(255,255,255,.30);font-size:11.5px">歌单暂无可播放歌曲</div>';
+  if (!loading && !rows) {
+    var emptyText = '歌单暂无可播放歌曲';
+    if (playlistPanelDetailState.requiresReauthorization) {
+      emptyText = appLanguage === 'en' ? 'Reconnect Spotify once to grant playlist access.' : 'Hãy kết nối lại Spotify một lần để cấp quyền đọc playlist.';
+    } else if (playlistPanelDetailState.emptyReason === 'restricted') {
+      emptyText = appLanguage === 'en' ? 'Spotify does not expose the track list for this saved playlist, but Play playlist can still start it.' : 'Spotify không cung cấp danh sách bài của playlist đã lưu này, nhưng nút Phát playlist vẫn có thể mở playlist.';
+    } else if ((pl && pl.trackCount || 0) > 0) {
+      emptyText = appLanguage === 'en' ? 'Spotify reported tracks, but the list could not be read. Refresh or reconnect Spotify.' : 'Spotify báo playlist có bài nhưng chưa đọc được danh sách. Hãy Refresh hoặc kết nối lại Spotify.';
+    }
+    rows = '<div style="text-align:center;padding:14px 10px;color:rgba(255,255,255,.42);font-size:11.5px;line-height:1.55">' + escHtml(emptyText) + '</div>';
+  }
   if (!loading && tracks.length > renderLimit) {
     rows += '<button type="button" class="fx-mini-btn ghost pl-detail-load-more" data-pl-detail-load-more="1">加载更多 ' + renderLimit + '/' + tracks.length + '</button>';
   } else if (!loading && tracks.length > PLAYLIST_DETAIL_INITIAL_RENDER) {
@@ -21773,13 +21815,18 @@ async function openPlaylistPanelDetail(provider, pid, title) {
     playlistPanelDetailState.key='';playlistPanelDetailState.tracks=[];playlistPanelDetailState.playlist=null;playlistPanelDetailState.renderLimit=PLAYLIST_DETAIL_INITIAL_RENDER;renderPlaylistPanelDetailState();return;
   }
   var token=++playlistPanelDetailState.token;
-  playlistPanelDetailState={key:key,loading:true,playlist:pl,tracks:[],token:token,renderLimit:PLAYLIST_DETAIL_INITIAL_RENDER};
+  playlistPanelDetailState={key:key,loading:true,playlist:pl,tracks:[],token:token,renderLimit:PLAYLIST_DETAIL_INITIAL_RENDER,emptyReason:'',requiresReauthorization:false};
   renderPlaylistPanelDetailState();scrollPlaylistPanelDetailIntoView(key);
   try {
     var endpoint = provider === 'qq' ? '/api/qq/playlist/tracks?id=' : (provider === 'local' ? '/api/local/playlist?id=' : '/api/playlist/tracks?id=');
     var r=await apiJson(endpoint+encodeURIComponent(pid));
     if(playlistPanelDetailState.token!==token)return;
-    playlistPanelDetailState.loading=false;playlistPanelDetailState.tracks=(r&&r.tracks||[]).map(cloneSong).filter(function(song){return song&&song.name&&(songProviderKey(song)!=='netease'||!!spotifyTrackIdFromSong(song));});playlistPanelDetailState.renderLimit=Math.min(playlistPanelDetailState.tracks.length,PLAYLIST_DETAIL_INITIAL_RENDER);renderPlaylistPanelDetailState();
+    playlistPanelDetailState.loading=false;
+    playlistPanelDetailState.playlist=Object.assign({},pl,(r&&r.playlist)||{});
+    playlistPanelDetailState.emptyReason=String(r&&r.playlist&&r.playlist.itemAccess||'');
+    playlistPanelDetailState.requiresReauthorization=!!(r&&r.playlist&&r.playlist.requiresReauthorization);
+    playlistPanelDetailState.tracks=(r&&r.tracks||[]).map(cloneSong).filter(function(song){return song&&song.name&&(songProviderKey(song)!=='netease'||!!spotifyTrackIdFromSong(song));});
+    playlistPanelDetailState.renderLimit=Math.min(playlistPanelDetailState.tracks.length,PLAYLIST_DETAIL_INITIAL_RENDER);renderPlaylistPanelDetailState();
   } catch(e){console.warn('[PlaylistPanelDetail]',pid,e);if(playlistPanelDetailState.token!==token)return;playlistPanelDetailState.loading=false;playlistPanelDetailState.tracks=[];playlistPanelDetailState.renderLimit=PLAYLIST_DETAIL_INITIAL_RENDER;renderPlaylistPanelDetailState();showToast(appLanguage==='en'?'Playlist details failed to load.':'Không thể tải chi tiết playlist.');}
 }
 function playPlaylistPanelDetail() {
@@ -22051,7 +22098,26 @@ async function loadPlaylistIntoQueueById(id, autoplay, title) {
       : qqPlaylistId
         ? await apiJson('/api/qq/playlist/tracks?id=' + encodeURIComponent(qqPlaylistId))
         : await apiJson('/api/playlist/tracks?id=' + encodeURIComponent(rawId));
-    if (r.error || !r.tracks || !r.tracks.length) { showToast(r.error || (appLanguage==='en'?'The playlist is empty.':'Playlist đang trống.')); return; }
+    if (r.error) { showToast(r.error); return; }
+    if (!r.tracks || !r.tracks.length) {
+      var spotifyPlaylist = !qqPlaylistId && !localPlaylistId ? (r.playlist || {}) : null;
+      if (spotifyPlaylist && spotifyPlaylist.requiresReauthorization) {
+        showToast(appLanguage === 'en' ? 'Reconnect Spotify once to grant playlist access.' : 'Hãy ngắt và kết nối lại Spotify một lần để cấp quyền đọc playlist.');
+        return;
+      }
+      if (spotifyPlaylist && spotifyPlaylist.canContextPlay && spotifyPlaylist.contextUri && autoplay && typeof window.playSpotifyPlaylistContext === 'function') {
+        try {
+          await window.playSpotifyPlaylistContext(spotifyPlaylist.contextUri, spotifyPlaylist);
+          showToast(appLanguage === 'en' ? 'Spotify started the playlist. Track listing is restricted by Spotify.' : 'Spotify đã bắt đầu phát playlist. Danh sách bài đang bị Spotify giới hạn truy cập.');
+        } catch (contextError) {
+          console.warn('[SpotifyPlaylistContext]', contextError);
+          showToast(appLanguage === 'en' ? 'Spotify could not start this playlist.' : 'Spotify không thể bắt đầu playlist này.');
+        }
+        return;
+      }
+      showToast(appLanguage==='en'?'The playlist is empty.':'Playlist đang trống.');
+      return;
+    }
     var normalizedPlaylistTracks = r.tracks.map(cloneSong).filter(function(song){
       if (!song || !song.name) return false;
       return songProviderKey(song) !== 'netease' || !!spotifyTrackIdFromSong(song);
@@ -25534,13 +25600,65 @@ async function checkLatestUpdate(automatic) {
   try {
     var data = await apiJson('/api/update/latest?t=' + Date.now());
     applyLatestUpdateInfo(data, !!automatic);
+    return { ok: true, data: data };
   } catch (e) {
     updatePreviewState.preview = false;
     updatePreviewState.updateAvailable = false;
     updatePreviewState.hero = '当前版本，更新检测已就绪。';
     renderUpdatePreviewPanel();
     setUpdatePreviewVisible(false);
+    return { ok: false, error: String(e && (e.message || e) || 'UPDATE_CHECK_FAILED') };
   }
+}
+
+function syncAdvancedUpdateUi(statusKind) {
+  if (statusKind) advancedUpdateStatusKind = statusKind;
+  var label = document.getElementById('fx-update-section-label');
+  var main = document.getElementById('fx-check-update-main');
+  var status = document.getElementById('fx-check-update-status');
+  var version = document.getElementById('fx-app-version');
+  var button = document.getElementById('fx-check-update-btn');
+  var english = appLanguage === 'en';
+  if (label) label.textContent = english ? 'Application update' : 'Cập nhật ứng dụng';
+  if (main) main.textContent = advancedUpdateCheckBusy ? (english ? 'Checking…' : 'Đang kiểm tra…') : (english ? 'Check for updates' : 'Kiểm tra cập nhật');
+  if (button) button.disabled = !!advancedUpdateCheckBusy;
+  if (version) version.textContent = (english ? 'Version ' : 'Phiên bản ') + SHINAYUU_APP_DISPLAY_VERSION;
+  if (!status) return;
+  var copy = {
+    ready: english ? 'Ready' : 'Sẵn sàng',
+    checking: english ? 'Connecting…' : 'Đang kết nối…',
+    latest: english ? 'You are up to date' : 'Đang là bản mới nhất',
+    available: english ? ('Version ' + updatePreviewState.version + ' available') : ('Có bản ' + updatePreviewState.version),
+    unconfigured: english ? 'Update source is not configured' : 'Chưa cấu hình nguồn cập nhật',
+    error: english ? 'Could not check' : 'Không thể kiểm tra'
+  };
+  status.textContent = copy[advancedUpdateStatusKind] || copy.ready;
+}
+
+async function checkLatestUpdateFromAdvanced() {
+  if (advancedUpdateCheckBusy) return;
+  advancedUpdateCheckBusy = true;
+  syncAdvancedUpdateUi('checking');
+  var result = await checkLatestUpdate(false);
+  advancedUpdateCheckBusy = false;
+  if (!result || result.ok === false) {
+    syncAdvancedUpdateUi('error');
+    showToast(appLanguage === 'en' ? 'Could not check for updates. Please try again.' : 'Không thể kiểm tra cập nhật. Hãy thử lại.');
+    return;
+  }
+  if (!updatePreviewState.configured) {
+    syncAdvancedUpdateUi('unconfigured');
+    showToast(appLanguage === 'en' ? 'The update source has not been configured yet.' : 'Nguồn cập nhật chưa được cấu hình trong package.json.');
+    return;
+  }
+  if (updatePreviewState.updateAvailable) {
+    syncAdvancedUpdateUi('available');
+    openUpdatePanel();
+    showToast((appLanguage === 'en' ? 'Update available: ' : 'Có bản cập nhật: ') + updatePreviewState.version);
+    return;
+  }
+  syncAdvancedUpdateUi('latest');
+  showToast(appLanguage === 'en' ? 'You are using the latest version.' : 'Bạn đang dùng phiên bản mới nhất.');
 }
 
 function applyLatestUpdateInfo(data, automatic) {
@@ -25562,6 +25680,7 @@ function applyLatestUpdateInfo(data, automatic) {
   }
   renderUpdatePreviewPanel();
   setUpdatePreviewVisible(updatePreviewState.updateAvailable || updatePreviewState.preview);
+  syncAdvancedUpdateUi(updatePreviewState.updateAvailable ? 'available' : (updatePreviewState.configured ? 'latest' : 'unconfigured'));
   if (automatic && updatePreviewState.updateAvailable) {
     var versionKey = String(updatePreviewState.version || 'unknown');
     var dismissedKey = '';
@@ -29632,7 +29751,7 @@ safeRenderQueuePanel('startup');
 updateCustomCoverButton();
 updateCustomLyricControls();
 updateLikeButtons();
-setTimeout(initUpdatePreview, 9000);
+setTimeout(function(){ syncAdvancedUpdateUi('ready'); initUpdatePreview(); }, 9000);
 
 // ============================================================
 //  主循环
@@ -30323,7 +30442,7 @@ function initHomeLiquidGlass() {
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHomeLiquidGlass, {once:true}); else initHomeLiquidGlass();
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeBackgroundMediaLibrary, {once:true}); else initializeBackgroundMediaLibrary();
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUpdatePreview, {once:true}); else initUpdatePreview();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ syncAdvancedUpdateUi('ready'); initUpdatePreview(); }, {once:true}); else { syncAdvancedUpdateUi('ready'); initUpdatePreview(); }
 </script>
 
 </body>

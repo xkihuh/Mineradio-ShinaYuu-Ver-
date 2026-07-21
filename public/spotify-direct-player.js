@@ -1858,6 +1858,79 @@
   } else {
     setTimeout(prewarmSpotifyDirectPlayer, 1200);
   }
+  async function waitForSpotifyContextTrack(timeoutMs) {
+    var started = Date.now();
+    timeoutMs = Math.max(900, Number(timeoutMs) || 4500);
+    while (Date.now() - started < timeoutMs) {
+      var state = await window.apiJson('/api/spotify/player/state?t=' + Date.now()).catch(function () { return null; });
+      if (state && state.track && (state.track.spotifyId || state.track.id)) return state;
+      await spotifyDelay(180);
+    }
+    return null;
+  }
+
+  window.playSpotifyPlaylistContext = async function (contextUri, playlistMeta) {
+    contextUri = String(contextUri || '').trim();
+    playlistMeta = playlistMeta || {};
+    if (!/^spotify:playlist:[A-Za-z0-9]+$/i.test(contextUri)) throw new Error('SPOTIFY_PLAYLIST_CONTEXT_REQUIRED');
+    var device = await resolveSpotifyDevice();
+    activateSpotifyAudioFromGesture();
+    if (spotifyDirectState.sdkPlayer) await applySpotifySdkVolume(spotifyDirectState.sdkPlayer);
+    var requestId = 'sy-context-' + Date.now().toString(36);
+    await postJson('/api/spotify/player/play', {
+      deviceId: device.id,
+      contextUri: contextUri,
+      positionMs: 0,
+      requestId: requestId
+    });
+
+    spotifyDirectState.active = true;
+    spotifyDirectState.switchingTrack = false;
+    spotifyDirectState.requestedUri = '';
+    spotifyDirectState.playRequestId = requestId;
+    spotifyDirectState.mode = device.mode;
+    spotifyDirectState.deviceId = device.id;
+    spotifyDirectState.deviceName = device.name || 'ShinaYuu Music';
+    spotifyDirectState.updatedAt = Date.now();
+    spotifyDirectState.clockUpdatedAt = monotonicNowMs();
+    window.activePlaybackTransport = 'spotify';
+    document.body.classList.add('spotify-direct-active');
+
+    var state = await waitForSpotifyContextTrack(4800);
+    if (state && state.track) {
+      var song = typeof window.cloneSong === 'function' ? window.cloneSong(state.track) : Object.assign({}, state.track);
+      song.provider = 'netease';
+      song.realProvider = 'spotify';
+      song.source = 'netease';
+      song.playbackTransport = 'spotify';
+      song.spotifyId = song.spotifyId || song.id || '';
+      song.spotifyUri = song.spotifyUri || (song.spotifyId ? 'spotify:track:' + song.spotifyId : '');
+      song.radioContext = { type: 'spotify-playlist', id: playlistMeta.id || '', name: playlistMeta.name || '', contextUri: contextUri };
+      window.playQueue = [song];
+      window.currentIdx = 0;
+      window.trackSwitchToken++;
+      spotifyDirectState.currentUri = song.spotifyUri || '';
+      spotifyDirectState.currentTrackId = song.spotifyId || '';
+      spotifyDirectState.positionMs = Number(state.progressMs || 0);
+      spotifyDirectState.durationMs = Number(state.durationMs || song.duration || 0);
+      spotifyDirectState.isPlaying = state.isPlaying !== false;
+      spotifyDirectState.clockUpdatedAt = monotonicNowMs();
+      var title = document.getElementById('thumb-title');
+      var artist = document.getElementById('thumb-artist');
+      if (title) title.textContent = song.name || playlistMeta.name || '';
+      if (artist) artist.textContent = song.artist || 'Spotify';
+      try { if (typeof window.updateControlTrackInfo === 'function') window.updateControlTrackInfo(song); } catch (_) {}
+      try { if (typeof window.safeRenderQueuePanel === 'function') window.safeRenderQueuePanel('spotify-playlist-context', { scrollCurrent: false }); } catch (_) {}
+      try { if (typeof window.scheduleShelfRebuild === 'function') window.scheduleShelfRebuild('spotify-playlist-context', true); } catch (_) {}
+      try { if (typeof window.forcePlaybackControlsInteractive === 'function') window.forcePlaybackControlsInteractive(); } catch (_) {}
+      try { if (typeof window.fetchLyric === 'function') window.fetchLyric(song, window.trackSwitchToken); } catch (_) {}
+      try { syncSpotifySdkSongMetadata(state.track, { duration: state.durationMs, position: state.progressMs, paused: state.isPlaying === false }, 'playlist-context'); } catch (_) {}
+    }
+    startSpotifyPolling();
+    startSpotifyUiClock();
+    return { ok: true, state: state, contextUri: contextUri };
+  };
+
   window.prewarmSpotifyDirectPlayer = prewarmSpotifyDirectPlayer;
   setTimeout(function () { setSpotifyDirectVolume(targetSpotifyVolume()); }, 450);
 

@@ -2254,7 +2254,10 @@ function createMainWindowShell() {
     transparent: USE_ROUNDED_TRANSPARENT_WINDOW,
     backgroundColor: USE_ROUNDED_TRANSPARENT_WINDOW ? '#00000000' : '#08090B',
     roundedCorners: true,
-    hasShadow: true,
+    // DWM can draw a rectangular native shadow around transparent frameless
+    // windows. The rounded shell supplies its own border; opaque fallback keeps
+    // the native shadow.
+    hasShadow: !USE_ROUNDED_TRANSPARENT_WINDOW,
     autoHideMenuBar: true,
     title: APP_NAME,
     icon: APP_ICON_ICO,
@@ -2264,6 +2267,10 @@ function createMainWindowShell() {
       nodeIntegration: false,
       sandbox: false,
       backgroundThrottling: false,
+      // The renderer must receive the window-style mode. Without this argument
+      // preload falls back to the opaque CSS class even when BrowserWindow is
+      // transparent, which makes the visible app shell remain square.
+      additionalArguments: [USE_ROUNDED_TRANSPARENT_WINDOW ? '--shinayuu-window-style=rounded-transparent' : '--shinayuu-window-style=safe-opaque'],
     },
   });
   mainWindow = win;
