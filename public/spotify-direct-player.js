@@ -1253,12 +1253,17 @@
     setTimeout(pollSpotifyState, 350);
   }
 
-  async function pauseSpotifyDirect(silent) {
-    if (!isSpotifyActive()) return false;
+  async function pauseSpotifyDirect(silent, force) {
+    if (!force && !isSpotifyActive()) return false;
+    var canControl = !!(spotifyDirectState.sdkPlayer || spotifyDirectState.deviceId || usesRemoteSpotifyHost());
+    if (!canControl) {
+      updateSpotifyState({ positionMs: nowPositionMs(), isPlaying: false }, force ? 'forced-pause-no-device' : 'pause-no-device');
+      return false;
+    }
     try {
       if (spotifyDirectState.mode === 'sdk' && spotifyDirectState.sdkPlayer) await spotifyDirectState.sdkPlayer.pause();
       else await postJson('/api/spotify/player/pause', { deviceId: spotifyDirectState.deviceId });
-      updateSpotifyState({ positionMs: nowPositionMs(), isPlaying: false }, 'pause');
+      updateSpotifyState({ positionMs: nowPositionMs(), isPlaying: false }, force ? 'forced-pause' : 'pause');
       try { if (typeof window.updateListenStatsTick === 'function') window.updateListenStatsTick(true); } catch (_) {}
       return true;
     } catch (error) {
@@ -1266,6 +1271,64 @@
       return false;
     }
   }
+
+  async function deactivateSpotifyForExternalPlayback(reason) {
+    var transportWasSpotify = window.activePlaybackTransport === 'spotify';
+    var shouldStop = transportWasSpotify || spotifyDirectState.active || spotifyDirectState.isPlaying || spotifyDirectState.switchingTrack;
+    spotifyDirectState.seekSerial++;
+    spotifyDirectState.switchingTrack = false;
+    spotifyDirectState.requestedUri = '';
+    spotifyDirectState.playRequestId = '';
+    spotifyDirectState.wrongTrackSince = 0;
+    stopSpotifyPolling();
+    stopSpotifyRealtimeCapture();
+    if (spotifyDirectState.lyricsRefreshTimer) {
+      clearTimeout(spotifyDirectState.lyricsRefreshTimer);
+      spotifyDirectState.lyricsRefreshTimer = null;
+    }
+
+    if (shouldStop) {
+      await pauseSpotifyDirect(true, true);
+      // The SDK pause promise can resolve before the audible output has fully
+      // stopped. Verify once and retry so switching to YouTube/local can never
+      // leave the previous Spotify track playing underneath the new source.
+      if (spotifyDirectState.mode === 'sdk' && spotifyDirectState.sdkPlayer && typeof spotifyDirectState.sdkPlayer.getCurrentState === 'function') {
+        try {
+          await spotifyDelay(70);
+          var state = await spotifyDirectState.sdkPlayer.getCurrentState();
+          if (state && state.paused === false) {
+            await spotifyDirectState.sdkPlayer.pause();
+            await spotifyDelay(45);
+          }
+        } catch (_) {}
+      }
+    }
+
+    spotifyDirectState.active = false;
+    spotifyDirectState.isPlaying = false;
+    spotifyDirectState.seeking = false;
+    spotifyDirectState.seekWasPlaying = false;
+    spotifyDirectState.seekRecoveryUntil = 0;
+    spotifyDirectState.clockUpdatedAt = monotonicNowMs();
+    document.body.classList.remove('spotify-direct-active');
+    if (transportWasSpotify) window.activePlaybackTransport = 'none';
+    window.playing = false;
+    try { if (typeof window.setPlayIcon === 'function') window.setPlayIcon(false); } catch (_) {}
+    // A Spotify play request may already be in flight when the user clicks a
+    // YouTube result. Re-check asynchronously without delaying the new source;
+    // if that stale request starts later, pause it before it can overlap.
+    [220, 700].forEach(function(delayMs){
+      setTimeout(async function(){
+        if (window.activePlaybackTransport === 'spotify' || !spotifyDirectState.sdkPlayer || typeof spotifyDirectState.sdkPlayer.getCurrentState !== 'function') return;
+        try {
+          var state = await spotifyDirectState.sdkPlayer.getCurrentState();
+          if (state && state.paused === false) await spotifyDirectState.sdkPlayer.pause();
+        } catch (_) {}
+      }, delayMs);
+    });
+    return true;
+  }
+  window.stopSpotifyPlaybackForProviderSwitch = deactivateSpotifyForExternalPlayback;
 
   async function resumeSpotifyDirect() {
     if (!isSpotifyActive()) return false;
@@ -1628,6 +1691,11 @@
         if (customCover) window.applyCoverDataUrl(customCover, coverOpts);
         else window.loadCoverFromUrl(song.cover ? window.coverUrlWithSize(song.cover, 400) : '', coverOpts);
       } catch (_) {}
+      try {
+        if (typeof window.primeNowPlayingBackgroundForSong === 'function') {
+          window.primeNowPlayingBackgroundForSong(song, token);
+        }
+      } catch (_) {}
       var trial = document.getElementById('trial-banner');
       if (trial) trial.classList.remove('show');
       try { window.showLoading(); } catch (_) {}
@@ -1671,6 +1739,11 @@
       phase = 'spotify-start';
       var started = await startSpotifyTrack(song, descriptor, opts, token);
       if (!started || token !== window.trackSwitchToken) return;
+      try {
+        if (typeof window.prepareNowPlayingBackgroundForSong === 'function') {
+          window.prepareNowPlayingBackgroundForSong(song, token);
+        }
+      } catch (_) {}
 
       spotifyDirectState.lastLyricsTrackId = String(song.currentTrackId || spotifyDirectState.currentTrackId || selectedSpotifyTrackId(song) || '');
       if (typeof window.scheduleNextPlaybackPrefetch === 'function') window.scheduleNextPlaybackPrefetch(idx);
@@ -1709,17 +1782,20 @@
   }
 
   window.beforeHtmlAudioSourceSwitch = async function () {
-    if (isSpotifyActive()) await pauseSpotifyDirect(true);
+    await deactivateSpotifyForExternalPlayback('html-audio-source-switch');
   };
 
   window.playQueueAt = async function (idx, opts) {
     var song = window.playQueue && idx >= 0 ? window.playQueue[idx] : null;
     if (isSpotifySong(song)) return playSpotifyQueueAt(idx, opts);
-    spotifyDirectState.active = false;
-    stopSpotifyPolling();
-    stopSpotifyRealtimeCapture();
-    if (spotifyDirectState.lyricsRefreshTimer) clearTimeout(spotifyDirectState.lyricsRefreshTimer);
-    document.body.classList.remove('spotify-direct-active');
+    // Begin stopping Spotify on the same click frame, but do not hold the whole
+    // UI and YouTube descriptor pipeline behind the remote pause confirmation.
+    // The HTML player consumes and awaits this promise immediately before it
+    // starts the new audible source, so two providers still cannot overlap.
+    var stopPromise = deactivateSpotifyForExternalPlayback('provider-switch');
+    window.pendingExternalProviderStopPromise = Promise.resolve(stopPromise).catch(function (error) {
+      console.warn('[SpotifyProviderSwitchStop]', error);
+    });
     window.activePlaybackTransport = 'html-audio';
     return originalPlayQueueAt.call(window, idx, opts);
   };
@@ -1728,9 +1804,24 @@
     if (!isSpotifyActive()) return originalTogglePlay.apply(window, arguments);
     if (window.playToggleBusy) return;
     window.playToggleBusy = true;
+    var wasPlaying = !!spotifyDirectState.isPlaying;
+    // Reflect the requested state immediately. Spotify's SDK/Web API command
+    // can still take a network round trip, but the control and MV react on the
+    // click frame instead of appearing frozen for 1-2 seconds.
     try {
-      if (spotifyDirectState.isPlaying) await pauseSpotifyDirect(false);
+      updateSpotifyState({ isPlaying: !wasPlaying }, wasPlaying ? 'pause-requested' : 'resume-requested');
+      window.playing = !wasPlaying;
+      if (typeof window.setPlayIcon === 'function') window.setPlayIcon(!wasPlaying);
+      if (typeof window.syncNowPlayingBackgroundPlaybackState === 'function') {
+        window.syncNowPlayingBackgroundPlaybackState(wasPlaying ? 'pause' : 'play');
+      }
+      if (wasPlaying) await pauseSpotifyDirect(false);
       else await resumeSpotifyDirect();
+    } catch (error) {
+      updateSpotifyState({ isPlaying: wasPlaying }, 'toggle-rollback');
+      window.playing = wasPlaying;
+      if (typeof window.setPlayIcon === 'function') window.setPlayIcon(wasPlaying);
+      throw error;
     } finally {
       window.playToggleBusy = false;
       try { window.forcePlaybackControlsInteractive(); } catch (_) {}

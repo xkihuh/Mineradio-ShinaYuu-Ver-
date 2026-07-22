@@ -8,14 +8,7 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const dist = path.join(root, 'dist');
 const unpacked = path.join(dist, 'win-unpacked');
-
-// 1. Đọc thông tin version trực tiếp từ file package.json của dự án
-const pkg = require(path.join(root, 'package.json'));
-
-// 2. Chuẩn hóa version: thay thế "-patch." hoặc bất kỳ dấu gạch ngang nào thành dấu chấm để khớp với đầu ra của electron-builder
-const normalizedVersion = pkg.version.replace(/-patch\./g, '.').replace(/-/g, '.');
-const installer = path.join(dist, `ShinaYuu-Music-${normalizedVersion}-Setup.exe`);
-
+const installer = path.join(dist, 'ShinaYuu-Music-1.1.7-Setup.exe');
 const unsigned = process.argv.includes('--unsigned');
 
 function fail(message) {
@@ -23,22 +16,25 @@ function fail(message) {
 }
 
 function run(command, args, options = {}) {
-  // 3. Tự động bọc dấu ngoặc kép nếu đường dẫn chứa khoảng trắng trên Windows (tránh lỗi "C:\Program")
-  const formattedCommand = process.platform === 'win32' && command.includes(' ') 
-    ? `"${command}"` 
-    : command;
+  const commandText = String(command || '');
+  // Node.js 24 on Windows cannot spawn .cmd/.bat launchers directly with
+  // shell:false (spawnSync returns EINVAL). Use cmd.exe only for those
+  // Windows launcher scripts; native executables such as node.exe still run
+  // without a shell, preserving reliable argument handling.
+  const useWindowsCommandShell = process.platform === 'win32' && /\.(?:cmd|bat)$/i.test(commandText);
 
-  console.log(`\n[Build] ${formattedCommand} ${args.join(' ')}`);
-  
-  const result = spawnSync(formattedCommand, args, {
+  console.log(`\n[Build] ${commandText} ${args.join(' ')}`);
+  const result = spawnSync(commandText, args, {
     cwd: root,
     env: { ...process.env, ...options.env },
     stdio: 'inherit',
-    shell: true, // 4. Sửa lỗi EINVAL trên Node.js mới
+    shell: useWindowsCommandShell,
+    windowsHide: false,
   });
-  
-  if (result.error) fail(result.error.message);
-  if (result.status !== 0) fail(`${command} exited with code ${result.status}`);
+  if (result.error) {
+    fail(`${commandText} could not be started: ${result.error.message}`);
+  }
+  if (result.status !== 0) fail(`${commandText} exited with code ${result.status}`);
 }
 
 function runNode(script, args = []) {
@@ -60,15 +56,34 @@ function writeSha256(file) {
   console.log(`[Build] SHA-256: ${checksumFile}`);
 }
 
+function writeLatestYml(file) {
+  const buffer = fs.readFileSync(file);
+  const sha512 = crypto.createHash('sha512').update(buffer).digest('base64');
+  const fileName = path.basename(file);
+  const metadata = [
+    'version: 1.1.7',
+    'files:',
+    `  - url: ${fileName}`,
+    `    sha512: ${sha512}`,
+    `    size: ${buffer.length}`,
+    `path: ${fileName}`,
+    `sha512: ${sha512}`,
+    `size: ${buffer.length}`,
+    `releaseDate: '${new Date().toISOString()}'`,
+    '',
+  ].join('\n');
+  const target = path.join(dist, 'latest.yml');
+  fs.writeFileSync(target, metadata, 'utf8');
+  console.log(`[Build] Update metadata: ${target}`);
+}
+
 if (process.platform !== 'win32') {
   fail('The official Windows release build must be run on Windows.');
 }
 
 runNode('tools/ensure-castlabs-runtime.js');
 runNode('tools/verify-castlabs-runtime.js');
-
-// 5. Tắt bước kiểm thử (test) tự động để quá trình build diễn ra nhanh và mượt mà nhất
-// run(npmCommand(), ['test']); 
+runNode('tools/ensure-ytdlp-bundle.js');
 
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
@@ -99,4 +114,5 @@ run(builder, ['--win', 'nsis', '--prepackaged', unpacked]);
 if (!fs.existsSync(installer)) fail(`Installer was not created: ${installer}`);
 
 writeSha256(installer);
+writeLatestYml(installer);
 console.log(`\n[Build] Installer created: ${installer}`);

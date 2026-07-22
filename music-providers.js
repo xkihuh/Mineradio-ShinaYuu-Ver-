@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.6.10';
+const UA = 'ShinaYuu Music/1.1.7';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const YOUTUBE_TOKEN_FILE = process.env.YOUTUBE_TOKEN_FILE || path.join(path.dirname(TOKEN_FILE), 'youtube-token.json');
@@ -37,6 +37,8 @@ let spotifySessionLyricsProvider = null;
 const youtubeMusicLyricsCache = new Map();
 const youtubeStreamTokens = new Map();
 const youtubeAudioDescriptorCache = new Map();
+const youtubeVideoDescriptorCache = new Map();
+const spotifyVisualBackgroundCache = new Map();
 const youtubeYtDlpInfoCache = new Map();
 const youtubeCaptionService = youtubeCaptions.createProvider({ userAgent: UA });
 const youtubeForcedAlignmentService = youtubeForcedAligner.createProvider({
@@ -65,6 +67,10 @@ const YTDLP_WINDOWS_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${
 const YTDLP_WINDOWS_SHA256 = '52fe3c26dcf71fbdc85b528589020bb0b8e383155cfa81b64dd447bbe35e24b8';
 const STREAM_TOKEN_TTL = 12 * 60 * 1000;
 const YOUTUBE_AUDIO_DESCRIPTOR_TTL = 8 * 60 * 1000;
+const YOUTUBE_VIDEO_DESCRIPTOR_TTL = 8 * 60 * 1000;
+const SPOTIFY_VISUAL_BACKGROUND_TTL = 30 * 60 * 1000;
+const YOUTUBE_VIDEO_DESCRIPTOR_CACHE_LIMIT = 12;
+const SPOTIFY_VISUAL_BACKGROUND_CACHE_LIMIT = 80;
 
 
 function readJson(file, fallback) {
@@ -1370,6 +1376,31 @@ function cachedYouTubeAudioDescriptor(videoId, quality) {
   return { ...cached.descriptor };
 }
 
+function youtubeVideoDescriptorKey(videoId, quality, options = {}) {
+  const compatibility = !!(options && options.compatibility);
+  return `${String(videoId || '').trim()}|${String(quality || 'auto').trim().toLowerCase()}|${compatibility ? 'compat' : 'quality'}`;
+}
+
+function cacheYouTubeVideoDescriptor(videoId, quality, descriptor, options = {}) {
+  const key = youtubeVideoDescriptorKey(videoId, quality, options);
+  if (!key || key.startsWith('|') || !descriptor || !descriptor.url) return;
+  youtubeVideoDescriptorCache.delete(key);
+  youtubeVideoDescriptorCache.set(key, { at: Date.now(), descriptor: { ...descriptor } });
+  while (youtubeVideoDescriptorCache.size > YOUTUBE_VIDEO_DESCRIPTOR_CACHE_LIMIT) {
+    youtubeVideoDescriptorCache.delete(youtubeVideoDescriptorCache.keys().next().value);
+  }
+}
+
+function cachedYouTubeVideoDescriptor(videoId, quality, options = {}) {
+  const key = youtubeVideoDescriptorKey(videoId, quality, options);
+  const cached = youtubeVideoDescriptorCache.get(key);
+  if (!cached || Date.now() - Number(cached.at || 0) > YOUTUBE_VIDEO_DESCRIPTOR_TTL) {
+    if (cached) youtubeVideoDescriptorCache.delete(key);
+    return null;
+  }
+  return { ...cached.descriptor };
+}
+
 function playbackResultFromYouTubeDescriptor(descriptor, engine) {
   const streamToken = saveYoutubeStreamDescriptor(descriptor);
   return {
@@ -1805,13 +1836,226 @@ async function youtubeAudioViaYtDlp(videoId, quality = '') {
   const descriptor = {
     url: directUrl,
     headers,
-    mimeType: String(selected.mime_type || info.mime_type || ''),
+    mimeType: String(selected.mime_type || info.mime_type || (/^(m4a|mp4)$/.test(String(selected.ext || info.ext || '').toLowerCase()) ? 'audio/mp4' : (String(selected.ext || info.ext || '').toLowerCase() === 'webm' ? 'audio/webm' : ''))),
     bitrate: Number(selected.abr || selected.tbr || info.abr || info.tbr || 0) * 1000,
     audioQuality: String(selected.format_note || selected.format || info.format_note || ''),
     videoId: String(videoId || ''),
   };
   cacheYouTubeAudioDescriptor(videoId, quality, descriptor);
   return playbackResultFromYouTubeDescriptor(descriptor, 'yt-dlp');
+}
+
+function normalizeBackgroundVideoQuality(quality) {
+  const value = String(quality || 'auto').trim().toLowerCase();
+  return /^(eco|balanced|high|ultra)$/.test(value) ? value : 'auto';
+}
+
+function youtubeBackgroundVideoLimits(quality) {
+  const mode = normalizeBackgroundVideoQuality(quality);
+  return {
+    mode,
+    // High requests 1440p so object-fit:cover has enough source pixels after
+    // cropping on a Full-HD desktop. Ultra may use 2160p on capable systems;
+    // Balanced remains 1080p and Eco remains 720p.
+    height: mode === 'eco' ? 720 : (mode === 'balanced' ? 1080 : (mode === 'ultra' ? 2160 : 1440)),
+    // A large portion of YouTube's high-resolution catalog is available only
+    // as 50/60 fps video-only formats.
+    fps: mode === 'eco' ? 30 : 60,
+  };
+}
+
+function youtubeBackgroundVideoFormat(quality, options = {}) {
+  const { mode, height, fps } = youtubeBackgroundVideoLimits(quality);
+  const compatibility = !!(options && options.compatibility);
+  const minimumHeight = mode === 'eco' ? 720 : (mode === 'balanced' ? 1080 : (mode === 'ultra' ? 2160 : 1440));
+  // Ask for the requested tier first, then fall back one tier at a time only
+  // when the upload genuinely does not contain that resolution. This prevents
+  // yt-dlp from silently selecting a soft 360p/480p rendition while Full HD or
+  // higher formats are available in the same metadata response.
+  if (!compatibility) {
+    return [
+      `bestvideo[height>=${minimumHeight}][height<=${height}][fps<=${fps}]`,
+      `bestvideo[height>=1080][height<=${height}][fps<=${fps}]`,
+      `bestvideo[height<=${height}][fps<=${fps}]`,
+      `bestvideo[height<=${height}]`,
+      `best[height>=1080][height<=${height}][fps<=${fps}]`,
+      `best[height<=${height}][fps<=${fps}]`,
+      `best[height<=${height}]`
+    ].join('/');
+  }
+  return [
+    `bestvideo[vcodec^=avc1][ext=mp4][height>=1080][height<=${height}][fps<=${fps}]`,
+    `bestvideo[ext=mp4][height>=1080][height<=${height}][fps<=${fps}]`,
+    `bestvideo[vcodec^=avc1][ext=mp4][height<=${height}][fps<=${fps}]`,
+    `bestvideo[ext=mp4][height<=${height}][fps<=${fps}]`,
+    `best[vcodec^=avc1][ext=mp4][height>=1080][height<=${height}][fps<=${fps}]`,
+    `best[ext=mp4][height>=1080][height<=${height}][fps<=${fps}]`,
+    `bestvideo[height<=${height}][fps<=${fps}]`,
+    `best[height<=${height}][fps<=${fps}]`,
+    `bestvideo[height<=${height}]`,
+    `best[height<=${height}]`
+  ].join('/');
+}
+
+function youtubeCachedVideoDescriptor(info, videoId, quality, options = {}) {
+  const formats = Array.isArray(info && info.formats) ? info.formats : [];
+  if (!formats.length) return null;
+  const { height: maxHeight, fps: maxFps } = youtubeBackgroundVideoLimits(quality);
+  const compatibility = !!(options && options.compatibility);
+  let rows = formats.filter((format) => {
+    if (!format || !String(format.url || '').trim()) return false;
+    const vcodec = String(format.vcodec || '').toLowerCase();
+    if (!vcodec || vcodec === 'none') return false;
+    const protocol = String(format.protocol || '').toLowerCase();
+    if (/m3u8|dash/.test(protocol) && !/^https?/.test(protocol)) return false;
+    return true;
+  });
+  if (compatibility) {
+    const compatibleRows = rows.filter((format) => {
+      const ext = String(format.ext || '').toLowerCase();
+      const vcodec = String(format.vcodec || '').toLowerCase();
+      return ext === 'mp4' && /^(avc1|h264)/.test(vcodec);
+    });
+    if (compatibleRows.length) rows = compatibleRows;
+  }
+  if (!rows.length) return null;
+
+  // Lock selection to the highest real resolution available inside the chosen
+  // quality ceiling before comparing codec or bitrate. Formats without width
+  // and height are ignored when dimensioned video streams exist.
+  const dimensionedRows = rows.filter((format) => Number(format.height || 0) > 0 && Number(format.width || 0) > 0);
+  if (dimensionedRows.length) rows = dimensionedRows;
+  const rowsInsideCeiling = rows.filter((format) => {
+    const height = Number(format.height || 0);
+    const fps = Number(format.fps || 0);
+    return height > 0 && height <= maxHeight && (!fps || fps <= maxFps);
+  });
+  const resolutionPool = rowsInsideCeiling.length ? rowsInsideCeiling : rows;
+  const selectedHeight = resolutionPool.reduce((best, format) => Math.max(best, Number(format.height || 0)), 0);
+  if (selectedHeight > 0) {
+    rows = resolutionPool.filter((format) => Number(format.height || 0) === selectedHeight);
+  } else {
+    rows = resolutionPool;
+  }
+
+  const score = (format) => {
+    const ext = String(format.ext || '').toLowerCase();
+    const vcodec = String(format.vcodec || '').toLowerCase();
+    const acodec = String(format.acodec || '').toLowerCase();
+    const height = Number(format.height || 0);
+    const fps = Number(format.fps || 0);
+    const bitrate = Number(format.tbr || format.vbr || 0);
+    const withinHeight = !height || height <= maxHeight;
+    const withinFps = !fps || fps <= maxFps;
+    let value = 0;
+    if (withinHeight) value += 1000000000; else value -= Math.max(0, height - maxHeight) * 1000000;
+    if (withinFps) value += 100000000; else value -= Math.max(0, fps - maxFps) * 100000;
+    // Resolution dominates codec preference so a 1080p stream is never beaten
+    // by a 360p/480p H.264 stream merely because of its container.
+    value += Math.min(maxHeight, height || 0) * 1000000;
+    value += Math.min(3840, Number(format.width || 0)) * 1000;
+    value += Math.min(maxFps, fps || 0) * 10000;
+    // At the same dimensions/fps, bitrate is the best available proxy for
+    // visible detail. Weight it enough to avoid a soft low-bitrate rendition.
+    value += Math.min(100000, bitrate || 0) * 20;
+    if (ext === 'mp4') value += 4000;
+    if (/^(avc1|h264)/.test(vcodec)) value += 3500;
+    else if (/^(vp9|vp0?9)/.test(vcodec)) value += 2500;
+    else if (/^(av01|av1)/.test(vcodec)) value += 1500;
+    if (!acodec || acodec === 'none') value += 1000;
+    return value;
+  };
+
+  const selected = rows.slice().sort((a, b) => score(b) - score(a))[0];
+  if (!selected) return null;
+  const availableMaxHeight = formats.reduce((best, format) => {
+    const vcodec = String(format && format.vcodec || '').toLowerCase();
+    return (!vcodec || vcodec === 'none') ? best : Math.max(best, Number(format.height || 0));
+  }, 0);
+  const headers = { ...(info.http_headers || {}), ...(selected.http_headers || {}) };
+  return {
+    url: String(selected.url || '').trim(),
+    headers,
+    mimeType: String(selected.mime_type || (String(selected.ext || '').toLowerCase() === 'mp4' ? 'video/mp4' : (String(selected.ext || '').toLowerCase() === 'webm' ? 'video/webm' : ''))),
+    bitrate: Number(selected.tbr || selected.vbr || 0) * 1000,
+    width: Number(selected.width || 0),
+    height: Number(selected.height || 0),
+    availableMaxHeight,
+    fps: Number(selected.fps || 0),
+    videoQuality: String(selected.format_note || selected.format || ''),
+    videoId: String(videoId || ''),
+    mediaKind: 'video',
+    hasAudio: !!(selected.acodec && String(selected.acodec).toLowerCase() !== 'none'),
+    formatId: String(selected.format_id || ''),
+    reusedPlaybackMetadata: true,
+    compatibility,
+  };
+}
+
+function ytDlpVideoArgs(videoId, quality = 'auto', options = {}) {
+  const nodeRuntime = findNodeRuntime();
+  const args = [
+    '--no-playlist',
+    '--no-warnings',
+    '--quiet',
+    '--dump-single-json',
+    '--socket-timeout', '20',
+    '--retries', '2',
+    '--fragment-retries', '2',
+    '--format', youtubeBackgroundVideoFormat(quality, options),
+  ];
+  if (nodeRuntime) args.push('--js-runtimes', `node:${nodeRuntime}`);
+  args.push(`https://www.youtube.com/watch?v=${encodeURIComponent(String(videoId || ''))}`);
+  return args;
+}
+
+async function youtubeVideoViaYtDlp(videoId, quality = 'auto', options = {}) {
+  const refresh = !!(options && options.refresh);
+  const cachedDescriptor = refresh ? null : cachedYouTubeVideoDescriptor(videoId, quality, options);
+  if (cachedDescriptor) return playbackResultFromYouTubeDescriptor(cachedDescriptor, 'yt-dlp-video-cache');
+  if (!refresh) {
+    const reused = youtubeCachedVideoDescriptor(cachedYouTubeYtDlpInfo(videoId), videoId, quality, options);
+    if (reused) {
+      cacheYouTubeVideoDescriptor(videoId, quality, reused, options);
+      return playbackResultFromYouTubeDescriptor(reused, 'yt-dlp-playback-metadata');
+    }
+  }
+  const engine = await prepareYouTubeEngine();
+  const nodeRuntime = findNodeRuntime();
+  const result = await runChild(engine.executable, ytDlpVideoArgs(videoId, quality, options), {
+    timeoutMs: 70000,
+    maxOutput: 18 * 1024 * 1024,
+    env: ytDlpRuntimeEnv(nodeRuntime),
+  });
+  let info;
+  try { info = JSON.parse(result.stdout); }
+  catch (_) { throw new Error('yt-dlp returned invalid video metadata'); }
+  cacheYouTubeYtDlpInfo(videoId, info);
+  const selected = Array.isArray(info.requested_downloads) && info.requested_downloads[0] || info;
+  const directUrl = String(selected.url || info.url || '').trim();
+  if (!directUrl) throw new Error('yt-dlp did not return a video URL');
+  const headers = { ...(info.http_headers || {}), ...(selected.http_headers || {}) };
+  const descriptor = {
+    url: directUrl,
+    headers,
+    mimeType: String(selected.mime_type || info.mime_type || (String(selected.ext || info.ext || '').toLowerCase() === 'mp4' ? 'video/mp4' : (String(selected.ext || info.ext || '').toLowerCase() === 'webm' ? 'video/webm' : ''))),
+    bitrate: Number(selected.tbr || info.tbr || 0) * 1000,
+    width: Number(selected.width || info.width || 0),
+    height: Number(selected.height || info.height || 0),
+    availableMaxHeight: Array.isArray(info.formats) ? info.formats.reduce((best, format) => {
+      const vcodec = String(format && format.vcodec || '').toLowerCase();
+      return (!vcodec || vcodec === 'none') ? best : Math.max(best, Number(format.height || 0));
+    }, 0) : Number(selected.height || info.height || 0),
+    fps: Number(selected.fps || info.fps || 0),
+    videoQuality: String(selected.format_note || selected.format || info.format_note || ''),
+    videoId: String(videoId || ''),
+    mediaKind: 'video',
+    hasAudio: !!(selected.acodec && String(selected.acodec).toLowerCase() !== 'none'),
+    formatId: String(selected.format_id || info.format_id || ''),
+    compatibility: !!(options && options.compatibility),
+  };
+  cacheYouTubeVideoDescriptor(videoId, quality, descriptor, options);
+  return playbackResultFromYouTubeDescriptor(descriptor, 'yt-dlp-video');
 }
 
 function publicProviderConfig(config = providerConfig(), baseUrl = '') {
@@ -3163,77 +3407,157 @@ async function youtubeMusicNativeLyrics(videoId) {
   }
 }
 
+function youtubeText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value.toString === 'function') {
+    const text = value.toString();
+    if (text && text !== '[object Object]' && text !== 'N/A') return text;
+  }
+  return String(value.text || value.name || value.title || '');
+}
+
+function youtubeDurationSeconds(value) {
+  if (!value) return 0;
+  const direct = Number(value.seconds || value.duration_seconds || 0);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const parts = youtubeText(value.text || value).trim().split(':').map(Number);
+  if (!parts.length || parts.some((part) => !Number.isFinite(part))) return 0;
+  return parts.reduce((total, part) => total * 60 + part, 0);
+}
+
 function youtubeThumbnail(item) {
-  const list = item && item.thumbnail && (item.thumbnail.contents || item.thumbnail) || [];
-  const first = Array.isArray(list) ? list[0] : null;
-  return first && first.url || '';
+  const seen = new Set();
+  const rows = [];
+  const collect = (value, depth = 0) => {
+    if (value == null || depth > 7) return;
+    if (typeof value === 'string') {
+      if (value.trim() && !seen.has(value)) {
+        seen.add(value);
+        rows.push({ url: value, width: 0, height: 0 });
+      }
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((entry) => collect(entry, depth + 1));
+      return;
+    }
+    if (typeof value !== 'object') return;
+    const url = String(value.url || value.src || '').trim();
+    if (url && !seen.has(url)) {
+      seen.add(url);
+      rows.push({ url, width: Number(value.width || 0), height: Number(value.height || 0) });
+    }
+    [
+      'thumbnail', 'thumbnails', 'contents', 'sources', 'image', 'images',
+      'primaryThumbnail', 'thumbnailViewModel', 'thumbnailRenderer',
+      'musicThumbnailRenderer', 'contentImage', 'collectionThumbnailViewModel'
+    ].forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(value, key)) collect(value[key], depth + 1);
+    });
+  };
+  collect(item && item.thumbnail);
+  collect(item && item.thumbnails);
+  collect(item && item.image);
+  collect(item && item.images);
+  collect(item && item.content_image);
+  collect(item && item.contentImage);
+  const best = rows.slice().sort((a, b) => {
+    const areaA = Number(a.width || 0) * Number(a.height || 0);
+    const areaB = Number(b.width || 0) * Number(b.height || 0);
+    return areaB - areaA;
+  })[0];
+  if (best && best.url) return best.url;
+  const endpoint = item && item.endpoint && item.endpoint.payload || {};
+  const id = String(item && (item.id || item.video_id || item.videoId) || endpoint.videoId || endpoint.video_id || '').trim();
+  return id ? `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg` : '';
 }
 
 function mapYouTubeMusicItem(item) {
   if (!item) return null;
-  const id = item.id || item.endpoint && item.endpoint.payload && item.endpoint.payload.videoId || '';
+  const endpoint = item.endpoint && item.endpoint.payload || {};
+  const id = item.id || item.video_id || endpoint.videoId || endpoint.video_id || '';
   if (!id) return null;
-  const artists = (item.artists || []).map((artist) => ({
+  const artists = (Array.isArray(item.artists) ? item.artists : []).map((artist) => ({
     id: artist.channel_id || artist.id || '',
-    name: artist.name || '',
+    name: youtubeText(artist.name || artist),
   })).filter((artist) => artist.name);
-  if (!artists.length && item.author && item.author.name) artists.push({ id: item.author.channel_id || '', name: item.author.name });
+  const authorName = youtubeText(item.author && (item.author.name || item.author));
+  if (!artists.length && authorName) artists.push({ id: item.author && (item.author.channel_id || item.author.id) || '', name: authorName });
+  const title = youtubeText(item.title || item.name);
+  if (!title) return null;
+  const durationSeconds = youtubeDurationSeconds(item.duration);
+  const isLive = !!(item.is_live || item.is_live_content || item.live_now);
+  const isShort = !!(item.is_short || item.is_shorts);
   const song = {
     provider: 'qq',
     realProvider: 'youtube',
     source: 'qq',
     type: 'qq',
+    contentType: isShort ? 'short' : (isLive ? 'live' : 'video'),
+    isYouTubeVideo: true,
+    isLive,
+    isShort,
     id,
     mid: id,
     songmid: id,
     youtubeId: id,
-    name: item.title && item.title.toString ? item.title.toString() : String(item.title || item.name || ''),
-    artist: artists.map((artist) => artist.name).join(' / ') || String(item.subtitle || ''),
+    videoId: id,
+    name: title,
+    artist: artists.map((artist) => artist.name).join(' / ') || youtubeText(item.subtitle),
     artists,
     artistId: artists[0] && artists[0].id || '',
     artistMid: artists[0] && artists[0].id || '',
-    album: item.album && item.album.name || '',
-    albumId: item.album && item.album.id || '',
+    album: '',
+    albumId: '',
     cover: youtubeThumbnail(item),
-    duration: item.duration && Number(item.duration.seconds || 0) * 1000 || 0,
+    duration: durationSeconds * 1000,
     playable: true,
-    externalUrl: `https://music.youtube.com/watch?v=${id}`,
+    externalUrl: `https://www.youtube.com/watch?v=${id}`,
   };
   youtubeTrackCache.set(id, song);
   return song;
 }
 
 function youtubeSearchItems(result) {
-  const output = [];
+  const candidates = [];
+  if (result && result.results) candidates.push(...Array.from(result.results));
   const shelves = result && result.contents ? Array.from(result.contents) : [];
   shelves.forEach((shelf) => {
-    const items = shelf && shelf.contents ? Array.from(shelf.contents) : [];
-    items.forEach((item) => {
-      const mapped = mapYouTubeMusicItem(item);
-      if (mapped) output.push(mapped);
-    });
+    if (shelf && shelf.contents) candidates.push(...Array.from(shelf.contents));
+    else candidates.push(shelf);
+  });
+  const output = [];
+  const seen = new Set();
+  candidates.forEach((item) => {
+    const mapped = mapYouTubeMusicItem(item);
+    if (!mapped || seen.has(mapped.videoId)) return;
+    seen.add(mapped.videoId);
+    output.push(mapped);
   });
   return output;
 }
 
 async function youtubeSearch(query, limit = 18) {
-  const key = `${String(query || '').trim().toLowerCase()}|${limit}`;
+  const normalizedQuery = String(query || '').trim();
+  const key = `all-videos|${normalizedQuery.toLowerCase()}|${limit}`;
   const cached = youtubeSearchCache.get(key);
   if (cached && Date.now() - cached.at < 5 * 60 * 1000) return cached.items.map((item) => ({ ...item }));
   const yt = await getYouTubeClient();
   let result;
   try {
-    result = await yt.music.search(String(query || ''), { type: 'song' });
-  } catch (_) {
-    result = await yt.search(String(query || ''), { type: 'video' });
+    // Universal YouTube search, not YouTube Music song-only search. This
+    // includes normal uploads, MVs, gameplay, tutorials, podcasts, Shorts and
+    // public live videos whenever YouTube returns them as video results.
+    result = await yt.search(normalizedQuery, { type: 'video' });
+  } catch (searchError) {
+    console.warn('[YouTubeSearch] universal video search failed, using music fallback:', searchError && searchError.message || searchError);
+    result = await yt.music.search(normalizedQuery, { type: 'song' });
   }
-  let songs = youtubeSearchItems(result);
-  if (!songs.length && result && result.results) {
-    songs = Array.from(result.results).map(mapYouTubeMusicItem).filter(Boolean);
-  }
-  songs = songs.slice(0, Math.max(1, Math.min(50, Number(limit) || 18)));
-  youtubeSearchCache.set(key, { at: Date.now(), items: songs });
-  return songs;
+  let videos = youtubeSearchItems(result);
+  videos = videos.slice(0, Math.max(1, Math.min(50, Number(limit) || 18)));
+  youtubeSearchCache.set(key, { at: Date.now(), items: videos });
+  return videos;
 }
 
 async function youtubeAudioUrl(videoId, quality = '') {
@@ -3523,6 +3847,105 @@ async function resolveYouTubePlayback(videoId, quality) {
     playable: !!(stream.url || stream.proxyUrl),
     requestedQuality: quality || '',
   };
+}
+
+async function resolveYouTubeVideoBackground(videoId, quality = 'auto', options = {}) {
+  const id = String(videoId || '').trim();
+  if (!id) {
+    const error = new Error('YOUTUBE_VIDEO_ID_REQUIRED');
+    error.status = 400;
+    throw error;
+  }
+  let ytDlpError = null;
+  try {
+    const stream = await youtubeVideoViaYtDlp(id, quality, options);
+    return {
+      ...stream,
+      proxyUrl: stream.streamToken ? `/api/media?stream=${encodeURIComponent(stream.streamToken)}` : stream.proxyUrl,
+      provider: 'youtube',
+      playbackProvider: 'youtube',
+      mediaKind: 'video',
+      muted: true,
+      playable: !!(stream.url || stream.proxyUrl),
+      requestedQuality: normalizeBackgroundVideoQuality(quality),
+    };
+  } catch (error) {
+    ytDlpError = error;
+    console.warn('[YouTubeBackgroundVideo] yt-dlp failed:', error.message);
+  }
+
+  try {
+    const yt = await getYouTubeClient();
+    const mode = normalizeBackgroundVideoQuality(quality);
+    const requestedQuality = mode === 'eco' ? '720p' : (mode === 'balanced' ? '1080p' : (mode === 'ultra' ? '2160p' : '1440p'));
+    const format = await yt.getStreamingData(id, { type: 'video', quality: requestedQuality, format: 'any' });
+    const directUrl = String(format && format.url || '').trim();
+    if (!directUrl) throw new Error('youtubei.js returned no video URL');
+    const descriptor = {
+      url: directUrl,
+      headers: {},
+      mimeType: String(format && format.mime_type || ''),
+      bitrate: Number(format && format.bitrate || 0),
+      width: Number(format && format.width || 0),
+      height: Number(format && format.height || 0),
+      availableMaxHeight: Number(format && format.height || 0),
+      fps: Number(format && format.fps || 0),
+      videoQuality: String(format && (format.quality_label || format.quality) || ''),
+      videoId: id,
+      mediaKind: 'video',
+    };
+    cacheYouTubeVideoDescriptor(id, quality, descriptor, options);
+    const playback = playbackResultFromYouTubeDescriptor(descriptor, 'youtubei.js-video-fallback');
+    return {
+      ...playback,
+      proxyUrl: playback.streamToken ? `/api/media?stream=${encodeURIComponent(playback.streamToken)}` : playback.proxyUrl,
+      provider: 'youtube', playbackProvider: 'youtube', mediaKind: 'video', muted: true, playable: true,
+      requestedQuality: mode,
+      compatibility: !!(options && options.compatibility),
+    };
+  } catch (fallbackError) {
+    const error = new Error(`YouTube background video unavailable: ${ytDlpError && ytDlpError.message || 'yt-dlp failed'}; ${fallbackError.message}`);
+    error.code = 'YOUTUBE_BACKGROUND_VIDEO_UNAVAILABLE';
+    error.status = 503;
+    throw error;
+  }
+}
+
+async function spotifyTrackVisualBackground(trackId) {
+  const id = String(trackId || '').trim();
+  if (!id) {
+    const error = new Error('SPOTIFY_TRACK_ID_REQUIRED');
+    error.status = 400;
+    throw error;
+  }
+  const cached = spotifyVisualBackgroundCache.get(id);
+  if (cached && Date.now() - Number(cached.at || 0) < SPOTIFY_VISUAL_BACKGROUND_TTL) return { ...cached.value };
+  const market = providerConfig().spotifyMarket;
+  let track = spotifyTrackCache.get(id);
+  if (!track || !track.cover || !track.artistId) {
+    track = mapSpotifyTrack(await spotifyApi(`/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, { required: true }));
+  }
+  let artist = null;
+  if (track && track.artistId) {
+    artist = await spotifyApi(`/artists/${encodeURIComponent(track.artistId)}`, { required: true }).catch(() => null);
+  }
+  const artistImages = Array.isArray(artist && artist.images) ? artist.images.map((item) => item && item.url).filter(Boolean) : [];
+  const albumImage = String(track && track.cover || '');
+  const value = {
+    provider: 'spotify',
+    spotifyId: id,
+    albumImage,
+    artistImage: artistImages[0] || '',
+    images: [...artistImages, albumImage].filter((item, index, list) => item && list.indexOf(item) === index),
+    artist: String(track && track.artist || artist && artist.name || ''),
+    title: String(track && track.name || ''),
+  };
+  spotifyVisualBackgroundCache.delete(id);
+  spotifyVisualBackgroundCache.set(id, { at: Date.now(), value });
+  while (spotifyVisualBackgroundCache.size > SPOTIFY_VISUAL_BACKGROUND_CACHE_LIMIT) {
+    spotifyVisualBackgroundCache.delete(spotifyVisualBackgroundCache.keys().next().value);
+  }
+  return { ...value };
 }
 
 async function youtubePlaylistTracks(id, limit = 200) {
@@ -4371,6 +4794,8 @@ module.exports = {
   youtubeArtistDetail,
   resolveSpotifyPlayback,
   resolveYouTubePlayback,
+  resolveYouTubeVideoBackground,
+  spotifyTrackVisualBackground,
   spotifyPlayerToken,
   spotifyAudioAnalysis,
   spotifyDevices,
@@ -4413,5 +4838,12 @@ module.exports = {
     youtubePlaylistFromDataApiItem,
     youtubeSpecialPlaylistSummary,
     youtubeCookieLooksSignedIn,
+    youtubeDurationSeconds,
+    youtubeThumbnail,
+    youtubeBackgroundVideoLimits,
+    youtubeBackgroundVideoFormat,
+    youtubeCachedVideoDescriptor,
+    mapYouTubeMusicItem,
+    youtubeSearchItems,
   },
 };

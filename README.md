@@ -1,16 +1,14 @@
-# ShinaYuu Music 1.1.6.10
+# ShinaYuu Music 1.1.7
 
-ShinaYuu Music is a Windows desktop visual music player with Spotify and YouTube playback, synchronized lyrics, Desktop Lyrics, real-time visual effects, Discord Rich Presence, and a unified in-app master volume control.
+ShinaYuu Music is a Windows visual music player built with Castlabs Electron, Spotify, YouTube, synchronized lyrics, Three.js, GSAP and Liquid Glass effects.
 
-This project is a modified work based on the original **Mineradio** repository by XxHuberrr. It is distributed under the GNU General Public License version 3 only (`GPL-3.0-only`). See `LICENSE` and `NOTICE.md`.
+Version `1.1.7` adds an optional **Playing MV** background. Each YouTube item uses the raw video frames from its exact video ID as a per-track wallpaper without YouTube logos, channel labels, controls or overlays. The wallpaper changes with the selected track and follows play, pause, seek and playback rate while the existing UI/UX, Three.js playlist shelf, lyrics, search, controls and panels keep their original layout and stacking order. The existing audio engine remains the only audible source. Spotify tracks continue to use Spotify artist and album artwork.
+
+See `RELEASE_1.1.7.md` for the exact release scope.
 
 ## Release focus
 
-ShinaYuu Music `1.1.6.10` is a playback-responsiveness patch built directly on the stable `1.1.6.10` source. It reduces track-switch and seek latency without changing the window, audio quality, UI/UX, Three.js, GSAP, Liquid Glass, lyrics, wallpaper, or CPU optimization behavior.
-
-YouTube stream descriptors are prefetched and reused for a short safe window, secondary beat-map work starts after audible playback, and Spotify uses the exact Track ID/URI already present in playlist data. See `RELEASE_1.1.6.10.md` for the exact patch scope.
-
-The Windows release build now prepares a verified `yt-dlp` executable for the installer. At runtime the app validates the cached engine, restores it from the packaged copy when it is missing or damaged, retries the official download when necessary, and automatically retries the selected YouTube track once after repair. Packaged Castlabs Electron is also exposed to `yt-dlp` as its Node-compatible JavaScript runtime, so ordinary users do not need a separate Node.js installation. See `RELEASE_1.1.6.10.md` for the exact patch scope.
+ShinaYuu Music `1.1.7` introduces the raw video-only **Playing MV** background and universal YouTube video search while preserving the established playback, lyrics, visual effects and desktop architecture. See `RELEASE_1.1.7.md` for the exact scope.
 
 ## Runtime architecture
 
@@ -30,6 +28,7 @@ Castlabs Electron installs and updates the Widevine CDM through its component up
 
 - Spotify Premium playback through the Spotify Web Playback SDK inside Castlabs Electron.
 - YouTube playback through `yt-dlp` with `youtubei.js` fallback support.
+- Universal YouTube video search for public uploads, MVs, tutorials, gameplay, podcasts, Shorts, and live video results.
 - Secure YouTube account connection through the system browser using OAuth 2.0 PKCE and a desktop loopback callback; owned playlists, Liked videos, and Uploads are synchronized through YouTube Data API v3.
 - Spotify-native synchronized lyrics when available.
 - Spotify market-relinked tracks keep their live SDK metadata, progress, cover, and lyrics synchronized.
@@ -98,7 +97,7 @@ npm run build:win:unsigned
 Installer output:
 
 ```text
-dist\ShinaYuu-Music-1.1.6.8-Setup.exe
+dist\ShinaYuu-Music-1.1.7-Setup.exe
 ```
 
 
@@ -151,12 +150,6 @@ Spotify now runs in the same Castlabs Electron renderer as the application UI. T
 
 - `CASTLABS_ELECTRON.md` — Castlabs runtime, Widevine provisioning, and packaging notes.
 - `docs/WINDOWS_SIGNING_AND_BUILD.md` — detailed EVS/VMP signing and Windows installer build procedure.
-- `SETUP_SPOTIFY_YOUTUBE.md` — provider setup and playback architecture.
-- `DISCORD_SETUP.md` — Discord Rich Presence setup.
-- `PRIVACY.md` — local data and third-party services.
-- `SECURITY.md` — security reporting and credential handling.
-- `NOTICE.md` — attribution and third-party notices.
-- `CHANGELOG.md` — release history. build procedure.
 - `SETUP_SPOTIFY_YOUTUBE.md` — provider setup and playback architecture.
 - `DISCORD_SETUP.md` — Discord Rich Presence setup.
 - `PRIVACY.md` — local data and third-party services.

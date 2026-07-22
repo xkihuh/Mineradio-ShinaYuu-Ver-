@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShinaYuu Music</title>
-<meta name="referrer" content="no-referrer">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
 <script src="vendor/three.r128.min.js"></script>
 <script src="vendor/music-tempo.min.js"></script>
@@ -96,10 +96,10 @@ body.desktop-shell.desktop-fullscreen #top-right{top:24px}
 
 /* ---------- 背景 ---------- */
 #custom-bg{position:fixed;inset:0;z-index:0;background:var(--custom-bg-color,#000);overflow:hidden;transition:background .35s ease}
-#custom-bg-video{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);object-fit:cover;opacity:0;filter:none;transform:scale(1.002);transition:opacity .35s ease;pointer-events:none;background:transparent}
+#custom-bg-video{position:absolute;z-index:1;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);object-fit:cover;opacity:0;filter:none;transform:scale(1.002);transition:opacity .35s ease;pointer-events:none;background:transparent;will-change:opacity}
 body.custom-background-video-ready #custom-bg-video{opacity:var(--custom-bg-video-opacity,0)}
-#custom-bg::before{content:'';position:absolute;inset:-1px;background-image:var(--custom-bg-image,none);background-size:cover;background-position:center;opacity:var(--custom-bg-image-opacity,0);filter:none;transform:scale(1.002);transition:opacity .35s ease,background-image .35s ease;pointer-events:none}
-#custom-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.16));opacity:var(--custom-bg-overlay-opacity,0);pointer-events:none}
+#custom-bg::before{content:'';position:absolute;z-index:0;inset:-1px;background-image:var(--custom-bg-image,none);background-size:cover;background-position:center;opacity:var(--custom-bg-image-opacity,0);filter:none;transform:scale(1.002);transition:opacity .35s ease,background-image .35s ease;pointer-events:none}
+#custom-bg::after{content:'';position:absolute;z-index:4;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.16));opacity:var(--custom-bg-overlay-opacity,0);pointer-events:none}
 body.custom-background-override #custom-bg::after{background:linear-gradient(180deg,rgba(0,0,0,.018),rgba(0,0,0,.045))}
 body.custom-background-override.custom-background-flat #custom-bg::after{opacity:0!important}
 body.custom-background-video #custom-bg::before{opacity:0!important}
@@ -1886,7 +1886,12 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
 /* ============================================================ */
 /*  舞台歌词 (大字 + 3D 入场 + 呼吸)                              */
 /* ============================================================ */
-#stage-lyrics{display:none}
+#stage-lyrics{position:fixed;z-index:5;left:50%;top:50%;width:min(1180px,calc(100vw - 96px));min-height:92px;display:flex;align-items:center;justify-content:center;padding:18px 28px;box-sizing:border-box;text-align:center;pointer-events:none;opacity:0;visibility:hidden;transform:translate(-50%,-50%) translateY(12px);transition:opacity .24s ease,transform .32s cubic-bezier(.22,1,.36,1),visibility .24s;white-space:normal;overflow-wrap:anywhere;font-family:var(--font-sans);font-size:clamp(30px,4.6vw,72px);font-weight:850;line-height:1.14;letter-spacing:.015em;color:#fff;text-shadow:0 3px 10px rgba(0,0,0,.78),0 8px 30px rgba(0,0,0,.72),0 0 22px rgba(160,226,255,.24);filter:none!important;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+body.now-playing-background-video #stage-lyrics.mv-stage-text-visible{opacity:1;visibility:visible;transform:translate(-50%,-50%) translateY(0)}
+body.now-playing-background-video #stage-lyrics[data-mode="title"]{top:44%;font-size:clamp(28px,3.8vw,60px);font-weight:800;letter-spacing:.01em}
+body.now-playing-background-video #stage-lyrics[data-mode="lyrics"]{top:48%;max-height:42vh}
+body.now-playing-background-video[data-stage-text-mode="hidden"] #stage-lyrics{opacity:0!important;visibility:hidden!important}
+@media(max-width:760px){#stage-lyrics{width:calc(100vw - 34px);padding:14px 16px;font-size:clamp(24px,8vw,48px)}}
 .stage-lyric-line{position:absolute;font-family:var(--font-sans);font-weight:700;font-size:clamp(34px,5.6vw,76px);letter-spacing:2px;text-align:center;color:#fff;white-space:nowrap;max-width:92vw;padding:0 24px;text-shadow:0 0 14px rgba(168,246,255,.38),0 0 36px rgba(143,233,255,.30),0 0 80px rgba(115,167,255,.16);background:linear-gradient(180deg,rgba(246,253,255,1) 0%,rgba(168,246,255,1) 55%,rgba(126,205,255,1) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;opacity:1;transform:translate3d(var(--bx,0px),0,0);transform-style:preserve-3d;will-change:transform;filter:drop-shadow(0 4px 22px rgba(143,233,255,.30))}
 .stage-lyric-line.in{animation:none;opacity:1;filter:drop-shadow(0 4px 22px rgba(143,233,255,.30))}
 .stage-lyric-line.out{animation:lyr-out 180ms linear forwards}
@@ -2304,6 +2309,33 @@ html body.empty-home-active #empty-home .discord-now-playing{
 .bg-media-library-foot{min-height:48px;border-top:1px solid rgba(255,255,255,.075);color:rgba(255,255,255,.42);font-size:11px}.bg-media-library-foot span:first-child{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body.bg-media-library-open #fx-panel{pointer-events:none}
 .lyric-color-row.image-pick-row{grid-template-columns:72px minmax(0,1fr) 68px 52px}
+.lyric-color-row.now-playing-bg-row{grid-template-columns:minmax(0,1fr) 136px;align-items:center}
+.lyric-color-row.now-playing-quality-row,.lyric-color-row.now-playing-display-mode-row{grid-template-columns:minmax(0,1fr) 260px;align-items:center}
+.lyric-color-row.now-playing-display-mode-row .fx-color-row-label{min-width:0}
+.lyric-color-row.now-playing-display-mode-row .fx-color-row-label small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#now-playing-video-quality-seg,#now-playing-video-display-mode-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#now-playing-video-quality-seg button,#now-playing-video-display-mode-seg button{min-width:0;padding:0 8px}
+@media(max-width:760px){.lyric-color-row.now-playing-quality-row,.lyric-color-row.now-playing-display-mode-row{grid-template-columns:1fr}.lyric-color-row.now-playing-quality-row #now-playing-video-quality-seg,.lyric-color-row.now-playing-display-mode-row #now-playing-video-display-mode-seg{width:100%}}
+.now-playing-bg-row .fx-color-row-label small{white-space:normal;line-height:1.35}
+#now-playing-bg-btn{min-width:132px}
+#now-playing-bg-btn.active{border-color:rgba(var(--fc-accent-rgb),.48)!important;background:rgba(var(--fc-accent-rgb),.14)!important;color:#fff!important;box-shadow:0 0 22px rgba(var(--fc-accent-rgb),.10)!important}
+#now-playing-art-card{position:absolute;z-index:2;left:50%;top:50%;width:min(40vw,520px);height:min(40vw,520px);max-height:68vh;object-fit:cover;border-radius:28px;opacity:0;transform:translate(-50%,-50%) scale(.96);filter:saturate(1.04);box-shadow:0 34px 100px rgba(0,0,0,.48),0 0 0 1px rgba(255,255,255,.12);transition:opacity .45s ease,transform .65s cubic-bezier(.22,1,.36,1);pointer-events:none}
+body.now-playing-background-art #now-playing-art-card{opacity:var(--custom-bg-video-opacity,1);transform:translate(-50%,-50%) scale(1)}
+body.now-playing-background-art #custom-bg::before{filter:blur(26px) saturate(1.15) brightness(.56);transform:scale(1.10)}
+body.now-playing-background-art #custom-bg::after{opacity:.24!important;background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.34))}
+body.now-playing-background-video #now-playing-art-card{opacity:0!important}
+/* Playing MV is a per-track wallpaper only. It stays in the app's existing
+   background stacking layer and never changes the layout, z-index, visibility,
+   pointer behavior or animation of the established UI/UX and Three.js shelf. */
+body.now-playing-background-video #custom-bg{z-index:0!important;isolation:auto!important;pointer-events:none!important}
+body.now-playing-background-video #custom-bg-video{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0;max-width:none;max-height:none;object-fit:cover;object-position:center center;background:#000;transform:none!important;filter:none!important;opacity:0;image-rendering:auto;backface-visibility:visible;will-change:auto;pointer-events:none!important}
+body.now-playing-background-video[data-now-playing-video-display-mode="fit"] #custom-bg-video{width:100%;height:100%;object-fit:contain}
+body.now-playing-background-video[data-now-playing-video-display-mode="original"] #custom-bg-video{inset:0;width:auto;height:auto;max-width:100%;max-height:100%;margin:auto;object-fit:contain}
+body.now-playing-background-video.custom-background-video-ready #custom-bg-video{opacity:1!important}
+body.now-playing-background-video #custom-bg::before{opacity:0!important;filter:none!important;transform:none!important;background-image:none!important}
+body.now-playing-background-video #custom-bg::after{opacity:0!important;background:none!important}
+body.now-playing-background-video #album-bg{opacity:0!important;pointer-events:none!important}
+@media(max-width:760px){.lyric-color-row.now-playing-bg-row{grid-template-columns:1fr}.lyric-color-row.now-playing-bg-row #now-playing-bg-btn{width:100%}#now-playing-art-card{width:min(68vw,420px);height:min(68vw,420px)}}
 @media(max-width:760px){#background-media-library{padding:12px}.bg-media-library-shell{width:100%;height:100%;border-radius:22px}.bg-media-library-head,.bg-media-library-tools{flex-wrap:wrap;padding-left:14px;padding-right:14px}.bg-media-library-search{min-width:100%;order:2}.bg-media-library-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.bg-media-library-body{padding-left:14px;padding-right:14px}}
 
 
@@ -2396,7 +2428,7 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
 <div id="fullscreen-diy-zone" aria-hidden="true">
   <button id="fullscreen-diy-btn" class="desktop-mode-btn" type="button" onclick="toggleDiyMode()" title="DIY" aria-label="DIY" aria-pressed="false">DIY</button>
 </div>
-<div id="custom-bg"><video id="custom-bg-video" muted loop autoplay playsinline preload="auto" disablepictureinpicture></video></div>
+<div id="custom-bg"><video id="custom-bg-video" muted loop autoplay playsinline preload="auto" disablepictureinpicture></video><img id="now-playing-art-card" alt="" draggable="false" decoding="async"></div>
 <div id="album-bg"></div>
 <div id="canvas-container"></div>
 <canvas id="idle-guide-canvas" aria-hidden="true"></canvas>
@@ -2685,6 +2717,26 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
     <button class="fx-mini-btn ghost" type="button" onclick="openBackgroundMediaLibrary()">Thư viện</button>
     <button class="fx-mini-btn ghost" type="button" onclick="clearCustomBackgroundImage()">Xóa</button>
   </div>
+  <div class="lyric-color-row now-playing-bg-row">
+    <div class="fx-color-row-label"><span id="now-playing-bg-title">Nền theo bài đang phát</span><small id="now-playing-bg-status">YouTube phát đúng MV/video đang chạy · Spotify dùng ảnh nghệ sĩ và album</small></div>
+    <button id="now-playing-bg-btn" class="fx-mini-btn ghost" type="button" onclick="toggleNowPlayingBackground()" aria-pressed="false">MV bài đang phát</button>
+  </div>
+  <div class="lyric-color-row now-playing-quality-row">
+    <div class="fx-color-row-label">Chất lượng MV YouTube<small>Full HD mượt hơn · 2K/4K cần GPU và mạng mạnh</small></div>
+    <div class="fx-seg" id="now-playing-video-quality-seg">
+      <button type="button" data-now-playing-video-quality="fhd" onclick="setNowPlayingVideoQuality('fhd')">Full HD</button>
+      <button type="button" data-now-playing-video-quality="2k" onclick="setNowPlayingVideoQuality('2k')">2K</button>
+      <button type="button" data-now-playing-video-quality="4k" onclick="setNowPlayingVideoQuality('4k')">4K</button>
+    </div>
+  </div>
+  <div class="lyric-color-row now-playing-display-mode-row">
+    <div class="fx-color-row-label">Chế độ hiển thị MV<small>Full phủ kín · Fit vừa khung · Original giữ kích thước gốc</small></div>
+    <div class="fx-seg" id="now-playing-video-display-mode-seg">
+      <button type="button" data-now-playing-video-display-mode="full" onclick="setNowPlayingVideoDisplayMode('full')">Full</button>
+      <button type="button" data-now-playing-video-display-mode="fit" onclick="setNowPlayingVideoDisplayMode('fit')">Fit</button>
+      <button type="button" data-now-playing-video-display-mode="original" onclick="setNowPlayingVideoDisplayMode('original')">Original</button>
+    </div>
+  </div>
   <div class="fx-slider"><label>Độ trong suốt nền</label><input id="fx-bgopacity" type="range" min="0" max="1" step="0.01"><output></output></div>
   <div class="fx-slider liquid-glass-transparency-control"><label>Độ trong suốt Liquid Glass</label><input id="fx-liquidglasstransparency" type="range" min="0" max="1" step="0.01"><output></output></div>
   <div class="fx-slider"><label>Sắc kính bảng điều khiển</label><input id="fx-glassaberration" type="range" min="0" max="140" step="1"><output></output></div>
@@ -2912,11 +2964,11 @@ html.control-glass-svg-ok body.empty-home-active #empty-home .discord-home-card{
           <span id="fx-check-update-main" class="fx-check-update-main">Kiểm tra cập nhật</span>
           <span id="fx-check-update-status" class="fx-check-update-status">Sẵn sàng</span>
         </button>
-        <div class="fx-app-identity" aria-label="ShinaYuu Music 1.1.6.10">
+        <div class="fx-app-identity" aria-label="ShinaYuu Music 1.1.7">
           <div class="fx-app-identity-mark">SY</div>
           <div class="fx-app-identity-copy">
             <div class="fx-app-identity-name">ShinaYuu Music</div>
-            <div id="fx-app-version" class="fx-app-identity-version">Phiên bản 1.1.6.10</div>
+            <div id="fx-app-version" class="fx-app-identity-version">Phiên bản 1.1.7</div>
           </div>
         </div>
       </div>
@@ -3867,8 +3919,8 @@ var qrPollTimer = null, qrKey = null;
 var youtubePendingCode = '', youtubePendingVerificationUrl = '';
 var volumeTween = null, trackSwitchToken = 0;
 var audioFadeTimer = null, audioElementFadeFrame = 0, audioFadeSerial = 0;
-var AUDIO_FADE_IN_MS = 460;
-var AUDIO_FADE_OUT_MS = 420;
+var AUDIO_FADE_IN_MS = 90;
+var AUDIO_FADE_OUT_MS = 60;
 var AUDIO_SILENCE_GAIN = 0.0001;
 var userPlaylists = [], qqPlaylists = [], localPlaylists = [], localLibraryState = {sources:[],playlists:[],tracks:[]}, myPodcastCollections = [], myPodcastItems = {}, playlistCoverCache = {};
 var APP_PLAYLIST_STORE_KEY = 'shinayuu-app-playlists-v1';
@@ -3978,7 +4030,7 @@ var smoothWheelScrollBound = false;
 var coverProcessToken = 0, aiDepthPipeline = null, aiDepthReady = false, aiDepthBusy = false, aiDepthFailUntil = 0;
 var coverDepthCache = Object.create(null), coverDepthCacheKeys = [];
 var aiDepthLastRunAt = 0, aiDepthMinGapMs = 18000;
-var SHINAYUU_APP_DISPLAY_VERSION = '1.1.6.10';
+var SHINAYUU_APP_DISPLAY_VERSION = '1.1.7';
 var advancedUpdateCheckBusy = false;
 var advancedUpdateStatusKind = 'ready';
 var updatePreviewState = {
@@ -4454,6 +4506,9 @@ var fxDefaults = {
   backgroundColorCustom: false,
   backgroundImage: '',
   backgroundMedia: null,
+  nowPlayingBackground: false,
+  nowPlayingVideoQuality: 'fhd',
+  nowPlayingVideoDisplayMode: 'full',
   desktopLyrics: false,
   desktopLyricsSize: 1.0,
   desktopLyricsOpacity: 0.92,
@@ -4486,6 +4541,7 @@ var fxDefaults = {
   shelfAccentColor: '#ffffff',
   performanceBackground: 'auto',
   performanceQuality: 'high',
+  nowPlayingVideoQuality: 'fhd',
   liveBackgroundKeep: false,
   cam: 'off',
 };
@@ -4556,6 +4612,7 @@ var PACKAGED_DEFAULT_FX_SNAPSHOT = Object.freeze({
   performanceBackground: 'auto',
   performanceQuality: 'high',
   liveBackgroundKeep: false,
+  nowPlayingVideoDisplayMode: 'full',
   particleLyrics: true,
   backCover: false,
   shelf: 'side',
@@ -8907,6 +8964,9 @@ function readSavedLyricLayout() {
       backgroundColorCustom: savedBgCustom,
       backgroundImage: normalizeCustomBackgroundImage(raw.backgroundImage),
       backgroundMedia: normalizeCustomBackgroundMedia(raw.backgroundMedia || raw.backgroundImage),
+      nowPlayingBackground: raw.nowPlayingBackground === true,
+      nowPlayingVideoQuality: normalizeNowPlayingVideoQuality(raw.nowPlayingVideoQuality),
+      nowPlayingVideoDisplayMode: normalizeNowPlayingVideoDisplayMode(raw.nowPlayingVideoDisplayMode),
       desktopLyrics: raw.desktopLyrics === true,
       desktopLyricsSize: clampRange(Number(raw.desktopLyricsSize) || fxDefaults.desktopLyricsSize, 0.72, 1.55),
       desktopLyricsOpacity: clampRange(raw.desktopLyricsOpacity == null ? fxDefaults.desktopLyricsOpacity : Number(raw.desktopLyricsOpacity), 0.28, 1),
@@ -8999,6 +9059,9 @@ function saveLyricLayout() {
       backgroundColorCustom: fx.backgroundColorMode === 'custom' || !!fx.backgroundColorCustom,
       backgroundImage: normalizeCustomBackgroundImage(fx.backgroundImage),
       backgroundMedia: normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage),
+      nowPlayingBackground: fx.nowPlayingBackground === true,
+      nowPlayingVideoQuality: normalizeNowPlayingVideoQuality(fx.nowPlayingVideoQuality),
+      nowPlayingVideoDisplayMode: normalizeNowPlayingVideoDisplayMode(fx.nowPlayingVideoDisplayMode),
       desktopLyrics: !!fx.desktopLyrics,
       desktopLyricsSize: clampRange(Number(fx.desktopLyricsSize) || fxDefaults.desktopLyricsSize, 0.72, 1.55),
       desktopLyricsOpacity: clampRange(fx.desktopLyricsOpacity == null ? fxDefaults.desktopLyricsOpacity : Number(fx.desktopLyricsOpacity), 0.28, 1),
@@ -10715,7 +10778,35 @@ function getLyricLineProgress(line, nextLine, now) {
   return Math.max(0, Math.min(1, (now - line.t) / span));
 }
 
+function resolveNowPlayingVideoStageText() {
+  if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video' || stageTextMode === 'hidden' || !fx.particleLyrics) return { mode: 'hidden', text: '' };
+  if (stageTextMode === 'title') return { mode: 'title', text: currentStageTrackTitle() };
+  var text = '';
+  var t = getLyricPlaybackSeconds();
+  var helper = window.ShinaYuuLyricsSync;
+  var idx = helper && typeof helper.findLyricIndex === 'function' ? helper.findLyricIndex(lyricsLines, t) : -1;
+  if (idx < 0) {
+    for (var i = 0; i < lyricsLines.length; i++) {
+      if (Number(lyricsLines[i].t) <= t) idx = i; else break;
+    }
+  }
+  var line = idx >= 0 ? lyricsLines[idx] : null;
+  if (line && !line.spotifySilent) text = String(line.text || '').trim();
+  if (!text) text = currentStageTrackTitle();
+  return { mode: 'lyrics', text: text };
+}
+function updateNowPlayingVideoStageTextOverlay() {
+  var overlay = document.getElementById('stage-lyrics');
+  if (!overlay) return;
+  var state = resolveNowPlayingVideoStageText();
+  overlay.setAttribute('data-mode', state.mode || 'hidden');
+  if (overlay.textContent !== state.text) overlay.textContent = state.text;
+  overlay.classList.toggle('mv-stage-text-visible', !!state.text && state.mode !== 'hidden');
+}
+window.updateNowPlayingVideoStageTextOverlay = updateNowPlayingVideoStageTextOverlay;
+
 function tickLyricsParticles() {
+  updateNowPlayingVideoStageTextOverlay();
   if (stageTextMode === 'hidden' || !fx.particleLyrics) {
     if (stageLyrics.current || stageLyrics.currentText || (stageLyrics.outgoing && stageLyrics.outgoing.length)) clearStageLyrics();
     return;
@@ -16717,6 +16808,10 @@ function coverProxySrc(url, cacheBust) {
 }
 function coverUrlWithSize(url, size) {
   if (!url || isInlineCoverSrc(url) || !/^https?:\/\//i.test(url)) return url || '';
+  // YouTube thumbnail hosts do not use the NetEase `param=WxH` convention.
+  // Keep their original URL intact; appending that query can make some CDN
+  // variants fail or return an empty image in Electron.
+  if (/(?:^|\.)ytimg\.com\//i.test(url) || /youtube\.com\/vi\//i.test(url)) return url;
   if (!size) return url;
   var param = 'param=' + size + 'y' + size;
   if (/[?&]param=\d+y\d+/i.test(url)) return url.replace(/([?&])param=\d+y\d+/i, '$1' + param);
@@ -16748,7 +16843,13 @@ function hydrateCustomCover(song) {
 function songCoverSrc(song, size) {
   var custom = getCustomCoverForSong(song);
   if (custom) return custom;
-  return song && song.cover ? coverUrlWithSize(song.cover, size) : '';
+  if (song && song.cover) return coverUrlWithSize(song.cover, size);
+  var provider = songProviderKey(song || {});
+  if (provider === 'qq') {
+    var videoId = String(song && (song.youtubeId || song.videoId || song.mid || song.songmid || song.id) || '').trim();
+    if (videoId) return 'https://i.ytimg.com/vi/' + encodeURIComponent(videoId) + '/hqdefault.jpg';
+  }
+  return '';
 }
 function cssImageUrl(url) {
   return String(url || '').replace(/\\/g, '\\\\').replace(/"/g, '%22');
@@ -19435,16 +19536,19 @@ async function fetchMusicSearchResults(q, mode) {
   if (result[1].status === 'rejected') console.warn('YouTube search failed:', result[1].reason);
   return mergeSongSearchResults(neteaseSongs, qqSongs, 20, q, true);
 }
-function prefetchSearchResult(index) {
+function prefetchSearchResult(index, includeVideo) {
   var song = playlist && playlist[index];
   if (!song || typeof resolvePlaybackDescriptor !== 'function') return;
   var quality = normalizePlaybackQuality(playbackQuality);
   resolvePlaybackDescriptor(song, quality, { prefetch: true }).catch(function(){});
+  if (includeVideo !== false) prefetchNowPlayingBackgroundForSong(song);
 }
 function prefetchInitialSearchResults() {
+  // Warm a small, bounded window only. Hover/pointer-down remains the urgent
+  // path for any other result, avoiding a burst of high-cost yt-dlp processes.
   [0, 1, 2].forEach(function(index, order){
     if (!playlist[index]) return;
-    setTimeout(function(){ prefetchSearchResult(index); }, 90 + order * 150);
+    setTimeout(function(){ prefetchSearchResult(index, order < 2); }, 40 + order * 120);
   });
 }
 function renderSongSearchResults(songs) {
@@ -19466,7 +19570,7 @@ function renderSongSearchResults(songs) {
     var imgTag = thumb
       ? '<img src="' + thumb + '" alt="" loading="lazy" onerror="this.style.opacity=0.2">'
       : '<div style="width:40px;height:40px;border-radius:6px;background:rgba(255,255,255,0.06);flex-shrink:0"></div>';
-    rows.push('<div class="search-result ' + sourceClass + '" onpointerenter="prefetchSearchResult(' + i + ')">' +
+    rows.push('<div class="search-result ' + sourceClass + '" onpointerenter="prefetchSearchResult(' + i + ', true)" onpointerdown="prefetchSearchResult(' + i + ', true)">' +
       '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0" onclick="playSearchResult(' + i + ')">' +
         imgTag +
         '<div class="search-result-info">' +
@@ -19750,6 +19854,20 @@ function fadeOutAndPauseAudio() {
       resolve(true);
     }, AUDIO_FADE_OUT_MS + 80);
   });
+}
+function pauseAudioImmediately(reason) {
+  if (!audio) return false;
+  audioFadeSerial++;
+  clearAudioFadeTimers();
+  try { audio.pause(); } catch (pauseErr) { console.warn('[ImmediatePause]', reason || '', pauseErr); }
+  // Keep the master gain ready at the user's selected level. Muting through a
+  // long fade made Pause feel delayed and made the next Play sound late.
+  setAudioOutputGainImmediate(targetVolume);
+  playing = false;
+  setPlayIcon(false);
+  hideLoading();
+  forcePlaybackControlsInteractive();
+  return true;
 }
 
 function applyVolumeToAudio() {
@@ -20212,6 +20330,55 @@ function scheduleAudioResumePosition(media, seconds, token) {
 }
 
 var playbackDescriptorCache = new Map();
+var nowPlayingVideoDescriptorCache = new Map();
+var NOW_PLAYING_VIDEO_DESCRIPTOR_TTL = 6 * 60 * 1000;
+function nowPlayingVideoDescriptorKey(song, quality, compatibility) {
+  song = song || {};
+  var videoId = String(song.mid || song.songmid || song.youtubeId || song.videoId || song.id || '').trim();
+  return videoId ? (videoId + '|' + String(quality || 'balanced') + '|' + (compatibility ? 'compat' : 'quality')) : '';
+}
+function cachedNowPlayingVideoDescriptor(song, quality, compatibility) {
+  var key = nowPlayingVideoDescriptorKey(song, quality, compatibility);
+  if (!key) return null;
+  var entry = nowPlayingVideoDescriptorCache.get(key);
+  if (!entry || Number(entry.expiresAt || 0) <= Date.now()) {
+    if (entry) nowPlayingVideoDescriptorCache.delete(key);
+    return null;
+  }
+  return entry.value || entry.promise || null;
+}
+function requestNowPlayingVideoDescriptor(song, options) {
+  options = options || {};
+  if (!song || songProviderKey(song) !== 'qq') return Promise.resolve(null);
+  var videoId = String(song.mid || song.songmid || song.youtubeId || song.videoId || song.id || '').trim();
+  if (!videoId) return Promise.resolve(null);
+  var quality = String(options.qualityOverride || nowPlayingBackgroundVideoQuality());
+  var compatibility = !!options.compatibility;
+  var key = nowPlayingVideoDescriptorKey(song, quality, compatibility);
+  if (!options.refresh) {
+    var cached = cachedNowPlayingVideoDescriptor(song, quality, compatibility);
+    if (cached) return Promise.resolve(cached);
+  }
+  var endpoint = '/api/qq/song/video?mid=' + encodeURIComponent(videoId) + '&quality=' + encodeURIComponent(quality);
+  if (options.refresh) endpoint += '&refresh=1';
+  if (compatibility) endpoint += '&compat=1';
+  var promise = apiJson(endpoint, { timeoutMs: options.refresh ? 80000 : 76000 }).then(function(data){
+    if (!data || data.playable === false || !(data.proxyUrl || data.url)) throw new Error(data && data.message || 'VIDEO_STREAM_UNAVAILABLE');
+    nowPlayingVideoDescriptorCache.set(key, { value: data, expiresAt: Date.now() + NOW_PLAYING_VIDEO_DESCRIPTOR_TTL });
+    return data;
+  }).catch(function(error){
+    var current = nowPlayingVideoDescriptorCache.get(key);
+    if (current && current.promise === promise) nowPlayingVideoDescriptorCache.delete(key);
+    throw error;
+  });
+  nowPlayingVideoDescriptorCache.set(key, { promise: promise, expiresAt: Date.now() + 80000 });
+  return promise;
+}
+function prefetchNowPlayingBackgroundForSong(song) {
+  if (!fx || !fx.nowPlayingBackground || !song || songProviderKey(song) !== 'qq') return Promise.resolve(null);
+  return requestNowPlayingVideoDescriptor(song, { qualityOverride: nowPlayingBackgroundVideoQuality() }).catch(function(){ return null; });
+}
+window.prefetchNowPlayingBackgroundForSong = prefetchNowPlayingBackgroundForSong;
 function playbackDescriptorKey(song, quality) {
   var provider = songProviderKey(song);
   var id = provider === 'qq' ? (song.mid || song.songmid || song.youtubeId || song.videoId || song.id || '') : (provider === 'local' ? (song.localFileId || song.localId || song.id || '') : (song.spotifyId || song.id || ''));
@@ -20237,16 +20404,18 @@ async function resolvePlaybackDescriptor(song, quality, options) {
   playbackDescriptorCache.set(key,{promise:promise,expiresAt:now+20000});
   return promise;
 }
-function prefetchQueuePlayback(index) {
+function prefetchQueuePlayback(index, includeVideo) {
   if (!playQueue || !playQueue.length) return;
   var target=((Number(index)||0)+playQueue.length)%playQueue.length;
   var song=playQueue[target];
   if(!song||songProviderKey(song)==='local')return;
   var quality=normalizePlaybackQuality(playbackQuality);
   resolvePlaybackDescriptor(song,quality,{prefetch:true}).catch(function(){});
+  if (includeVideo !== false) prefetchNowPlayingBackgroundForSong(song);
 }
 function scheduleNextPlaybackPrefetch(index) {
-  setTimeout(function(){prefetchQueuePlayback((Number(index)||0)+1);},80);
+  setTimeout(function(){ prefetchQueuePlayback((Number(index)||0)+1, true); },40);
+  setTimeout(function(){ prefetchQueuePlayback((Number(index)||0)+2, false); },220);
 }
 
 function schedulePlaybackVisualPreparation(song, data, proxyAudioUrl, bmKey, podcastDjMode, idx, token) {
@@ -20345,6 +20514,14 @@ async function playQueueAt(idx, opts) {
   beatMapToken++;
   var token = trackSwitchToken;
   var firstVisualPlay = !firstPlayDone;
+  // React immediately to a new selection. The previous implementation kept the
+  // old track audible while waiting 1-2 seconds for a fresh signed URL.
+  pauseCurrentAudioForTrackSwitch();
+  var providerStopPromise = window.pendingExternalProviderStopPromise || null;
+  window.pendingExternalProviderStopPromise = null;
+  if (!providerStopPromise && typeof window.beforeHtmlAudioSourceSwitch === 'function') {
+    providerStopPromise = Promise.resolve(window.beforeHtmlAudioSourceSwitch()).catch(function(error){ console.warn('[PlaybackSwitchHook]', error); });
+  }
   markPlayPhase('track-setup');
   var song = safePlaybackStep('hydrate-song', function(){ return hydrateCustomCover(playQueue[idx]); }) || playQueue[idx];
   playQueue[idx] = song;
@@ -20383,6 +20560,10 @@ async function playQueueAt(idx, opts) {
     if (customCover) applyCoverDataUrl(customCover, coverOpts);
     else loadCoverFromUrl(song.cover ? coverUrlWithSize(song.cover, 400) : '', coverOpts);
   });
+  safePlaybackStep('now-playing-background-prime', function(){ primeNowPlayingBackgroundForSong(song, token); });
+  safePlaybackStep('now-playing-background-prefetch', function(){
+    Promise.resolve(prepareNowPlayingBackgroundForSong(song, token)).catch(function(error){ console.warn('[NowPlayingBackgroundPrefetch]', error); });
+  });
   safePlaybackStep('trial-banner-reset', function(){ document.getElementById('trial-banner').classList.remove('show'); });
   safePlaybackStep('show-loading', showLoading);
   lyricSunEnergy = 0; lyricSunTarget = 0; lyricSunHold = 0; lyricSunAvg = 0; lyricSunPeak = 0.55;
@@ -20403,7 +20584,9 @@ async function playQueueAt(idx, opts) {
     var requestedQuality = normalizePlaybackQuality(opts.qualityOverride || playbackQuality);
     if (!isQQPlayback && !isLocalPlayback && requestedQuality === 'jymaster' && !hasProviderSvip('netease', loginStatus)) requestedQuality = 'hires';
     if (isQQPlayback && qqPlaybackQualityCeiling && (requestedQuality === 'jymaster' || requestedQuality === 'hires' || requestedQuality === 'lossless')) requestedQuality = qqPlaybackQualityCeiling;
-    var data = await resolvePlaybackDescriptor(song, requestedQuality, { prefetch: false });
+    var descriptorPromise = resolvePlaybackDescriptor(song, requestedQuality, { prefetch: false });
+    var data = await descriptorPromise;
+    if (providerStopPromise) await providerStopPromise;
     if (token !== trackSwitchToken) return;
     if (!data.url && !data.proxyUrl) {
       if (isQQPlayback && isPlaybackEngineFailure(data) && await repairYouTubeEngineForPlayback(song, idx, token, opts)) return;
@@ -20433,10 +20616,6 @@ async function playQueueAt(idx, opts) {
       document.getElementById('trial-banner').classList.add('show');
     }
     markPlayPhase('audio-element');
-    if (typeof window.beforeHtmlAudioSourceSwitch === 'function') {
-      await window.beforeHtmlAudioSourceSwitch(song).catch(function(error){ console.warn('[PlaybackSwitchHook]', error); });
-    }
-    pauseCurrentAudioForTrackSwitch();
     if (isLocalPlayback) currentLocalSong = song;
     if (!audio) { audio = new Audio(); audio.crossOrigin = 'anonymous'; audio.preload = 'auto'; }
     else {
@@ -20473,6 +20652,7 @@ async function playQueueAt(idx, opts) {
       return;
     }
     forcePlaybackControlsInteractive();
+    safePlaybackStep('now-playing-background-video', function(){ syncNowPlayingBackgroundPosition(true, 'audio-started'); });
     scheduleNextPlaybackPrefetch(idx);
     markPlayPhase('visual-prep-background');
     schedulePlaybackVisualPreparation(song, data, proxyAudioUrl, bmKey, podcastDjMode, idx, token);
@@ -20517,20 +20697,19 @@ async function attemptAudioPlay(opts) {
   try {
       if (!audio) return false;
       if (!audioReady) initAudio();
-      if (opts.fade !== false) preparePlaybackFadeIn();
-      if (opts.manual) {
-        var manualPlay = audio.play();
-        await resumeAudioAnalysis();
-        await manualPlay;
-      } else {
-        await resumeAudioAnalysis();
-        await audio.play();
-      }
-      await resumeAudioAnalysis();
+      // Update controls on the click frame, then start media and AudioContext in
+      // parallel. Waiting for AudioContext.resume() first added visible latency.
+      playing = true;
+      setPlayIcon(true);
+      forcePlaybackControlsInteractive();
+      restorePlaybackGain();
+      var mediaPlay = audio.play();
+      var analysisResume = resumeAudioAnalysis();
+      await mediaPlay;
+      await analysisResume;
       switchPlaybackVisualToEmily();
       playing = true; setPlayIcon(true);
-    if (opts.fade !== false) startPlaybackFadeIn();
-    else restorePlaybackGain();
+    restorePlaybackGain();
     forcePlaybackControlsInteractive();
     hideLoading();
     return true;
@@ -20546,7 +20725,7 @@ async function attemptAudioPlay(opts) {
 }
 async function playAudio(opts) {
   opts = opts || {};
-  return attemptAudioPlay({ manual: false, silent: !!opts.silent });
+  return attemptAudioPlay({ manual: false, silent: !!opts.silent, fade: false });
 }
 async function togglePlay() {
   if (playToggleBusy) return;
@@ -20559,12 +20738,9 @@ async function togglePlay() {
     }
     if (!audio) return;
     if (audio.paused || audio.ended) {
-      await attemptAudioPlay({ manual: true });
+      await attemptAudioPlay({ manual: true, fade: false });
     } else {
-      await fadeOutAndPauseAudio();
-      playing = false;
-      setPlayIcon(false);
-      hideLoading();
+      pauseAudioImmediately('manual-pause');
       safePlaybackStep('listen-stats-pause', function(){ updateListenStatsTick(true); });
       forcePlaybackControlsInteractive();
       safePlaybackStep('sync-pause-state', function(){ syncPlaybackStateFromAudioEvent('manual-pause'); });
@@ -21367,6 +21543,7 @@ function applyStageTextModeRuntime(options) {
     stageLyrics.currentText = '';
     if (stageTextMode === 'title') renderStageTrackTitleNow();
   }
+  updateNowPlayingVideoStageTextOverlay();
   syncStageTextModeUi();
   if (!options.silent) showToast(stageTextModeCopy(stageTextMode).toast);
 }
@@ -22183,10 +22360,27 @@ function bindPlaybackProgressEvents(audioEl) {
       if (typeof pushDesktopLyricsState === 'function') pushDesktopLyricsState(true);
     });
   });
-  audioEl.addEventListener('seeking', function(){ onPlaybackClockDiscontinuity(Number(audioEl.currentTime) || 0, 'html-seeking'); });
-  audioEl.addEventListener('seeked', function(){ onPlaybackClockDiscontinuity(Number(audioEl.currentTime) || 0, 'html-seeked'); });
-  ['play', 'playing', 'pause', 'ended', 'emptied', 'abort', 'error'].forEach(function(name){
-    audioEl.addEventListener(name, function(){ syncPlaybackStateFromAudioEvent(name); });
+  audioEl.addEventListener('seeking', function(){
+    var target = Number(audioEl.currentTime) || 0;
+    onPlaybackClockDiscontinuity(target, 'html-seeking');
+    if (typeof beginNowPlayingBackgroundSeek === 'function') beginNowPlayingBackgroundSeek(target);
+  });
+  audioEl.addEventListener('seeked', function(){
+    var target = Number(audioEl.currentTime) || 0;
+    onPlaybackClockDiscontinuity(target, 'html-seeked');
+    if (typeof completeNowPlayingBackgroundSeek === 'function') completeNowPlayingBackgroundSeek(target);
+  });
+  ['play', 'playing', 'pause', 'waiting', 'stalled', 'ratechange', 'ended', 'emptied', 'abort', 'error'].forEach(function(name){
+    audioEl.addEventListener(name, function(){
+      syncPlaybackStateFromAudioEvent(name);
+      if (typeof syncNowPlayingBackgroundPlaybackState === 'function') syncNowPlayingBackgroundPlaybackState(name);
+      if (name === 'playing' && fx && fx.nowPlayingBackground) {
+        var backgroundSong = nowPlayingBackgroundSong();
+        if (backgroundSong && songProviderKey(backgroundSong) === 'qq' && nowPlayingBackgroundState.status !== 'video') {
+          prepareNowPlayingBackgroundForSong(backgroundSong, trackSwitchToken);
+        }
+      }
+    });
   });
 }
 function emitProgressDragParticles(x, y) {
@@ -22249,6 +22443,7 @@ async function commitHtmlAudioSeek(targetSec) {
     // position immediately. Visual cursors are reset directly afterwards and
     // no longer delay the actual media operation.
     onPlaybackClockDiscontinuity(targetSec, 'html-seek-request');
+    if (typeof beginNowPlayingBackgroundSeek === 'function') beginNowPlayingBackgroundSeek(targetSec);
     audio.currentTime = targetSec;
     setProgressVisual(durationSec > 0 ? targetSec / durationSec * 100 : 0);
     resetRealtimeBeatEngine();
@@ -22264,6 +22459,7 @@ async function commitHtmlAudioSeek(targetSec) {
     syncBeatMapPlaybackCursor(actual, true);
     syncPodcastDjMapCursor(actual, true);
     onPlaybackClockDiscontinuity(actual, 'html-seek-confirmed');
+    if (typeof completeNowPlayingBackgroundSeek === 'function') completeNowPlayingBackgroundSeek(actual);
     resetRealtimeBeatEngine();
     if (wasPlaying && audio.paused) {
       await audio.play();
@@ -22547,6 +22743,7 @@ function normalizeFxArchiveSnapshot(raw) {
     backgroundColorMode: raw.backgroundColorMode === 'custom' || raw.backgroundColorCustom ? 'custom' : 'cover',
     backgroundColor: normalizeHexColor(raw.backgroundColor || fxDefaults.backgroundColor, fxDefaults.backgroundColor),
     backgroundOpacity: archiveNumber(raw, 'backgroundOpacity', fxDefaults.backgroundOpacity, 0, 1),
+    nowPlayingBackground: raw.nowPlayingBackground === true,
     liquidGlassTransparency: archiveNumber(raw, 'liquidGlassTransparency', fxDefaults.liquidGlassTransparency, 0, 1),
     controlGlassChromaticOffset: archiveNumber(raw, 'controlGlassChromaticOffset', fxDefaults.controlGlassChromaticOffset, 0, 140),
     backgroundColorCustom: raw.backgroundColorMode === 'custom' || !!raw.backgroundColorCustom,
@@ -23115,80 +23312,777 @@ function setVisualIconColor(color, silent) {
 function resetVisualIconColor() {
   setVisualIconColor(fxDefaults.visualIconColor || '#7fd8ff');
 }
+var nowPlayingBackgroundState = {
+  token: 0,
+  songKey: '',
+  provider: '',
+  status: 'idle',
+  media: null,
+  syncTimer: 0,
+  syncTimerKind: '',
+  lastSyncCheckAt: 0,
+  lastHardSyncAt: 0,
+  refreshAttempts: 0,
+  activeRequestKey: '',
+  lastErrorKey: '',
+  directStreamPending: false,
+  userSeeking: false,
+  pendingSeekTarget: null,
+  seekResumeTimer: 0,
+  syncSuspendedUntil: 0,
+  lastSeekCompletedAt: 0,
+  lastCompletedSeekTarget: -1,
+  lastPlaybackCommandAt: 0,
+  lastVideoFrameAt: 0,
+  lastVideoMediaTime: -1,
+  sourceAttachedAt: 0,
+  stallStartedAt: 0,
+  lastRecoveryAt: 0,
+  stallRefreshAttempts: 0,
+  lastRateAdjustAt: 0
+};
+
+function nowPlayingBackgroundSong() {
+  return playQueue && currentIdx >= 0 ? playQueue[currentIdx] : null;
+}
+function nowPlayingBackgroundSongKey(song) {
+  song = song || {};
+  return [songProviderKey(song), song.mid || song.songmid || song.youtubeId || song.videoId || song.spotifyId || song.spotifyUri || song.id || song.localFileId || song.name || ''].join(':');
+}
+function normalizeNowPlayingVideoQuality(value) {
+  value = String(value || '').toLowerCase();
+  return value === '2k' || value === '4k' ? value : 'fhd';
+}
+function normalizeNowPlayingVideoDisplayMode(value) {
+  value = String(value || '').toLowerCase();
+  return value === 'fit' || value === 'original' ? value : 'full';
+}
+function nowPlayingBackgroundVideoQuality() {
+  var quality = normalizeNowPlayingVideoQuality(fx.nowPlayingVideoQuality || fxDefaults.nowPlayingVideoQuality);
+  return quality === '4k' ? 'ultra' : (quality === '2k' ? 'high' : 'balanced');
+}
+function syncNowPlayingVideoQualityUi() {
+  var quality = normalizeNowPlayingVideoQuality(fx.nowPlayingVideoQuality || fxDefaults.nowPlayingVideoQuality);
+  document.querySelectorAll('[data-now-playing-video-quality]').forEach(function(button){
+    button.classList.toggle('active', button.getAttribute('data-now-playing-video-quality') === quality);
+  });
+}
+function syncNowPlayingVideoDisplayModeUi() {
+  var mode = normalizeNowPlayingVideoDisplayMode(fx.nowPlayingVideoDisplayMode || fxDefaults.nowPlayingVideoDisplayMode);
+  document.querySelectorAll('[data-now-playing-video-display-mode]').forEach(function(button){
+    button.classList.toggle('active', button.getAttribute('data-now-playing-video-display-mode') === mode);
+  });
+  document.body.setAttribute('data-now-playing-video-display-mode', mode);
+}
+function setNowPlayingVideoQuality(value) {
+  var next = normalizeNowPlayingVideoQuality(value);
+  if (fx.nowPlayingVideoQuality === next) { syncNowPlayingVideoQualityUi(); return; }
+  fx.nowPlayingVideoQuality = next;
+  saveLyricLayout();
+  syncNowPlayingVideoQualityUi();
+  if (fx.nowPlayingBackground) {
+    var song = nowPlayingBackgroundSong();
+    if (song && songProviderKey(song) === 'qq') {
+      nowPlayingBackgroundState.token++;
+      nowPlayingBackgroundState.media = null;
+      nowPlayingBackgroundState.status = 'loading';
+      nowPlayingBackgroundState.activeRequestKey = '';
+      stopNowPlayingBackgroundSyncTimer();
+      applyCustomBackground();
+      prepareNowPlayingBackgroundForSong(song, trackSwitchToken, { refresh: true, qualityOverride: nowPlayingBackgroundVideoQuality() });
+    }
+  }
+  showToast(nowPlayingBackgroundText('Chất lượng MV: ' + (next === '4k' ? '4K' : (next === '2k' ? '2K' : 'Full HD')), 'MV quality: ' + (next === '4k' ? '4K' : (next === '2k' ? '2K' : 'Full HD'))));
+}
+function setNowPlayingVideoDisplayMode(value) {
+  var next = normalizeNowPlayingVideoDisplayMode(value);
+  if (fx.nowPlayingVideoDisplayMode === next) {
+    syncNowPlayingVideoDisplayModeUi();
+    return;
+  }
+  fx.nowPlayingVideoDisplayMode = next;
+  saveLyricLayout();
+  syncNowPlayingVideoDisplayModeUi();
+  applyCustomBackground();
+  var modeLabel = next === 'original' ? 'Original' : (next === 'fit' ? 'Fit' : 'Full');
+  showToast(nowPlayingBackgroundText('Chế độ hiển thị MV: ' + modeLabel, 'MV display mode: ' + modeLabel));
+}
+window.setNowPlayingVideoQuality = setNowPlayingVideoQuality;
+window.setNowPlayingVideoDisplayMode = setNowPlayingVideoDisplayMode;
+function nowPlayingBackgroundText(vi, en) { return appLanguage === 'en' ? en : vi; }
+function nowPlayingBackgroundStatusText() {
+  if (!fx.nowPlayingBackground) return nowPlayingBackgroundText('YouTube phát đúng MV/video đang chạy · Spotify dùng ảnh nghệ sĩ và album', 'YouTube shows the exact playing MV/video · Spotify uses artist and album artwork');
+  if (nowPlayingBackgroundState.status === 'loading') return nowPlayingBackgroundText('Đang tải luồng hình ảnh video thuần, không có giao diện YouTube…', 'Loading the raw video stream without YouTube interface elements…');
+  if (nowPlayingBackgroundState.status === 'video') {
+    var media = nowPlayingBackgroundState.media || {};
+    var size = Number(media.width || 0) && Number(media.height || 0) ? (Math.round(media.width) + '×' + Math.round(media.height)) : '';
+    var fps = Number(media.fps || 0) ? (Math.round(media.fps) + ' FPS') : '';
+    var detail = [size, fps].filter(Boolean).join(' · ');
+    return nowPlayingBackgroundText('Video đang phát' + (detail ? ' · ' + detail : '') + ' · tên bài/lyrics nằm trên video', 'Video playing' + (detail ? ' · ' + detail : '') + ' · title/lyrics remain above the video');
+  }
+  if (nowPlayingBackgroundState.status === 'spotify-art') return nowPlayingBackgroundText('Đang hiển thị ảnh nghệ sĩ và album từ Spotify', 'Showing Spotify artist and album artwork');
+  if (nowPlayingBackgroundState.status === 'local-art') return nowPlayingBackgroundText('Đang hiển thị ảnh bìa của bài nhạc local', 'Showing the local track artwork');
+  if (nowPlayingBackgroundState.status === 'error') return nowPlayingBackgroundText('Không thể khởi động video cho bài này', 'Could not start video for this track');
+  return nowPlayingBackgroundText('Hãy phát một bài để hiển thị nền theo bài hát', 'Play a track to show its matching background');
+}
+function updateNowPlayingBackgroundControls() {
+  var button = document.getElementById('now-playing-bg-btn');
+  var title = document.getElementById('now-playing-bg-title');
+  var status = document.getElementById('now-playing-bg-status');
+  if (title) title.textContent = nowPlayingBackgroundText('Nền theo bài đang phát', 'Now-playing background');
+  if (button) {
+    button.textContent = nowPlayingBackgroundText('MV bài đang phát', 'Playing MV');
+    button.classList.toggle('active', !!fx.nowPlayingBackground);
+    button.setAttribute('aria-pressed', fx.nowPlayingBackground ? 'true' : 'false');
+    button.title = nowPlayingBackgroundText('Hiển thị khung hình video thuần của đúng video YouTube đang nghe, không logo, tên kênh hay nút YouTube; Spotify dùng ảnh nghệ sĩ và album.', 'Show the raw frames of the exact YouTube video with no YouTube logo, channel name, or controls; Spotify uses artist and album artwork.');
+  }
+  if (status) status.textContent = nowPlayingBackgroundStatusText();
+  syncNowPlayingVideoQualityUi();
+  syncNowPlayingVideoDisplayModeUi();
+}
+
+function currentNowPlayingBackgroundMedia() {
+  return fx.nowPlayingBackground && nowPlayingBackgroundState.media ? nowPlayingBackgroundState.media : null;
+}
+function nowPlayingBackgroundIsPlaying() {
+  var song = nowPlayingBackgroundSong();
+  if (!song) return false;
+  if (songProviderKey(song) === 'netease') return !!(window.spotifyDirectState && window.spotifyDirectState.isPlaying);
+  return !!(audio && audio.src && !audio.paused && !audio.ended && !audio.seeking && audio.readyState >= 2);
+}
+function preservePrimaryYouTubeAudioOutput() {
+  var song = nowPlayingBackgroundSong();
+  if (!song || songProviderKey(song) !== 'qq' || !audio || audio.paused || audio.ended) return;
+  // The MV element is visual-only. Reassert the existing audible <audio>
+  // element after Chromium starts a second media decoder so the master player
+  // can never be left muted or at the fade-in silence floor.
+  try {
+    audio.muted = false;
+    audio.defaultMuted = false;
+    audio.volume = gainNode ? 1 : clampRange(targetVolume, 0, 1);
+  } catch (_) {}
+  if (gainNode && audioCtx && gainNode.gain && targetVolume > 0.001) {
+    try {
+      var now = audioCtx.currentTime || 0;
+      var current = Number(gainNode.gain.value) || 0;
+      if (current < Math.max(0.015, targetVolume * 0.18)) {
+        gainNode.gain.cancelScheduledValues(now);
+        gainNode.gain.setValueAtTime(Math.max(current, AUDIO_SILENCE_GAIN), now);
+        gainNode.gain.setTargetAtTime(targetVolume, now, 0.025);
+      }
+    } catch (_) {}
+  }
+}
+function stopNowPlayingBackgroundSyncTimer() {
+  var video = document.getElementById('custom-bg-video');
+  if (nowPlayingBackgroundState.syncTimer) {
+    if (nowPlayingBackgroundState.syncTimerKind === 'video-frame' && video && typeof video.cancelVideoFrameCallback === 'function') {
+      try { video.cancelVideoFrameCallback(nowPlayingBackgroundState.syncTimer); } catch (_) {}
+    } else {
+      try { cancelAnimationFrame(nowPlayingBackgroundState.syncTimer); } catch (_) {}
+    }
+  }
+  nowPlayingBackgroundState.syncTimer = 0;
+  nowPlayingBackgroundState.syncTimerKind = '';
+}
+function clearNowPlayingBackgroundSeekResumeTimer() {
+  if (nowPlayingBackgroundState.seekResumeTimer) clearTimeout(nowPlayingBackgroundState.seekResumeTimer);
+  nowPlayingBackgroundState.seekResumeTimer = 0;
+}
+function queueNowPlayingBackgroundSyncFrame() {
+  if (nowPlayingBackgroundState.syncTimer || !fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video') return;
+  var media = currentNowPlayingBackgroundMedia();
+  var video = document.getElementById('custom-bg-video');
+  var directVideo = !!(media && media.type === 'video' && video && video.getAttribute('src'));
+  var callback = function(now, metadata){
+    nowPlayingBackgroundState.syncTimer = 0;
+    nowPlayingBackgroundState.syncTimerKind = '';
+    if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video') return;
+    if (metadata && isFinite(Number(metadata.mediaTime))) {
+      nowPlayingBackgroundState.lastVideoFrameAt = now;
+      nowPlayingBackgroundState.lastVideoMediaTime = Number(metadata.mediaTime);
+      nowPlayingBackgroundState.stallStartedAt = 0;
+    }
+    // Synchronization is deliberately low-frequency. Reassigning currentTime
+    // every few frames forces Chromium to discard decoded frames and is the
+    // main cause of visible judder during play/pause and ordinary playback.
+    if (!document.hidden && !nowPlayingBackgroundState.userSeeking && now - nowPlayingBackgroundState.lastSyncCheckAt >= 320) {
+      nowPlayingBackgroundState.lastSyncCheckAt = now;
+      syncNowPlayingBackgroundPosition(false, 'clock');
+    }
+    if (nowPlayingBackgroundIsPlaying() && !document.hidden) queueNowPlayingBackgroundSyncFrame();
+  };
+  if (directVideo && typeof video.requestVideoFrameCallback === 'function' && !video.paused) {
+    nowPlayingBackgroundState.syncTimerKind = 'video-frame';
+    nowPlayingBackgroundState.syncTimer = video.requestVideoFrameCallback(callback);
+  } else {
+    nowPlayingBackgroundState.syncTimerKind = 'animation-frame';
+    nowPlayingBackgroundState.syncTimer = requestAnimationFrame(callback);
+  }
+}
+function startNowPlayingBackgroundSyncTimer() {
+  stopNowPlayingBackgroundSyncTimer();
+  nowPlayingBackgroundState.lastSyncCheckAt = 0;
+  if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video' || nowPlayingBackgroundState.userSeeking) return;
+  queueNowPlayingBackgroundSyncFrame();
+}
+function recoverNowPlayingBackgroundVideo(reason) {
+  if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video' || nowPlayingBackgroundState.userSeeking || document.hidden) return;
+  var video = document.getElementById('custom-bg-video');
+  if (!video || !video.getAttribute('src') || !nowPlayingBackgroundIsPlaying()) return;
+  var now = performance.now();
+  if (now - nowPlayingBackgroundState.lastRecoveryAt < 900) return;
+  nowPlayingBackgroundState.lastRecoveryAt = now;
+  var target = Math.max(0, Number(getPlaybackCurrentSeconds()) || 0);
+  var drift = Math.abs((Number(video.currentTime) || 0) - target);
+  try { video.playbackRate = audio && isFinite(Number(audio.playbackRate)) ? Number(audio.playbackRate) : 1; } catch (_) {}
+  if (video.readyState >= 1 && drift > 0.55 && now - nowPlayingBackgroundState.lastHardSyncAt > 1600) {
+    seekNowPlayingBackgroundVideoOnce(target, reason || 'stall-recovery');
+  }
+  var promise = video.play();
+  if (promise && promise.catch) promise.catch(function(){});
+
+  var frameAge = nowPlayingBackgroundState.lastVideoFrameAt ? now - nowPlayingBackgroundState.lastVideoFrameAt : now - nowPlayingBackgroundState.sourceAttachedAt;
+  if (frameAge > 5200 && nowPlayingBackgroundState.stallRefreshAttempts < 1) {
+    nowPlayingBackgroundState.stallRefreshAttempts += 1;
+    var retrySong = nowPlayingBackgroundSong();
+    setTimeout(function(){
+      if (!retrySong || !fx.nowPlayingBackground || nowPlayingBackgroundSongKey(retrySong) !== nowPlayingBackgroundState.songKey) return;
+      prepareNowPlayingBackgroundForSong(retrySong, trackSwitchToken, {
+        refresh: true,
+        qualityOverride: nowPlayingBackgroundVideoQuality(),
+        silentError: true
+      });
+    }, 160);
+  }
+}
+function seekNowPlayingBackgroundVideoOnce(target, reason) {
+  var video = document.getElementById('custom-bg-video');
+  if (!video || video.readyState < 1 || !video.getAttribute('src')) {
+    nowPlayingBackgroundState.pendingSeekTarget = target;
+    return false;
+  }
+  var duration = Number(video.duration) || 0;
+  target = Math.max(0, Number(target) || 0);
+  if (duration > 0) target = Math.min(target, Math.max(0, duration - 0.08));
+  var drift = Math.abs((Number(video.currentTime) || 0) - target);
+  if (drift < 0.08) {
+    nowPlayingBackgroundState.pendingSeekTarget = null;
+    return false;
+  }
+  try {
+    // Assign currentTime once. Chromium seeks from the nearest keyframe
+    // internally while still landing on the requested timeline position.
+    video.currentTime = target;
+    nowPlayingBackgroundState.lastHardSyncAt = performance.now();
+    nowPlayingBackgroundState.pendingSeekTarget = null;
+    return true;
+  } catch (_) {
+    nowPlayingBackgroundState.pendingSeekTarget = target;
+    return false;
+  }
+}
+function beginNowPlayingBackgroundSeek(target) {
+  if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video') return;
+  var video = document.getElementById('custom-bg-video');
+  clearNowPlayingBackgroundSeekResumeTimer();
+  stopNowPlayingBackgroundSyncTimer();
+  nowPlayingBackgroundState.userSeeking = true;
+  nowPlayingBackgroundState.pendingSeekTarget = Math.max(0, Number(target) || 0);
+  nowPlayingBackgroundState.syncSuspendedUntil = performance.now() + 360;
+  if (video) {
+    try { video.playbackRate = 1; } catch (_) {}
+    // Keep the last decoded frame visible while the audio seek is committed.
+    // This avoids a black flash and prevents repeated network Range requests.
+    if (!video.paused) video.pause();
+  }
+}
+function completeNowPlayingBackgroundSeek(target) {
+  if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video') return;
+  var video = document.getElementById('custom-bg-video');
+  var now = performance.now();
+  target = Math.max(0, Number(target) || 0);
+  // The audio element emits seeked before commitHtmlAudioSeek resolves. Ignore
+  // the second confirmation for the same target so the MV receives exactly one
+  // currentTime assignment per user action.
+  if (Math.abs(nowPlayingBackgroundState.lastCompletedSeekTarget - target) < 0.05 && now - nowPlayingBackgroundState.lastSeekCompletedAt < 320) return;
+  clearNowPlayingBackgroundSeekResumeTimer();
+  nowPlayingBackgroundState.userSeeking = true;
+  nowPlayingBackgroundState.lastSeekCompletedAt = now;
+  nowPlayingBackgroundState.lastCompletedSeekTarget = target;
+  nowPlayingBackgroundState.syncSuspendedUntil = now + 620;
+  nowPlayingBackgroundState.pendingSeekTarget = target;
+
+  var resumed = false;
+  function resumeAfterSeek() {
+    if (resumed) return;
+    resumed = true;
+    clearNowPlayingBackgroundSeekResumeTimer();
+    if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video' || !video) return;
+    nowPlayingBackgroundState.userSeeking = false;
+    var shouldPlay = nowPlayingBackgroundIsPlaying() && !document.hidden;
+    if (shouldPlay && video.paused) {
+      var p = video.play();
+      if (p && p.catch) p.catch(function(){});
+    }
+    startNowPlayingBackgroundSyncTimer();
+  }
+  if (video) {
+    video.addEventListener('seeked', function onMvSeeked(){
+      if (video.readyState >= 2) resumeAfterSeek();
+      else video.addEventListener('canplay', resumeAfterSeek, { once: true });
+    }, { once: true });
+  }
+  var changed = seekNowPlayingBackgroundVideoOnce(target, 'user-seek');
+  if (!changed) resumeAfterSeek();
+  else nowPlayingBackgroundState.seekResumeTimer = setTimeout(resumeAfterSeek, 2800);
+}
+function syncNowPlayingBackgroundPlaybackState(eventName) {
+  if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video') return;
+  var video = document.getElementById('custom-bg-video');
+  if (!video || !video.getAttribute('src')) return;
+  nowPlayingBackgroundState.lastPlaybackCommandAt = performance.now();
+  if (eventName === 'pause' || eventName === 'waiting' || eventName === 'stalled' || eventName === 'ended' || eventName === 'emptied' || eventName === 'abort' || eventName === 'error') {
+    stopNowPlayingBackgroundSyncTimer();
+    if (!video.paused) video.pause();
+    try { video.playbackRate = audio && isFinite(Number(audio.playbackRate)) ? Number(audio.playbackRate) : 1; } catch (_) {}
+    return;
+  }
+  if (eventName === 'ratechange') {
+    try { video.playbackRate = audio && isFinite(Number(audio.playbackRate)) ? Number(audio.playbackRate) : 1; } catch (_) {}
+    return;
+  }
+  if ((eventName === 'play' || eventName === 'playing') && !nowPlayingBackgroundState.userSeeking && !document.hidden) {
+    // Do not seek on play/resume. The previous forced currentTime assignment
+    // discarded the buffered frame queue and caused a visible hitch every time
+    // the user pressed Play.
+    if (video.paused) {
+      var p = video.play();
+      if (p && p.catch) p.catch(function(){});
+    }
+    startNowPlayingBackgroundSyncTimer();
+    setTimeout(function(){ recoverNowPlayingBackgroundVideo('play-resume'); }, 180);
+    setTimeout(function(){ recoverNowPlayingBackgroundVideo('play-resume-check'); }, 900);
+  }
+}
+function syncNowPlayingBackgroundPosition(force, reason) {
+  if (!fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video') return;
+  var target = Math.max(0, Number(getPlaybackCurrentSeconds()) || 0);
+  var shouldPlay = nowPlayingBackgroundIsPlaying() && !document.hidden;
+  var baseRate = audio && isFinite(Number(audio.playbackRate)) ? Number(audio.playbackRate) : 1;
+  var now = performance.now();
+  var video = document.getElementById('custom-bg-video');
+  if (!video || video.readyState < 1 || !video.getAttribute('src')) {
+    if (force) nowPlayingBackgroundState.pendingSeekTarget = target;
+    return;
+  }
+  if (nowPlayingBackgroundState.userSeeking) return;
+  var duration = Number(video.duration) || 0;
+  if (duration > 0) target = Math.min(target, Math.max(0, duration - 0.08));
+  var current = Number(video.currentTime) || 0;
+  var signedDrift = current - target;
+  var drift = Math.abs(signedDrift);
+  var sourceReadyForce = force && (reason === 'source-ready' || reason === 'visibility-resume' || reason === 'user-seek');
+
+  // One hard seek is allowed when a new source is attached, after a real user
+  // seek, or after returning from a long hidden period. During normal playback
+  // hard corrections require a large error and a long cooldown.
+  if (sourceReadyForce || (drift > 1.45 && now - nowPlayingBackgroundState.lastHardSyncAt > 9000)) {
+    seekNowPlayingBackgroundVideoOnce(target, reason || 'drift');
+    try { video.playbackRate = baseRate; } catch (_) {}
+  } else if (now >= nowPlayingBackgroundState.syncSuspendedUntil && drift > 0.28 && shouldPlay && now - nowPlayingBackgroundState.lastRateAdjustAt > 1600) {
+    // Keep frame pacing stable. Only apply a tiny, infrequent clock correction;
+    // larger continuous rate swings are visibly jerky on 50/60 FPS videos.
+    nowPlayingBackgroundState.lastRateAdjustAt = now;
+    var correction = Math.max(0.996, Math.min(1.004, 1 - signedDrift * 0.008));
+    var correctedRate = baseRate * correction;
+    if (Math.abs(video.playbackRate - correctedRate) > 0.0015) video.playbackRate = correctedRate;
+  } else if (drift < 0.12 && Math.abs(video.playbackRate - baseRate) > 0.0015) {
+    video.playbackRate = baseRate;
+  }
+
+  if (shouldPlay) {
+    var frameAge = nowPlayingBackgroundState.lastVideoFrameAt
+      ? now - nowPlayingBackgroundState.lastVideoFrameAt
+      : now - nowPlayingBackgroundState.sourceAttachedAt;
+    if (video.paused || video.readyState < 2 || (nowPlayingBackgroundState.sourceAttachedAt > 0 && frameAge > 2200)) {
+      recoverNowPlayingBackgroundVideo(reason || 'frame-watchdog');
+    }
+  }
+
+  if (shouldPlay && video.paused && !nowPlayingBackgroundState.userSeeking) {
+    var promise = video.play();
+    if (promise && promise.then) promise.then(function(){
+      preservePrimaryYouTubeAudioOutput();
+      queueNowPlayingBackgroundSyncFrame();
+    }).catch(function(){});
+  } else if (!shouldPlay && !video.paused) {
+    video.pause();
+  }
+  if (shouldPlay) queueNowPlayingBackgroundSyncFrame();
+}
+function fallbackNowPlayingArtwork(song, status) {
+  song = song || {};
+  var cover = '';
+  try { cover = songCoverSrc(song, 1200) || song.cover || ''; } catch (_) { cover = song.cover || ''; }
+  nowPlayingBackgroundState.media = cover ? { type: 'track-art', source: 'now-playing', backdrop: cover, card: cover, name: song.name || '' } : null;
+  nowPlayingBackgroundState.status = status || (songProviderKey(song) === 'local' ? 'local-art' : 'error');
+  applyCustomBackground();
+  updateNowPlayingBackgroundControls();
+}
+function primeNowPlayingBackgroundForSong(song, trackToken) {
+  if (!fx.nowPlayingBackground) return;
+  song = song || nowPlayingBackgroundSong();
+  if (!song || (trackToken != null && trackToken !== trackSwitchToken)) return;
+  var key = nowPlayingBackgroundSongKey(song);
+  if (key !== nowPlayingBackgroundState.songKey) {
+    nowPlayingBackgroundState.refreshAttempts = 0;
+    nowPlayingBackgroundState.activeRequestKey = '';
+  }
+  nowPlayingBackgroundState.songKey = key;
+  nowPlayingBackgroundState.provider = songProviderKey(song);
+  stopNowPlayingBackgroundSyncTimer();
+  if (songProviderKey(song) === 'qq') {
+    // YouTube MV mode intentionally starts with an empty black stage. The raw
+    // <video> layer becomes visible only after Chromium emits `playing`.
+    nowPlayingBackgroundState.media = null;
+    nowPlayingBackgroundState.status = 'loading';
+    applyCustomBackground();
+    updateNowPlayingBackgroundControls();
+  } else {
+    fallbackNowPlayingArtwork(song, songProviderKey(song) === 'netease' ? 'spotify-art' : 'local-art');
+  }
+}
+async function prepareNowPlayingBackgroundForSong(song, trackToken, options) {
+  options = options || {};
+  if (!fx.nowPlayingBackground) return;
+  song = song || nowPlayingBackgroundSong();
+  var key = nowPlayingBackgroundSongKey(song);
+  var provider = songProviderKey(song);
+  var videoQualityHint = options.qualityOverride || nowPlayingBackgroundVideoQuality();
+  if (!options.refresh && key === nowPlayingBackgroundState.songKey) {
+    if (provider === 'qq' && nowPlayingBackgroundState.status === 'video' && nowPlayingBackgroundState.media) return;
+    if (provider === 'netease' && nowPlayingBackgroundState.status === 'spotify-art' && nowPlayingBackgroundState.media) return;
+  }
+  var requestSignature = key + '|' + provider + '|' + videoQualityHint;
+  if (!options.refresh && nowPlayingBackgroundState.activeRequestKey === requestSignature) return;
+  var requestToken = ++nowPlayingBackgroundState.token;
+  if (key !== nowPlayingBackgroundState.songKey) nowPlayingBackgroundState.refreshAttempts = 0;
+  nowPlayingBackgroundState.songKey = key;
+  nowPlayingBackgroundState.provider = provider;
+  nowPlayingBackgroundState.status = song ? 'loading' : 'idle';
+  nowPlayingBackgroundState.activeRequestKey = requestSignature;
+  stopNowPlayingBackgroundSyncTimer();
+  updateNowPlayingBackgroundControls();
+  if (!song || (trackToken != null && trackToken !== trackSwitchToken)) {
+    if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+    applyCustomBackground();
+    return;
+  }
+
+  if (provider === 'qq') {
+    var videoId = String(song.mid || song.songmid || song.youtubeId || song.videoId || song.id || '').trim();
+    if (!videoId) {
+      if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+      nowPlayingBackgroundState.media = null;
+      nowPlayingBackgroundState.status = 'error';
+      applyCustomBackground();
+      updateNowPlayingBackgroundControls();
+      return;
+    }
+
+    // Raw-stream-only MV mode: never create a YouTube iframe. This guarantees
+    // that logos, channel names, titles, controls and end-screen overlays cannot
+    // appear in the app. The existing audible player remains the master clock.
+    nowPlayingBackgroundState.media = null;
+    nowPlayingBackgroundState.status = 'loading';
+    nowPlayingBackgroundState.directStreamPending = true;
+    applyCustomBackground();
+    updateNowPlayingBackgroundControls();
+    try {
+      var videoQuality = videoQualityHint;
+      var data = await requestNowPlayingVideoDescriptor(song, {
+        qualityOverride: videoQuality,
+        refresh: !!options.refresh,
+        compatibility: !!options.compatibility
+      });
+      if (!fx.nowPlayingBackground || requestToken !== nowPlayingBackgroundState.token || key !== nowPlayingBackgroundState.songKey || (trackToken != null && trackToken !== trackSwitchToken)) return;
+      var src = String(data && (data.proxyUrl || data.url) || '');
+      if (!src || data.playable === false) throw new Error(data && data.message || 'VIDEO_STREAM_UNAVAILABLE');
+      nowPlayingBackgroundState.media = {
+        type: 'video', source: 'now-playing', src: src, name: song.name || '', videoId: videoId,
+        poster: '', width: Number(data.width || 0), height: Number(data.height || 0),
+        availableMaxHeight: Number(data.availableMaxHeight || data.height || 0),
+        fps: Number(data.fps || 0), bitrate: Number(data.bitrate || 0), hasAudio: !!data.hasAudio, engine: String(data.engine || ''),
+        formatId: String(data.formatId || ''), videoQuality: String(data.videoQuality || ''),
+        requestedQuality: String(data.requestedQuality || videoQuality || ''), compatibility: !!options.compatibility
+      };
+      nowPlayingBackgroundState.status = 'video';
+      nowPlayingBackgroundState.directStreamPending = false;
+      nowPlayingBackgroundState.refreshAttempts = options.refresh ? nowPlayingBackgroundState.refreshAttempts : 0;
+      if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+      applyCustomBackground();
+      updateNowPlayingBackgroundControls();
+      startNowPlayingBackgroundSyncTimer();
+      setTimeout(function(){ syncNowPlayingBackgroundPosition(true, 'source-ready'); }, 0);
+    } catch (error) {
+      if (requestToken !== nowPlayingBackgroundState.token) return;
+      nowPlayingBackgroundState.directStreamPending = false;
+      if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+      console.warn('[NowPlayingBackground] raw YouTube video unavailable:', error && (error.message || error));
+      nowPlayingBackgroundState.media = null;
+      nowPlayingBackgroundState.status = 'error';
+      stopNowPlayingBackgroundSyncTimer();
+      applyCustomBackground();
+      updateNowPlayingBackgroundControls();
+      var errorKey = key + ':' + String(error && (error.message || error) || 'error');
+      if (nowPlayingBackgroundState.lastErrorKey !== errorKey && !options.silentError) {
+        nowPlayingBackgroundState.lastErrorKey = errorKey;
+        showToast(nowPlayingBackgroundText('Không lấy được luồng video thuần cho video này.', 'Could not load a raw video stream for this video.'));
+      }
+    }
+    return;
+  }
+
+  if (provider === 'netease') {
+    fallbackNowPlayingArtwork(song, 'spotify-art');
+    var spotifyId = String(song.spotifyId || song.id || '').trim();
+    if (!spotifyId) {
+      if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+      return;
+    }
+    try {
+      var visual = await apiJson('/api/spotify/track/visual?id=' + encodeURIComponent(spotifyId), { timeoutMs: 18000 });
+      if (!fx.nowPlayingBackground || requestToken !== nowPlayingBackgroundState.token || key !== nowPlayingBackgroundState.songKey || (trackToken != null && trackToken !== trackSwitchToken)) return;
+      var albumImage = String(visual && visual.albumImage || song.cover || '');
+      var artistImage = String(visual && visual.artistImage || albumImage || '');
+      nowPlayingBackgroundState.media = (artistImage || albumImage) ? { type: 'track-art', source: 'now-playing', backdrop: artistImage || albumImage, card: albumImage || artistImage, name: song.name || '' } : null;
+      nowPlayingBackgroundState.status = 'spotify-art';
+      if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+      applyCustomBackground();
+      updateNowPlayingBackgroundControls();
+    } catch (error) {
+      if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+      console.warn('[NowPlayingBackground] Spotify artwork:', error && (error.message || error));
+    }
+    return;
+  }
+
+  if (nowPlayingBackgroundState.activeRequestKey === requestSignature) nowPlayingBackgroundState.activeRequestKey = '';
+  fallbackNowPlayingArtwork(song, 'local-art');
+}
+window.primeNowPlayingBackgroundForSong = primeNowPlayingBackgroundForSong;
+window.prepareNowPlayingBackgroundForSong = prepareNowPlayingBackgroundForSong;
+window.syncNowPlayingBackgroundPosition = syncNowPlayingBackgroundPosition;
+window.beginNowPlayingBackgroundSeek = beginNowPlayingBackgroundSeek;
+window.completeNowPlayingBackgroundSeek = completeNowPlayingBackgroundSeek;
+window.syncNowPlayingBackgroundPlaybackState = syncNowPlayingBackgroundPlaybackState;
+
+function toggleNowPlayingBackground() {
+  fx.nowPlayingBackground = !fx.nowPlayingBackground;
+  nowPlayingBackgroundState.token++;
+  nowPlayingBackgroundState.media = null;
+  nowPlayingBackgroundState.status = 'idle';
+  nowPlayingBackgroundState.refreshAttempts = 0;
+  nowPlayingBackgroundState.activeRequestKey = '';
+  nowPlayingBackgroundState.directStreamPending = false;
+  nowPlayingBackgroundState.userSeeking = false;
+  nowPlayingBackgroundState.pendingSeekTarget = null;
+  nowPlayingBackgroundState.lastCompletedSeekTarget = -1;
+  clearNowPlayingBackgroundSeekResumeTimer();
+  stopNowPlayingBackgroundSyncTimer();
+  saveLyricLayout();
+  updateNowPlayingBackgroundControls();
+  if (fx.nowPlayingBackground) {
+    prepareNowPlayingBackgroundForSong(nowPlayingBackgroundSong(), trackSwitchToken);
+    showToast(nowPlayingBackgroundText('Đã bật MV theo bài đang phát', 'Now-playing MV enabled'));
+  } else {
+    applyCustomBackground();
+    showToast(nowPlayingBackgroundText('Đã tắt nền theo bài đang phát', 'Now-playing background disabled'));
+  }
+}
+window.toggleNowPlayingBackground = toggleNowPlayingBackground;
+
+document.addEventListener('visibilitychange', function(){
+  if (!fx || !fx.nowPlayingBackground || nowPlayingBackgroundState.status !== 'video') return;
+  if (document.hidden) {
+    stopNowPlayingBackgroundSyncTimer();
+    var video = document.getElementById('custom-bg-video');
+    if (video && !video.paused) video.pause();
+  } else {
+    syncNowPlayingBackgroundPosition(true, 'visibility-resume');
+    startNowPlayingBackgroundSyncTimer();
+  }
+});
+
 function applyCustomBackground() {
   var color = normalizeHexColor(fx.backgroundColor || '#000000', '#000000');
-  var media = normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage);
-  var image = media && media.type === 'image' ? media.src : '';
-  var hasVideo = !!(media && media.type === 'video');
+  var runtimeMedia = currentNowPlayingBackgroundMedia();
+  // While now-playing mode is enabled, never fall back to a saved image or
+  // thumbnail. YouTube uses either decoded raw video frames or a black stage.
+  var media = fx.nowPlayingBackground ? runtimeMedia : normalizeCustomBackgroundMedia(fx.backgroundMedia || fx.backgroundImage);
+  var hasTrackArt = !!(runtimeMedia && runtimeMedia.type === 'track-art');
+  var hasHtmlVideo = !!(media && media.type === 'video');
+  var hasVideo = hasHtmlVideo;
+  var isNowPlayingVideo = !!(runtimeMedia && runtimeMedia.type === 'video' && runtimeMedia.source === 'now-playing');
+  var image = hasTrackArt
+    ? String(runtimeMedia.backdrop || runtimeMedia.card || '')
+    : (isNowPlayingVideo ? '' : (media && media.type === 'image' ? media.src : ''));
   var opacity = clampRange(fx.backgroundOpacity == null ? 1 : Number(fx.backgroundOpacity), 0, 1);
   var customColor = fx.backgroundColorMode === 'custom' || !!fx.backgroundColorCustom;
-  var override = !!media || customColor || opacity < 1;
+  var override = !!fx.nowPlayingBackground || !!media || customColor || opacity < 1;
   var root = document.documentElement;
   var layer = document.getElementById('custom-bg');
   var video = document.getElementById('custom-bg-video');
+  var artCard = document.getElementById('now-playing-art-card');
   root.style.setProperty('--custom-bg-color', color);
   document.body.classList.toggle('custom-background-override', override);
   document.body.classList.toggle('custom-background-flat', override && !media);
   document.body.classList.toggle('custom-background-video', hasVideo);
+  document.body.classList.toggle('now-playing-background-active', !!fx.nowPlayingBackground);
+  document.body.classList.toggle('now-playing-background-video', isNowPlayingVideo);
+  document.body.setAttribute('data-now-playing-video-display-mode', normalizeNowPlayingVideoDisplayMode(fx.nowPlayingVideoDisplayMode || fxDefaults.nowPlayingVideoDisplayMode));
+  document.body.classList.toggle('now-playing-background-art', hasTrackArt);
+  updateNowPlayingVideoStageTextOverlay();
   if (!hasVideo) document.body.classList.remove('custom-background-video-ready');
+  if (artCard) {
+    var cardSrc = hasTrackArt ? String(runtimeMedia.card || runtimeMedia.backdrop || '') : '';
+    if (cardSrc && artCard.getAttribute('src') !== cardSrc) artCard.setAttribute('src', cardSrc);
+    else if (!cardSrc) artCard.removeAttribute('src');
+  }
   if (layer) {
     layer.style.setProperty('--custom-bg-image', image ? 'url("' + cssImageUrl(image) + '")' : 'none');
     layer.style.setProperty('--custom-bg-image-opacity', image ? opacity.toFixed(3) : '0');
-    layer.style.setProperty('--custom-bg-video-opacity', hasVideo ? opacity.toFixed(3) : '0');
-    layer.style.setProperty('--custom-bg-overlay-opacity', media ? '0.18' : '0');
+    layer.style.setProperty('--custom-bg-video-opacity', hasVideo ? (isNowPlayingVideo ? '1' : opacity.toFixed(3)) : '0');
+    layer.style.setProperty('--custom-bg-overlay-opacity', isNowPlayingVideo ? '0' : (media ? '0.18' : '0'));
   }
   var token = ++customBgApplyToken;
   if (!video) return;
   if (!hasVideo) {
+    clearNowPlayingBackgroundSeekResumeTimer();
+    nowPlayingBackgroundState.userSeeking = false;
+    nowPlayingBackgroundState.pendingSeekTarget = null;
     video.pause();
     video.onloadeddata = null;
     video.onplaying = null;
+    video.oncanplay = null;
+    video.onwaiting = null;
+    video.onstalled = null;
     video.onerror = null;
+    nowPlayingBackgroundState.lastVideoFrameAt = 0;
+    nowPlayingBackgroundState.sourceAttachedAt = 0;
+    updateNowPlayingVideoStageTextOverlay();
     video.removeAttribute('src');
     video.load();
     document.body.classList.remove('custom-background-video-ready');
     if (customBgObjectUrl) { URL.revokeObjectURL(customBgObjectUrl); customBgObjectUrl = ''; }
     return;
   }
+
   function setVideoSrc(src) {
     if (token !== customBgApplyToken || !src) return;
     if (customBgObjectUrl && customBgObjectUrl !== src) { URL.revokeObjectURL(customBgObjectUrl); customBgObjectUrl = ''; }
     var sourceChanged = video.getAttribute('src') !== src;
-    if (sourceChanged) document.body.classList.remove('custom-background-video-ready');
+    if (sourceChanged) {
+      document.body.classList.remove('custom-background-video-ready');
+      nowPlayingBackgroundState.sourceAttachedAt = performance.now();
+      nowPlayingBackgroundState.lastVideoFrameAt = 0;
+      nowPlayingBackgroundState.lastVideoMediaTime = -1;
+      nowPlayingBackgroundState.stallStartedAt = 0;
+      nowPlayingBackgroundState.stallRefreshAttempts = 0;
+      nowPlayingBackgroundState.lastRateAdjustAt = 0;
+    }
     video.onloadeddata = function(){
       if (token !== customBgApplyToken || video.getAttribute('src') !== src) return;
-      document.body.classList.add('custom-background-video-ready');
+      // A loaded first frame may still be static. Playing MV is revealed only
+      // after the browser confirms that frames are actively advancing.
+      if (!isNowPlayingVideo) document.body.classList.add('custom-background-video-ready');
+      if (isNowPlayingVideo) syncNowPlayingBackgroundPosition(true, 'source-ready');
     };
     video.onplaying = function(){
       if (token !== customBgApplyToken || video.getAttribute('src') !== src) return;
       document.body.classList.add('custom-background-video-ready');
+      nowPlayingBackgroundState.stallStartedAt = 0;
+      nowPlayingBackgroundState.stallRefreshAttempts = 0;
+      if (isNowPlayingVideo) {
+        nowPlayingBackgroundState.refreshAttempts = 0;
+        preservePrimaryYouTubeAudioOutput();
+        setTimeout(preservePrimaryYouTubeAudioOutput, 180);
+        setTimeout(preservePrimaryYouTubeAudioOutput, 720);
+        queueNowPlayingBackgroundSyncFrame();
+      }
+    };
+    video.oncanplay = function(){
+      if (token !== customBgApplyToken || video.getAttribute('src') !== src) return;
+      nowPlayingBackgroundState.stallStartedAt = 0;
+      if (isNowPlayingVideo && nowPlayingBackgroundIsPlaying() && video.paused) {
+        var promise = video.play();
+        if (promise && promise.catch) promise.catch(function(){});
+      }
+    };
+    video.onwaiting = video.onstalled = function(){
+      if (token !== customBgApplyToken || video.getAttribute('src') !== src || !isNowPlayingVideo) return;
+      if (!nowPlayingBackgroundState.stallStartedAt) nowPlayingBackgroundState.stallStartedAt = performance.now();
+      setTimeout(function(){ recoverNowPlayingBackgroundVideo('media-stalled'); }, 260);
     };
     video.onerror = function(){
       if (token !== customBgApplyToken || video.getAttribute('src') !== src) return;
       document.body.classList.remove('custom-background-video-ready');
       var mediaError = video.error;
       console.warn('background video playback failed:', mediaError && mediaError.code, media && media.name, src);
+      if (isNowPlayingVideo && nowPlayingBackgroundState.refreshAttempts < 1) {
+        nowPlayingBackgroundState.refreshAttempts += 1;
+        video.__shinayuuLastErrorSrc = src;
+        var retrySong = nowPlayingBackgroundSong();
+        showToast(nowPlayingBackgroundText('Đang tải lại MV ở chế độ tương thích…', 'Reloading the MV in compatibility mode…'));
+        setTimeout(function(){
+          if (!fx.nowPlayingBackground || !retrySong || nowPlayingBackgroundSongKey(retrySong) !== nowPlayingBackgroundState.songKey) return;
+          prepareNowPlayingBackgroundForSong(retrySong, trackSwitchToken, {
+            refresh: true,
+            qualityOverride: nowPlayingBackgroundVideoQuality(),
+            compatibility: true,
+            silentError: true
+          });
+        }, 240);
+        return;
+      }
+      if (isNowPlayingVideo) {
+        nowPlayingBackgroundState.media = null;
+        nowPlayingBackgroundState.status = 'error';
+        stopNowPlayingBackgroundSyncTimer();
+        setTimeout(function(){ applyCustomBackground(); updateNowPlayingBackgroundControls(); }, 0);
+      }
       if (video.__shinayuuLastErrorSrc !== src) {
         video.__shinayuuLastErrorSrc = src;
-        showToast(backgroundMediaUiText('Không thể phát video nền này. Hãy thử MP4 H.264 hoặc WebM.', 'This background video could not be played. Try MP4 H.264 or WebM.'));
+        showToast(isNowPlayingVideo
+          ? nowPlayingBackgroundText('Không thể giải mã luồng video thuần của video này.', 'The raw video stream for this video could not be decoded.')
+          : backgroundMediaUiText('Không thể phát video nền này. Hãy thử MP4 H.264 hoặc WebM.', 'This background video could not be played. Try MP4 H.264 or WebM.'));
       }
     };
+    video.muted = true;
+    video.defaultMuted = true;
+    video.volume = 0;
+    video.disableRemotePlayback = true;
+    video.autoplay = true;
+    video.loop = !isNowPlayingVideo;
+    video.preload = 'auto';
+    video.poster = '';
+    video.playsInline = true;
     if (sourceChanged) {
       video.__shinayuuLastErrorSrc = '';
       video.setAttribute('src', src);
       video.load();
-    } else if (video.readyState >= 2) {
+    } else if (video.readyState >= 2 && !isNowPlayingVideo) {
       document.body.classList.add('custom-background-video-ready');
     }
-    video.muted = true;
-    video.defaultMuted = true;
-    video.autoplay = true;
-    video.loop = true;
-    video.playsInline = true;
-    var p = video.play();
-    if (p && p.catch) p.catch(function(err){
-      if (token === customBgApplyToken) console.warn('background video autoplay deferred:', err && err.message || err);
-    });
+    if (isNowPlayingVideo) {
+      syncNowPlayingBackgroundPosition(true, 'source-ready');
+    } else {
+      var p = video.play();
+      if (p && p.catch) p.catch(function(err){
+        if (token === customBgApplyToken) console.warn('background video autoplay deferred:', err && err.message || err);
+      });
+    }
   }
   if (media.src) {
     setVideoSrc(media.src);
@@ -23215,7 +24109,8 @@ function updateCustomBackgroundControls() {
     if (row) row.classList.toggle('bg-cover-mode', !customColor);
   }
   setRange('fx-bgopacity', fx.backgroundOpacity == null ? 1 : fx.backgroundOpacity);
-  if (imageValue) imageValue.textContent = customBackgroundMediaLabel(fx.backgroundMedia || fx.backgroundImage);
+  if (imageValue) imageValue.textContent = fx.nowPlayingBackground ? nowPlayingBackgroundStatusText() : customBackgroundMediaLabel(fx.backgroundMedia || fx.backgroundImage);
+  updateNowPlayingBackgroundControls();
   applyBackgroundMediaHint();
 }
 function setCustomBackgroundColor(color, silent, customFlag) {
@@ -24603,6 +25498,7 @@ function relabelFxPanelControls() {
   if (title) title.textContent = localizeFixedText('视觉控制台');
   ensureLyricPrimaryControls();
   applyBackgroundMediaHint();
+  updateNowPlayingBackgroundControls();
   localizeBackgroundMediaLibrary();
   var overlayGrid = document.getElementById('t-cinema');
   overlayGrid = overlayGrid && overlayGrid.closest('.fx-toggle-grid');

@@ -1,3 +1,73 @@
+## 1.1.7 — 2026-07-22
+
+### Instant transport response and parallel track preparation
+
+- Stops the previous HTML-audio track on the same interaction frame instead of leaving it audible while a signed playback URL is being resolved.
+- Starts Spotify shutdown, YouTube/local descriptor resolution and the per-track MV request in parallel, while still awaiting Spotify stop confirmation before the new audible source is allowed to start.
+- Updates Play/Pause controls immediately and removes the artificial 420 ms pause fade and 460 ms play fade from normal transport actions.
+- Starts the HTML media element and resumes Web Audio analysis concurrently so visual analysis can no longer delay audible playback.
+- Added a short-lived renderer cache for raw MV descriptors and warms the hovered result, the first search results and the next queued track to reduce first-frame delay.
+- Bounds speculative MV preloading to a small window to avoid launching many high-cost YouTube metadata processes or increasing idle resource use.
+
+### Per-track MV wallpaper, single-audio provider switching and selectable quality
+
+- Added an explicit provider-switch transaction that pauses and verifies Spotify before YouTube or local HTML-audio playback is allowed to start. In-flight Spotify start requests are invalidated, and delayed SDK state checks stop a stale request that completes after the user has already selected YouTube.
+- Kept the Playing MV inside the existing background layer. The Three.js shelf, playlist carousel, lyrics, search, controls, panels and every established UI element retain their original stacking order, position, animation and pointer behavior above the per-track video wallpaper.
+- Added Full HD, 2K and 4K Playing MV quality controls in Image Control. Full HD is the smooth default; 2K and 4K request 1440p and 2160p respectively, with the selected stream's actual resolution and frame rate shown in the MV status.
+- Changed source selection to lock onto the highest real pixel dimensions available within the selected tier before comparing bitrate, codec or container. Lower tiers are used only when the upload does not expose the requested resolution.
+- Added decoded-frame tracking and a stall watchdog. A paused decoder is resumed without a seek, a genuinely frozen decoder receives one clock correction, and a prolonged stream failure receives one controlled source refresh instead of remaining stuck.
+- Reduced normal drift correction to a maximum ±0.4% and rate-limited it to avoid 50/60 FPS cadence judder. Hard correction now requires more than 1.45 seconds of drift and has a nine-second cooldown.
+
+### MV frame pacing, seek smoothness and higher-detail source selection
+
+- Removed forced background-video `currentTime` assignments from ordinary Play, Playing and Pause events. Resuming playback now continues from the already-buffered frame queue instead of flushing the decoder.
+- Added a dedicated user-seek transaction: the MV pauses on the last decoded frame, receives exactly one seek after the primary audio seek completes, waits for `seeked`/`canplay`, and then resumes.
+- Ignored duplicate seek confirmations emitted by the HTML audio event and the seek completion promise, preventing two Range requests for one pointer action.
+- Reduced synchronization frequency and limited small corrections to an imperceptible ±0.4% playback-rate adjustment. Hard synchronization now requires more than 1.45 seconds of drift and has a nine-second cooldown.
+- Paused the MV when the primary audio enters `waiting` or `stalled`, preventing video drift and the later correction hitch caused by audio buffering.
+- Added backpressure handling and short local Range caching to the media proxy so high-bitrate frames are delivered steadily instead of in memory-pressure bursts.
+- Raised High MV selection to 1440p and Ultra to 2160p where the source offers those formats; Balanced remains 1080p and Eco remains 720p.
+- Increased bitrate weighting between equal-resolution formats and disabled the parent desktop-shell transform while Playing MV is active to avoid an additional full-window texture resample.
+
+### MV sharpness and audio-output correction
+
+- Corrected Playing MV layering so the video remains at the native wallpaper z-index instead of being raised above the Three.js shelf. The feature now changes only the background content and never hides, lowers or reorders existing UI/UX layers.
+- Removed the fractional GPU scale transform from the Playing MV element and render it at exact viewport dimensions with `object-fit: cover`.
+- Allowed 50/60 FPS 1080p formats in Balanced/High mode; the previous 30 FPS ceiling could force yt-dlp to choose a much lower-resolution rendition when a video only exposed 1080p at 60 FPS.
+- Reasserted the existing audible HTML audio element after the muted MV decoder starts, preventing the master output or Web Audio gain from remaining at the fade-in silence floor.
+- Kept the MV element permanently muted and at zero volume so only the established master player produces sound.
+
+### Full-screen sharp MV and YouTube thumbnails
+
+- Changed Playing MV from letterboxed `contain` rendering to edge-to-edge `cover` rendering so the video fills the complete app window.
+- Removed the MV background opacity blend and dark overlay; decoded video frames are now displayed at full opacity with no CSS blur/filter layer.
+- Changed video selection to prioritize the highest available resolution inside the selected ceiling before codec/container preference.
+- Raised the optional MV quality floors to 720p for Eco and 1080p for Balanced/High, with 1440p for Ultra or large displays.
+- Replaced the previous 480p compatibility retry with a same-resolution H.264/MP4 retry, preventing a successful retry from becoming visibly blurry.
+- Repaired universal YouTube thumbnails by supporting nested thumbnail response shapes and adding a canonical `i.ytimg.com` fallback from the exact video ID.
+- Prevented NetEase-specific image sizing parameters from being appended to YouTube thumbnail URLs.
+
+### Raw video-only Playing MV
+
+- Removed the YouTube iframe from the Playing MV rendering path.
+- Playing MV now renders only the direct muted video stream inside the app-owned HTML5 video layer, so YouTube interface elements such as the logo, channel name, title, controls, annotations and end screens are not rendered.
+- The video layer becomes visible only after Chromium emits a real `playing` event. Loading and error states remain a clean black stage and never fall back to a thumbnail or saved image.
+- Kept the existing audible player as the single master clock for play, pause, seek, playback rate, track changes, lyrics and visualizer synchronization.
+- Removed the hidden decode-probe player and iframe fallback to avoid duplicate video decoders and reduce CPU, GPU and memory overhead.
+- Retained one compatibility refresh for expired or unsupported direct video streams without interrupting audible playback.
+
+### Universal YouTube video search
+
+- Changed the primary YouTube search from YouTube Music song-only results to universal video results.
+- Added normalized support for ordinary uploads, music videos, gameplay, tutorials, podcasts, Shorts and public live videos.
+- Preserved channel/author metadata, duration, thumbnails, exact video IDs and direct YouTube URLs in search results.
+- Kept YouTube Music song search only as a fallback when universal video search is unavailable.
+
+### Preserved behavior
+
+- Spotify Playing MV backgrounds continue to use Spotify artist, album and artwork metadata rather than matching unrelated YouTube videos.
+- Preserved the existing UI/UX, Liquid Glass, Three.js, GSAP, lyrics, visualizer, Discord Rich Presence, updater, rounded window, wallpaper library and current playback paths.
+
 ## 1.1.6.10
 
 - Fixed the missing rounded-window renderer argument that left the visible shell square.

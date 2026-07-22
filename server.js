@@ -2520,6 +2520,17 @@ function audioContentTypeForUrl(audioUrl, upstreamType) {
   return upstreamType || 'audio/mpeg';
 }
 
+function mediaContentTypeForUrl(mediaUrl, upstreamType, descriptor) {
+  const declared = String(descriptor && descriptor.mimeType || upstreamType || '').split(';')[0].trim();
+  if (/^(video|audio)\//i.test(declared)) return declared;
+  let pathname = '';
+  try { pathname = new URL(mediaUrl).pathname.toLowerCase(); } catch (e) {}
+  if (/\.webm$/.test(pathname)) return descriptor && descriptor.mediaKind === 'video' ? 'video/webm' : 'audio/webm';
+  if (/\.(mp4|m4v|mov)$/.test(pathname)) return descriptor && descriptor.mediaKind === 'video' ? 'video/mp4' : 'audio/mp4';
+  if (/\.m3u8$/.test(pathname)) return 'application/vnd.apple.mpegurl';
+  return descriptor && descriptor.mediaKind === 'video' ? 'video/mp4' : audioContentTypeForUrl(mediaUrl, upstreamType);
+}
+
 function mapQQPlaylist(pl, kind) {
   pl = pl || {};
   const id = pl.dissid || pl.tid || pl.dirid || pl.id || pl.diss_id;
@@ -3889,6 +3900,39 @@ async function handleModernMusicRoute(req, res, url, pn) {
     return true;
   }
 
+  if (pn === '/api/qq/song/video') {
+    try {
+      const id = url.searchParams.get('mid') || url.searchParams.get('id') || '';
+      const quality = url.searchParams.get('quality') || 'auto';
+      const refresh = url.searchParams.get('refresh') === '1';
+      const compatibility = url.searchParams.get('compat') === '1';
+      const data = await musicProviders.resolveYouTubeVideoBackground(id, quality, { refresh, compatibility });
+      sendJSON(res, { ...data, loggedIn: false, mediaKind: 'video' });
+    } catch (error) {
+      console.error('[YouTubeBackgroundVideo]', error);
+      sendJSON(res, {
+        url: null,
+        proxyUrl: null,
+        playable: false,
+        reason: 'youtube_background_video_unavailable',
+        message: error.message || 'YouTube background video is unavailable.',
+      }, Number(error.status) || 500);
+    }
+    return true;
+  }
+
+  if (pn === '/api/spotify/track/visual') {
+    try {
+      const id = url.searchParams.get('id') || '';
+      const data = await musicProviders.spotifyTrackVisualBackground(id);
+      sendJSON(res, data);
+    } catch (error) {
+      console.error('[SpotifyVisualBackground]', error);
+      sendJSON(res, { provider: 'spotify', images: [], albumImage: '', artistImage: '', error: error.message || 'Spotify visual background unavailable.' }, Number(error.status) || 500);
+    }
+    return true;
+  }
+
   if (pn === '/api/qq/song/url') {
     try {
       const id = url.searchParams.get('mid') || url.searchParams.get('id') || '';
@@ -4986,6 +5030,74 @@ const server = http.createServer(async (req, res) => {
       while (true) { const c = await reader.read(); if (c.done) break; res.write(c.value); }
       res.end();
     } catch (err) { console.error('[Cover]', err); res.writeHead(500); res.end(); }
+    return;
+  }
+
+  // ---------- Generic media proxy with Range support ----------
+  // Used by the muted now-playing YouTube MV background. Adaptive video-only
+  // streams are preferred; a muted progressive MP4 is accepted only as a
+  // compatibility fallback for uploads that expose no separate video stream.
+  if (pn === '/api/media') {
+    try {
+      const streamToken = url.searchParams.get('stream') || '';
+      const descriptor = streamToken ? musicProviders.getYouTubeStreamDescriptor(streamToken) : null;
+      const mediaUrl = descriptor && descriptor.url || url.searchParams.get('url');
+      if (!mediaUrl) {
+        res.writeHead(streamToken ? 410 : 400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end(streamToken ? 'Media stream expired. Please retry the track.' : 'Missing url');
+        return;
+      }
+      const range = req.headers.range || '';
+      const hdr = {
+        ...audioProxyHeadersFor(mediaUrl, range),
+        ...((descriptor && descriptor.headers) || {}),
+      };
+      if (range) hdr.Range = range;
+      delete hdr.Host;
+      delete hdr.host;
+      delete hdr['Content-Length'];
+      delete hdr['content-length'];
+      const up = await fetch(mediaUrl, { headers: hdr, redirect: 'follow' });
+      const out = {
+        'Content-Type': mediaContentTypeForUrl(mediaUrl, up.headers.get('content-type'), descriptor),
+        'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'private, max-age=120',
+        'Vary': 'Range',
+      };
+      const cl = up.headers.get('content-length'); if (cl) out['Content-Length'] = cl;
+      const cr = up.headers.get('content-range'); if (cr) out['Content-Range'] = cr;
+      if (!up.ok && up.status !== 206) {
+        const detail = await up.text().catch(() => '');
+        res.writeHead(up.status, { 'Content-Type': 'text/plain; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+        res.end(detail.slice(0, 1000) || `Upstream media HTTP ${up.status}`);
+        return;
+      }
+      res.writeHead(up.status, out);
+      if (!up.body) { res.end(); return; }
+      const reader = up.body.getReader();
+      while (true) {
+        const c = await reader.read();
+        if (c.done || res.destroyed) break;
+        // Respect Node's writable backpressure. Reading the upstream as fast as
+        // possible filled the local response buffer, increased memory pressure,
+        // and caused frame delivery bursts on high-bitrate MV streams.
+        if (!res.write(c.value)) {
+          await new Promise((resolve) => {
+            const done = () => { res.off('drain', done); res.off('close', done); resolve(); };
+            res.once('drain', done);
+            res.once('close', done);
+          });
+        }
+      }
+      try { reader.releaseLock(); } catch (_) {}
+      if (!res.destroyed) res.end();
+    } catch (err) {
+      console.error('[MediaProxy]', err.message || err);
+      if (!res.headersSent) res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+      if (!res.destroyed) res.end('Media proxy failed');
+    }
     return;
   }
 
