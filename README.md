@@ -86,7 +86,11 @@ npm run build:win:dir
 Build the official EVS/VMP-signed NSIS installer:
 
 ```powershell
-npm run build:win
+npm run build:win 
+```
+If you want to build the installer without running tests, execute the following command
+```powershell
+npm run build:win:skip-tests
 ```
 
 Build an unsigned development installer for installer testing only:
