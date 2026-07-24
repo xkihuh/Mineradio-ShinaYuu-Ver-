@@ -8,7 +8,7 @@ See `RELEASE_1.1.7.md` for the exact release scope.
 
 ## Release focus
 
-ShinaYuu Music `1.1.7.2` keeps the raw video-only **Playing MV** background while restoring **YouTube Music** as a separate music source and exposing normal **YouTube Video** as an additional source. Playback, lyrics, visual effects and the desktop architecture remain independent from the MV background.
+ShinaYuu Music `1.1.7.3` keeps the raw video-only **Playing MV** background while restoring **YouTube Music** as a separate music source and exposing normal **YouTube Video** as an additional source. Playback, lyrics, visual effects and the desktop architecture remain independent from the MV background.
 
 ## Runtime architecture
 
@@ -86,8 +86,9 @@ npm run build:win:dir
 Build the official EVS/VMP-signed NSIS installer:
 
 ```powershell
-npm run build:win 
+npm run build:win
 ```
+
 If you want to build the installer without running tests, execute the following command
 ```powershell
 npm run build:win:skip-tests

@@ -3968,7 +3968,8 @@ async function handleModernMusicRoute(req, res, url, pn) {
       const id = url.searchParams.get('mid') || url.searchParams.get('id') || '';
       const quality = url.searchParams.get('quality') || '';
       const sourceType = String(url.searchParams.get('sourceType') || 'music').toLowerCase() === 'video' ? 'video' : 'music';
-      const data = await musicProviders.resolveYouTubePlayback(id, quality);
+      const refresh = url.searchParams.get('refresh') === '1';
+      const data = await musicProviders.resolveYouTubePlayback(id, quality, { refresh });
       sendJSON(res, { ...data, sourceType, loggedIn: false, vipType: 0, vipLevel: 'public', isVip: false, isSvip: false, vipLabel: sourceType === 'video' ? 'YouTube Video' : 'YouTube Music' });
     } catch (error) {
       console.error('[YouTubePlayback]', error);
@@ -3977,6 +3978,7 @@ async function handleModernMusicRoute(req, res, url, pn) {
         playable: false,
         reason: error.code === 'YOUTUBE_ENGINE_UNAVAILABLE' ? 'youtube_engine_unavailable' : 'youtube_stream_unavailable',
         message: error.message || 'YouTube playback stream is unavailable.',
+        engineCode: error.engineCode || error.code || '',
         restriction: { provider: 'youtube', category: error.code === 'YOUTUBE_ENGINE_UNAVAILABLE' ? 'engine_unavailable' : 'url_unavailable', message: error.message || 'YouTube playback stream is unavailable.', action: 'retry' },
       }, Number(error.status) || 500);
     }
@@ -5102,9 +5104,31 @@ const server = http.createServer(async (req, res) => {
       delete hdr.host;
       delete hdr['Content-Length'];
       delete hdr['content-length'];
-      const up = await fetch(mediaUrl, { headers: hdr, redirect: 'follow' });
+      let activeDescriptor = descriptor;
+      let activeMediaUrl = mediaUrl;
+      let up = await fetch(activeMediaUrl, { headers: hdr, redirect: 'follow' });
+      if (!up.ok && up.status !== 206 && activeDescriptor && activeDescriptor.videoId && /^(403|410|416|429)$/.test(String(up.status))) {
+        try {
+          const refreshed = await musicProviders.resolveYouTubeVideoBackground(
+            activeDescriptor.videoId,
+            activeDescriptor.requestedQuality || 'auto',
+            { refresh: true, compatibility: !!activeDescriptor.compatibility }
+          );
+          activeDescriptor = refreshed && refreshed.streamToken ? musicProviders.getYouTubeStreamDescriptor(refreshed.streamToken) : null;
+          activeMediaUrl = activeDescriptor && activeDescriptor.url || '';
+          if (activeMediaUrl) {
+            const retryHeaders = { ...audioProxyHeadersFor(activeMediaUrl, range), ...((activeDescriptor && activeDescriptor.headers) || {}) };
+            if (range) retryHeaders.Range = range;
+            delete retryHeaders.Host; delete retryHeaders.host;
+            delete retryHeaders['Content-Length']; delete retryHeaders['content-length'];
+            up = await fetch(activeMediaUrl, { headers: retryHeaders, redirect: 'follow' });
+          }
+        } catch (refreshError) {
+          console.warn('[MediaProxyRefresh]', refreshError.message || refreshError);
+        }
+      }
       const out = {
-        'Content-Type': mediaContentTypeForUrl(mediaUrl, up.headers.get('content-type'), descriptor),
+        'Content-Type': mediaContentTypeForUrl(activeMediaUrl, up.headers.get('content-type'), activeDescriptor),
         'Access-Control-Allow-Origin': '*',
         'Cross-Origin-Resource-Policy': 'cross-origin',
         'Accept-Ranges': 'bytes',
@@ -5168,9 +5192,31 @@ const server = http.createServer(async (req, res) => {
       delete hdr.host;
       delete hdr['Content-Length'];
       delete hdr['content-length'];
-      const up = await fetch(audioUrl, { headers: hdr, redirect: 'follow' });
+      let activeDescriptor = descriptor;
+      let activeAudioUrl = audioUrl;
+      let up = await fetch(activeAudioUrl, { headers: hdr, redirect: 'follow' });
+      if (!up.ok && up.status !== 206 && activeDescriptor && activeDescriptor.videoId && /^(403|410|416|429)$/.test(String(up.status))) {
+        try {
+          const refreshed = await musicProviders.resolveYouTubePlayback(
+            activeDescriptor.videoId,
+            activeDescriptor.requestedQuality || '',
+            { refresh: true }
+          );
+          activeDescriptor = refreshed && refreshed.streamToken ? musicProviders.getYouTubeStreamDescriptor(refreshed.streamToken) : null;
+          activeAudioUrl = activeDescriptor && activeDescriptor.url || '';
+          if (activeAudioUrl) {
+            const retryHeaders = { ...audioProxyHeadersFor(activeAudioUrl, range), ...((activeDescriptor && activeDescriptor.headers) || {}) };
+            if (range) retryHeaders.Range = range;
+            delete retryHeaders.Host; delete retryHeaders.host;
+            delete retryHeaders['Content-Length']; delete retryHeaders['content-length'];
+            up = await fetch(activeAudioUrl, { headers: retryHeaders, redirect: 'follow' });
+          }
+        } catch (refreshError) {
+          console.warn('[AudioProxyRefresh]', refreshError.message || refreshError);
+        }
+      }
       const out = {
-        'Content-Type': descriptor && descriptor.mimeType || audioContentTypeForUrl(audioUrl, up.headers.get('content-type')),
+        'Content-Type': activeDescriptor && activeDescriptor.mimeType || audioContentTypeForUrl(activeAudioUrl, up.headers.get('content-type')),
         'Access-Control-Allow-Origin': '*',
         'Cross-Origin-Resource-Policy': 'cross-origin',
         'Accept-Ranges': 'bytes',

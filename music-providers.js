@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
 
-const UA = 'ShinaYuu Music/1.1.7.2';
+const UA = 'ShinaYuu Music/1.1.7.3';
 const CONFIG_FILE = process.env.MUSIC_SOURCE_CONFIG_FILE || path.join(__dirname, '.music-sources.json');
 const TOKEN_FILE = process.env.SPOTIFY_TOKEN_FILE || path.join(__dirname, '.spotify-token.json');
 const YOUTUBE_TOKEN_FILE = process.env.YOUTUBE_TOKEN_FILE || path.join(path.dirname(TOKEN_FILE), 'youtube-token.json');
@@ -1740,12 +1740,22 @@ async function prepareYouTubeEngine(options = {}) {
 }
 
 async function repairYouTubeEngine() {
+  // First perform a non-destructive health check. Network timeouts, expired
+  // signed media URLs and a sleeping renderer must never cause the working
+  // bundled engine to be deleted on managed Windows gaming PCs.
   youtubeEnginePreparePromise = null;
-  const target = userYtDlpPath();
-  safeUnlink(target);
-  safeUnlink(`${target}.download`);
-  safeUnlink(`${target}.restore`);
-  return prepareYouTubeEngine({ force: true, reason: 'manual_repair' });
+  try {
+    return await prepareYouTubeEngine({ force: true, reason: 'health_check' });
+  } catch (firstError) {
+    const failureCode = ytDlpFailureCode(firstError);
+    const executableFailure = /^(YTDLP_NOT_FOUND|YTDLP_BLOCKED_OR_PERMISSION|YTDLP_INVALID_EXECUTABLE|ENOENT|EACCES|EPERM)$/i.test(failureCode);
+    if (!executableFailure) throw firstError;
+    const target = userYtDlpPath();
+    safeUnlink(target);
+    safeUnlink(`${target}.download`);
+    safeUnlink(`${target}.restore`);
+    return prepareYouTubeEngine({ force: true, reason: 'manual_repair' });
+  }
 }
 
 function youtubeEngineStatus() {
@@ -1818,8 +1828,9 @@ function ytDlpArgs(videoId, quality = '') {
   return args;
 }
 
-async function youtubeAudioViaYtDlp(videoId, quality = '') {
-  const cachedDescriptor = cachedYouTubeAudioDescriptor(videoId, quality);
+async function youtubeAudioViaYtDlp(videoId, quality = '', options = {}) {
+  const refresh = !!(options && options.refresh);
+  const cachedDescriptor = refresh ? null : cachedYouTubeAudioDescriptor(videoId, quality);
   if (cachedDescriptor) return playbackResultFromYouTubeDescriptor(cachedDescriptor, 'yt-dlp-cache');
   const engine = await prepareYouTubeEngine();
   const nodeRuntime = findNodeRuntime();
@@ -1843,6 +1854,8 @@ async function youtubeAudioViaYtDlp(videoId, quality = '') {
     bitrate: Number(selected.abr || selected.tbr || info.abr || info.tbr || 0) * 1000,
     audioQuality: String(selected.format_note || selected.format || info.format_note || ''),
     videoId: String(videoId || ''),
+    mediaKind: 'audio',
+    requestedQuality: String(quality || ''),
   };
   cacheYouTubeAudioDescriptor(videoId, quality, descriptor);
   return playbackResultFromYouTubeDescriptor(descriptor, 'yt-dlp');
@@ -2056,6 +2069,7 @@ async function youtubeVideoViaYtDlp(videoId, quality = 'auto', options = {}) {
     hasAudio: !!(selected.acodec && String(selected.acodec).toLowerCase() !== 'none'),
     formatId: String(selected.format_id || info.format_id || ''),
     compatibility: !!(options && options.compatibility),
+    requestedQuality: normalizeBackgroundVideoQuality(quality),
   };
   cacheYouTubeVideoDescriptor(videoId, quality, descriptor, options);
   return playbackResultFromYouTubeDescriptor(descriptor, 'yt-dlp-video');
@@ -3977,44 +3991,59 @@ async function youtubeSearch(query, limit = 18) {
   return youtubeMusicSearch(query, limit);
 }
 
-async function youtubeAudioUrl(videoId, quality = '') {
-  let ytDlpError = null;
-  try {
-    return await youtubeAudioViaYtDlp(videoId, quality);
-  } catch (error) {
-    ytDlpError = error;
-    console.warn('[YouTubeEngine] yt-dlp failed:', error.message);
-  }
+async function youtubeAudioViaInnertube(videoId, quality = '', options = {}) {
+  const refresh = !!(options && options.refresh);
+  const cachedDescriptor = refresh ? null : cachedYouTubeAudioDescriptor(videoId, quality);
+  if (cachedDescriptor) return playbackResultFromYouTubeDescriptor(cachedDescriptor, 'youtube-cache');
+  const yt = await getYouTubeClient();
+  const requested = String(quality || '').toLowerCase();
+  const format = await yt.getStreamingData(String(videoId), {
+    type: 'audio',
+    quality: requested === 'standard' ? 'bestefficiency' : 'best',
+    format: 'any',
+  });
+  const directUrl = String(format && format.url || '').trim();
+  if (!directUrl) throw new Error('youtubei.js returned no audio URL');
+  const descriptor = {
+    url: directUrl,
+    headers: {},
+    mimeType: String(format && format.mime_type || ''),
+    bitrate: Number(format && format.bitrate || 0),
+    audioQuality: String(format && format.audio_quality || ''),
+    videoId: String(videoId || ''),
+    mediaKind: 'audio',
+    requestedQuality: String(quality || ''),
+  };
+  cacheYouTubeAudioDescriptor(videoId, quality, descriptor);
+  return {
+    ...playbackResultFromYouTubeDescriptor(descriptor, 'youtubei.js-fast'),
+    level: requested || 'exhigh',
+    quality: requested === 'standard' ? 'Standard' : 'YouTube Music',
+  };
+}
 
-  // Compatibility fallback. youtubei.js can still work on some player revisions,
-  // but yt-dlp is the primary engine because YouTube frequently changes ciphers.
+async function youtubeAudioUrl(videoId, quality = '', options = {}) {
+  const refresh = !!(options && options.refresh);
+  const cachedDescriptor = refresh ? null : cachedYouTubeAudioDescriptor(videoId, quality);
+  if (cachedDescriptor) return playbackResultFromYouTubeDescriptor(cachedDescriptor, 'youtube-cache');
+
+  // Start the lightweight Innertube route immediately. Give it a very small
+  // head start, then run yt-dlp in parallel. Whichever returns a valid stream
+  // first starts playback; the slower result still warms the descriptor cache.
+  const fastPromise = youtubeAudioViaInnertube(videoId, quality, { refresh });
+  const ytDlpPromise = new Promise((resolve) => setTimeout(resolve, 180))
+    .then(() => youtubeAudioViaYtDlp(videoId, quality, { refresh }));
   try {
-    const yt = await getYouTubeClient();
-    const requested = String(quality || '').toLowerCase();
-    const format = await yt.getStreamingData(String(videoId), {
-      type: 'audio',
-      quality: requested === 'standard' ? 'bestefficiency' : 'best',
-      format: 'any',
-    });
-    const directUrl = format && format.url || '';
-    if (!directUrl) throw new Error('youtubei.js returned no audio URL');
-    const descriptor = {
-      url: directUrl,
-      headers: {},
-      mimeType: format && format.mime_type || '',
-      bitrate: format && format.bitrate || 0,
-      audioQuality: format && format.audio_quality || '',
-      videoId: String(videoId || ''),
-    };
-    cacheYouTubeAudioDescriptor(videoId, quality, descriptor);
-    return {
-      ...playbackResultFromYouTubeDescriptor(descriptor, 'youtubei.js-fallback'),
-      level: requested || 'exhigh',
-      quality: requested === 'standard' ? 'Standard' : 'YouTube Music',
-    };
-  } catch (fallbackError) {
-    const error = new Error(`YouTube engine unavailable: ${ytDlpError && ytDlpError.message || 'yt-dlp failed'}; ${fallbackError.message}`);
-    error.code = 'YOUTUBE_ENGINE_UNAVAILABLE';
+    return await Promise.any([fastPromise, ytDlpPromise]);
+  } catch (aggregate) {
+    const errors = aggregate && Array.isArray(aggregate.errors) ? aggregate.errors : [];
+    const fastError = errors[0] || null;
+    const ytDlpError = errors[1] || errors[0] || aggregate;
+    const engineCode = ytDlpFailureCode(ytDlpError);
+    const actualEngineFailure = /^(YTDLP_NOT_FOUND|YTDLP_BLOCKED_OR_PERMISSION|YTDLP_INVALID_EXECUTABLE|ENOENT|EACCES|EPERM)$/i.test(engineCode);
+    const error = new Error(`YouTube stream unavailable: ${ytDlpError && ytDlpError.message || 'yt-dlp failed'}; ${fastError && fastError.message || 'youtubei.js failed'}`);
+    error.code = actualEngineFailure ? 'YOUTUBE_ENGINE_UNAVAILABLE' : 'YOUTUBE_STREAM_UNAVAILABLE';
+    error.engineCode = engineCode;
     error.status = 503;
     throw error;
   }
@@ -4254,8 +4283,8 @@ async function resolveSpotifyPlayback(trackId, quality) {
   };
 }
 
-async function resolveYouTubePlayback(videoId, quality) {
-  const stream = await youtubeAudioUrl(videoId, quality);
+async function resolveYouTubePlayback(videoId, quality, options = {}) {
+  const stream = await youtubeAudioUrl(videoId, quality, options);
   return {
     ...stream,
     provider: 'youtube',
@@ -4266,6 +4295,33 @@ async function resolveYouTubePlayback(videoId, quality) {
   };
 }
 
+async function youtubeVideoViaInnertube(videoId, quality = 'auto', options = {}) {
+  const id = String(videoId || '').trim();
+  const mode = normalizeBackgroundVideoQuality(quality);
+  const requestedQuality = mode === 'eco' ? '720p' : (mode === 'balanced' ? '1080p' : (mode === 'ultra' ? '2160p' : '1440p'));
+  const yt = await getYouTubeClient();
+  const format = await yt.getStreamingData(id, { type: 'video', quality: requestedQuality, format: 'any' });
+  const directUrl = String(format && format.url || '').trim();
+  if (!directUrl) throw new Error('youtubei.js returned no video URL');
+  const descriptor = {
+    url: directUrl,
+    headers: {},
+    mimeType: String(format && format.mime_type || ''),
+    bitrate: Number(format && format.bitrate || 0),
+    width: Number(format && format.width || 0),
+    height: Number(format && format.height || 0),
+    availableMaxHeight: Number(format && format.height || 0),
+    fps: Number(format && format.fps || 0),
+    videoQuality: String(format && (format.quality_label || format.quality) || ''),
+    videoId: id,
+    mediaKind: 'video',
+    requestedQuality: mode,
+    compatibility: !!(options && options.compatibility),
+  };
+  cacheYouTubeVideoDescriptor(id, quality, descriptor, options);
+  return playbackResultFromYouTubeDescriptor(descriptor, 'youtubei.js-video-fast');
+}
+
 async function resolveYouTubeVideoBackground(videoId, quality = 'auto', options = {}) {
   const id = String(videoId || '').trim();
   if (!id) {
@@ -4273,9 +4329,20 @@ async function resolveYouTubeVideoBackground(videoId, quality = 'auto', options 
     error.status = 400;
     throw error;
   }
-  let ytDlpError = null;
+  const mode = normalizeBackgroundVideoQuality(quality);
+  // Compatibility recovery must let yt-dlp enforce its H.264/MP4 format
+  // selection. Racing an arbitrary Innertube codec here could repeatedly pick
+  // the same undecodable stream on older or policy-managed Windows 10 PCs.
+  const fastPromise = options && options.compatibility
+    ? youtubeVideoViaYtDlp(id, quality, options)
+    : youtubeVideoViaInnertube(id, quality, options);
+  const ytDlpPromise = options && options.compatibility
+    ? Promise.reject(new Error('compatibility route uses yt-dlp only'))
+    : new Promise((resolve) => setTimeout(resolve, 220)).then(() => youtubeVideoViaYtDlp(id, quality, options));
   try {
-    const stream = await youtubeVideoViaYtDlp(id, quality, options);
+    const stream = options && options.compatibility
+      ? await fastPromise
+      : await Promise.any([fastPromise, ytDlpPromise]);
     return {
       ...stream,
       proxyUrl: stream.streamToken ? `/api/media?stream=${encodeURIComponent(stream.streamToken)}` : stream.proxyUrl,
@@ -4284,44 +4351,14 @@ async function resolveYouTubeVideoBackground(videoId, quality = 'auto', options 
       mediaKind: 'video',
       muted: true,
       playable: !!(stream.url || stream.proxyUrl),
-      requestedQuality: normalizeBackgroundVideoQuality(quality),
-    };
-  } catch (error) {
-    ytDlpError = error;
-    console.warn('[YouTubeBackgroundVideo] yt-dlp failed:', error.message);
-  }
-
-  try {
-    const yt = await getYouTubeClient();
-    const mode = normalizeBackgroundVideoQuality(quality);
-    const requestedQuality = mode === 'eco' ? '720p' : (mode === 'balanced' ? '1080p' : (mode === 'ultra' ? '2160p' : '1440p'));
-    const format = await yt.getStreamingData(id, { type: 'video', quality: requestedQuality, format: 'any' });
-    const directUrl = String(format && format.url || '').trim();
-    if (!directUrl) throw new Error('youtubei.js returned no video URL');
-    const descriptor = {
-      url: directUrl,
-      headers: {},
-      mimeType: String(format && format.mime_type || ''),
-      bitrate: Number(format && format.bitrate || 0),
-      width: Number(format && format.width || 0),
-      height: Number(format && format.height || 0),
-      availableMaxHeight: Number(format && format.height || 0),
-      fps: Number(format && format.fps || 0),
-      videoQuality: String(format && (format.quality_label || format.quality) || ''),
-      videoId: id,
-      mediaKind: 'video',
-    };
-    cacheYouTubeVideoDescriptor(id, quality, descriptor, options);
-    const playback = playbackResultFromYouTubeDescriptor(descriptor, 'youtubei.js-video-fallback');
-    return {
-      ...playback,
-      proxyUrl: playback.streamToken ? `/api/media?stream=${encodeURIComponent(playback.streamToken)}` : playback.proxyUrl,
-      provider: 'youtube', playbackProvider: 'youtube', mediaKind: 'video', muted: true, playable: true,
       requestedQuality: mode,
       compatibility: !!(options && options.compatibility),
     };
-  } catch (fallbackError) {
-    const error = new Error(`YouTube background video unavailable: ${ytDlpError && ytDlpError.message || 'yt-dlp failed'}; ${fallbackError.message}`);
+  } catch (aggregate) {
+    const errors = aggregate && Array.isArray(aggregate.errors) ? aggregate.errors : [];
+    const fastError = errors[0] || null;
+    const ytDlpError = errors[1] || errors[0] || aggregate;
+    const error = new Error(`YouTube background video unavailable: ${ytDlpError && ytDlpError.message || 'yt-dlp failed'}; ${fastError && fastError.message || 'youtubei.js failed'}`);
     error.code = 'YOUTUBE_BACKGROUND_VIDEO_UNAVAILABLE';
     error.status = 503;
     throw error;

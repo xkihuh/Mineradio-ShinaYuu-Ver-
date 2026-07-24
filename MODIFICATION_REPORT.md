@@ -1,12 +1,31 @@
-## 1.1.7.2
+# Modification Report — ShinaYuu Music 1.1.7.3
 
-- Restored the original YouTube Music song-search and metadata pipeline while keeping YouTube Video separate.
-- Added progressive multi-provider search and a lightweight search-only YouTube client.
-- Fixed exact YouTube captions/forced alignment being treated as external lyrics.
-- Changed the default lyrics offset to 0.00 seconds and migrated the legacy +0.35-second default.
-- Reduced automatic prefetch pressure immediately after search results appear.
+## Requested fixes
 
-# Final 1.1.7.1 source separation correction
+- Recover YouTube audio and MV playback after long pause/background periods on Windows 10 gaming systems without requiring an application restart.
+- Reduce the cold delay between selecting a result and hearing/seeing playback.
+- Prevent the MV from disappearing or remaining black while audio continues.
+- Allow lyric delay and timeline calibration on every playback source.
+
+## Implemented changes
+
+- Classifies expired stream URLs, HTTP failures, timeouts and network interruptions as transient stream failures instead of engine-installation failures.
+- Performs a non-destructive engine health check and only rebuilds the bundled engine for genuine missing, blocked or invalid executable errors.
+- Prefetches fresh YouTube audio/MV descriptors during extended pause and restores the media elements at the saved playback position on resume.
+- Races Innertube with a delayed yt-dlp request for faster first usable descriptors, while retaining yt-dlp and H.264/MP4 compatibility fallbacks.
+- Retries audio and video proxy requests once with a refreshed descriptor when signed URLs expire.
+- Keeps artwork behind the MV until decoded frames are ready and repairs the decoder after background suspension or repeated stalls.
+- Extends per-track lyric delay and timeline-rate controls to exact Spotify, YouTube Music, YouTube Video and local timing sources.
+- Added regression coverage for idle resume, stream refresh, black-video fallback, compatibility recovery and universal lyric calibration.
+
+## Preserved systems
+
+- Separate Spotify, YouTube Music and YouTube Video sources
+- Original lyrics/title UI and visual layout
+- Castlabs Electron/Widevine runtime
+- Three.js, GSAP, visualizer and playlist shelf
+- MV display modes and A/V synchronization watchdog
+- Discord Rich Presence, updater and Windows installer pipeline
 
 ## Restored architecture
 
@@ -167,9 +186,9 @@
 - While exact-video alignment is processing, the original title fallback remains visible instead of showing falsely synchronized estimated lyrics.
 
 
-## 1.1.7.2 — YouTube Video A/V synchronization maintenance
+## 1.1.7.3 — YouTube Video A/V synchronization maintenance
 
-- Kept the public version at 1.1.7.2 as requested.
+- Kept the public version at 1.1.7.3 as requested.
 - Added a strict synchronization path only for the separate YouTube Video source.
 - Added an independent 180 ms A/V watchdog so synchronization continues even when Chromium stops emitting video-frame callbacks during a brief decoder stall.
 - Audio remains the authoritative playback clock; the muted MV is automatically realigned after audio buffering, video buffering, dropped frames, or a decoder hitch.

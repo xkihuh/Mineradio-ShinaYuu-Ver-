@@ -1,10 +1,13 @@
-## 1.1.7.2
+## 1.1.7.3 — Idle resume, fast playback and MV recovery
 
-- Restored the original YouTube Music song-search and metadata pipeline while keeping YouTube Video separate.
-- Added progressive multi-provider search and a lightweight search-only YouTube client.
-- Fixed exact YouTube captions/forced alignment being treated as external lyrics.
-- Changed the default lyrics offset to 0.00 seconds and migrated the legacy +0.35-second default.
-- Reduced automatic prefetch pressure immediately after search results appear.
+- Fixed YouTube playback failing after a track was paused or the application stayed in the background for several minutes.
+- Added non-destructive engine health checks and automatic refresh of expired audio/video stream descriptors.
+- Added a fast Innertube/yt-dlp descriptor race and staggered first-result prefetch to reduce cold track-start latency.
+- Added audio and media proxy retries for expired or rejected signed URLs.
+- Added MV artwork fallback, decoder recovery, compatibility retry and foreground-resume repair to prevent persistent black backgrounds while audio continues.
+- Kept audio as the authoritative clock and retained the existing YouTube Video A/V watchdog.
+- Enabled lyric delay and timeline-rate calibration for Spotify, YouTube Music, YouTube Video and local tracks.
+- Updated package, display/build version, installer name, release notes, modification report and regression coverage to 1.1.7.3.
 
 ## 1.1.7.1 — YouTube Music restored as a separate source
 
@@ -511,9 +514,9 @@ All notable changes to ShinaYuu Music are documented in this file.
 - While exact-video alignment is processing, the original title fallback remains visible instead of showing falsely synchronized estimated lyrics.
 
 
-## 1.1.7.2 — YouTube Video A/V synchronization maintenance
+## 1.1.7.3 — YouTube Video A/V synchronization maintenance
 
-- Kept the public version at 1.1.7.2 as requested.
+- Kept the public version at 1.1.7.3 as requested.
 - Added a strict synchronization path only for the separate YouTube Video source.
 - Added an independent 180 ms A/V watchdog so synchronization continues even when Chromium stops emitting video-frame callbacks during a brief decoder stall.
 - Audio remains the authoritative playback clock; the muted MV is automatically realigned after audio buffering, video buffering, dropped frames, or a decoder hitch.
